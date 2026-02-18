@@ -3,6 +3,7 @@ import pandas as pd
 import talib as ta
 from pathlib import Path
 import base64
+import os
 
 st.set_page_config(page_title="Master Scanner", layout="wide")
 
