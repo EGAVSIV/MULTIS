@@ -1,66 +1,59 @@
 import streamlit as st
 import pandas as pd
 import talib as ta
-import os
 from pathlib import Path
 
-st.set_page_config(page_title="Master Stock Scanner", layout="wide")
+st.set_page_config(page_title="Master Scanner", layout="wide")
 
 st.title("📈 Multi-Timeframe Master Scanner")
 
-# ===============================
-# DATA FOLDERS
-# ===============================
+# ==========================================
+# FOLDERS
+# ==========================================
 DATA_D = "stock_data_D"
 DATA_W = "stock_data_W"
 DATA_M = "stock_data_M"
 
-symbols = list(set(
-    [f.stem for f in Path(DATA_D).glob("*.parquet")]
-))
+symbols = list(set([f.stem for f in Path(DATA_D).glob("*.parquet")]))
 
 st.write(f"✅ Found {len(symbols)} symbols")
 
-# ===============================
+# ==========================================
 # FUNCTIONS
-# ===============================
+# ==========================================
 
 def get_macd_trend(series):
     macd, signal, hist = ta.MACD(series, 12, 26, 9)
     if macd.dropna().shape[0] < 3:
         return None, None
-    trend_now = "Up Tick" if macd.iloc[-1] > macd.iloc[-2] else "Down Tick"
-    trend_prev = "Up Tick" if macd.iloc[-2] > macd.iloc[-3] else "Down Tick"
-    return trend_now, trend_prev
+    now = "Up Tick" if macd.iloc[-1] > macd.iloc[-2] else "Down Tick"
+    prev = "Up Tick" if macd.iloc[-2] > macd.iloc[-3] else "Down Tick"
+    return now, prev
 
 
-def classify_trend(daily, daily_n1, weekly, monthly):
+def classify_trend(d, d1, w, m):
 
-    if daily == "Up Tick" and weekly == "Up Tick" and monthly == "Up Tick":
-        if daily_n1 == "Up Tick":
-            return "Running Uptrend"
-        else:
-            return "D Aligned Up With W/M"
+    if d == "Up Tick" and w == "Up Tick" and m == "Up Tick":
+        return "Running Uptrend" if d1 == "Up Tick" else "D Aligned Up With W_M"
 
-    if daily == "Down Tick" and weekly == "Down Tick" and monthly == "Down Tick":
-        if daily_n1 == "Down Tick":
-            return "Running Downtrend"
-        else:
-            return "D Aligned Down With W/M"
+    if d == "Down Tick" and w == "Down Tick" and m == "Down Tick":
+        return "Running Down Trend" if d1 == "Down Tick" else "D Aligned Down With W_M"
 
-    if daily == "Down Tick" and weekly == "Up Tick" and monthly == "Up Tick":
-        return "Wave Going Against Tide (Down)"
+    if d == "Down Tick" and w == "Up Tick" and m == "Up Tick":
+        return "D (Wave) Going Down/W_M_UP(TIDE)"
 
-    if daily == "Up Tick" and weekly == "Down Tick" and monthly == "Down Tick":
-        return "Wave Going Against Tide (Up)"
+    if d == "Up Tick" and w == "Down Tick" and m == "Down Tick":
+        return "D(Wave) Going Up /W_M_DN(TIDE)"
 
     return "No Clear Trend"
 
 
-# ===============================
-# SCAN BUTTON
-# ===============================
-if st.button("🚀 Run Full Scan"):
+# ==========================================
+# SCAN LOGIC
+# ==========================================
+
+@st.cache_data
+def run_scan():
 
     results = []
 
@@ -73,9 +66,7 @@ if st.button("🚀 Run Full Scan"):
             if len(df_d) < 100:
                 continue
 
-            # ===============================
-            # MTF MACD
-            # ===============================
+            # === MTF ===
             d_now, d_prev = get_macd_trend(df_d["close"])
             w_now, _ = get_macd_trend(df_w["close"])
             m_now, _ = get_macd_trend(df_m["close"])
@@ -85,9 +76,7 @@ if st.button("🚀 Run Full Scan"):
 
             trend_status = classify_trend(d_now, d_prev, w_now, m_now)
 
-            # ===============================
-            # DAILY MOMENTUM STRUCTURE
-            # ===============================
+            # === DAILY STRUCTURE ===
             df_d["ema13"] = ta.EMA(df_d["close"], 13)
             df_d["ema50"] = ta.EMA(df_d["close"], 50)
             df_d["ema100"] = ta.EMA(df_d["close"], 100)
@@ -122,39 +111,82 @@ if st.button("🚀 Run Full Scan"):
 
             results.append({
                 "Stock": symbol,
-                "Trend Status": trend_status,
+                "Category 1": trend_status,
                 "Bullish Momentum": bullish_momentum,
                 "Bearish Momentum": bearish_momentum,
                 "Bullish Swing": bullish_swing,
                 "Bearish Swing": bearish_swing
             })
 
-        except Exception as e:
+        except:
             continue
 
-    df_result = pd.DataFrame(results)
+    return pd.DataFrame(results)
+
+
+# ==========================================
+# RUN SCAN BUTTON
+# ==========================================
+
+if "scan_done" not in st.session_state:
+    st.session_state.scan_done = False
+
+if st.button("🚀 Run Scan"):
+    st.session_state.df_result = run_scan()
+    st.session_state.scan_done = True
+
+# ==========================================
+# DISPLAY RESULTS
+# ==========================================
+
+if st.session_state.scan_done:
+
+    df_result = st.session_state.df_result
 
     st.success("Scan Completed ✅")
 
-    st.dataframe(df_result, use_container_width=True)
+    col1, col2 = st.columns(2)
 
-    # ===============================
-    # CATEGORY FILTERS
-    # ===============================
-    st.subheader("📊 Category View")
+    # ==========================
+    # CATEGORY 1 DROPDOWN
+    # ==========================
+    with col1:
+        cat1 = st.selectbox(
+            "Category 1 Scan",
+            [
+                "All",
+                "Running Uptrend",
+                "Running Down Trend",
+                "D Aligned Up With W_M",
+                "D Aligned Down With W_M",
+                "D (Wave) Going Down/W_M_UP(TIDE)",
+                "D(Wave) Going Up /W_M_DN(TIDE)",
+                "No Clear Trend"
+            ]
+        )
 
-    category = st.selectbox(
-        "Select Category",
-        [
-            "All",
-            "Running Uptrend",
-            "Running Downtrend",
-            "Wave Going Against Tide (Down)",
-            "Wave Going Against Tide (Up)",
-            "No Clear Trend"
-        ]
-    )
+    # ==========================
+    # CATEGORY 2 DROPDOWN
+    # ==========================
+    with col2:
+        cat2 = st.selectbox(
+            "Category 2 Scan",
+            [
+                "All",
+                "Bullish Momentum",
+                "Bearish Momentum",
+                "Bullish Swing",
+                "Bearish Swing"
+            ]
+        )
 
-    if category != "All":
-        filtered = df_result[df_result["Trend Status"] == category]
-        st.dataframe(filtered, use_container_width=True)
+    filtered_df = df_result.copy()
+
+    if cat1 != "All":
+        filtered_df = filtered_df[filtered_df["Category 1"] == cat1]
+
+    if cat2 != "All":
+        filtered_df = filtered_df[filtered_df[cat2] == True]
+
+    st.subheader("📊 Filtered Stocks")
+    st.dataframe(filtered_df, use_container_width=True)
