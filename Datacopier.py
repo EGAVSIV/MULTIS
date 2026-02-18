@@ -4,52 +4,65 @@ import requests
 import zipfile
 import io
 
-# ========================================
+# ==========================================
 # CONFIG
-# ========================================
+# ==========================================
 
 SOURCE_REPO_ZIP = "https://github.com/EGAVSIV/Stock_Scanner_With_ASTA_Parameters/archive/refs/heads/main.zip"
 
-SOURCE_FOLDER_PATH = "Stock_Scanner_With_ASTA_Parameters-main/market_data/sector_index/D"
-DESTINATION_FOLDER = "D"
+BASE_SOURCE_PATH = "Stock_Scanner_With_ASTA_Parameters-main"
+
+FOLDERS_TO_SYNC = [
+    "stock_data_15",
+    "stock_data_1H",
+    "stock_data_D",
+    "stock_data_M",
+    "stock_data_W"
+]
+
+DESTINATION_BASE = "."
 
 
-# ========================================
-# DOWNLOAD & COPY FUNCTION
-# ========================================
+# ==========================================
+# SYNC FUNCTION
+# ==========================================
 
-def sync_folder():
-    print("📥 Downloading source repository...")
+def sync_folders():
+
+    print("📥 Downloading repository...")
 
     response = requests.get(SOURCE_REPO_ZIP)
     response.raise_for_status()
 
-    print("📦 Extracting files...")
+    print("📦 Extracting repository...")
     zip_file = zipfile.ZipFile(io.BytesIO(response.content))
     zip_file.extractall("temp_repo")
 
-    source_full_path = os.path.join("temp_repo", SOURCE_FOLDER_PATH)
+    for folder in FOLDERS_TO_SYNC:
 
-    if not os.path.exists(source_full_path):
-        raise Exception("❌ Source D folder not found!")
+        source_path = os.path.join(
+            "temp_repo",
+            BASE_SOURCE_PATH,
+            folder
+        )
 
-    # Remove old D folder if exists
-    if os.path.exists(DESTINATION_FOLDER):
-        print("🗑 Removing old D folder...")
-        shutil.rmtree(DESTINATION_FOLDER)
+        destination_path = os.path.join(DESTINATION_BASE, folder)
 
-    print("📁 Copying D folder...")
-    shutil.copytree(source_full_path, DESTINATION_FOLDER)
+        if not os.path.exists(source_path):
+            print(f"❌ {folder} not found in repo!")
+            continue
 
-    # Cleanup
+        if os.path.exists(destination_path):
+            print(f"🗑 Removing old {folder}...")
+            shutil.rmtree(destination_path)
+
+        print(f"📁 Copying {folder}...")
+        shutil.copytree(source_path, destination_path)
+
     shutil.rmtree("temp_repo")
 
-    print("✅ D folder successfully synced!")
+    print("✅ All folders synced successfully!")
 
-
-# ========================================
-# RUN
-# ========================================
 
 if __name__ == "__main__":
-    sync_folder()
+    sync_folders()
