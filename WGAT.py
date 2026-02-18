@@ -7,7 +7,7 @@ import os
 
 st.set_page_config(page_title="Master Scanner", layout="wide")
 
-st.title("📈 Multi-Timeframe Master Scanner")
+st.title("📈 Wave Going Against The Tide/ Swing- Momentum Scans")
 
 def set_bg_image(image_path: str):
     with open(image_path, "rb") as f:
