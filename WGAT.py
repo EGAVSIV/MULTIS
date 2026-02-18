@@ -33,7 +33,7 @@ def set_bg_image(image_path: str):
 # =====================================================
 
 BASE_PATH = os.path.dirname(__file__)
-bg_path = os.path.join(BASE_PATH, "Assets", "BG11.png")
+bg_path = os.path.join(BASE_PATH, "Assest", "BG11.png")
 
 if os.path.exists(bg_path):
     set_bg_image(bg_path)
