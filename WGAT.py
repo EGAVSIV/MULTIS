@@ -16,20 +16,46 @@ DATA_M = "stock_data_M"
 
 symbols = list(set([f.stem for f in Path(DATA_D).glob("*.parquet")]))
 
-st.write(f"✅ Found {len(symbols)} symbols")
+# ==========================================
+# GET LAST AVAILABLE DAILY DATE
+# ==========================================
+def get_last_daily_date():
+    for f in Path(DATA_D).glob("*.parquet"):
+        df = pd.read_parquet(f)
+        df.index = pd.to_datetime(df.index)
+        return df.index.max()
+    return None
+
+last_daily_date = get_last_daily_date()
+
+st.markdown("### 🕯 Last Candle (IST)")
+st.markdown(f"📅 **Daily: {last_daily_date.date()}**")
+
+# ==========================================
+# DATE SELECTOR
+# ==========================================
+selected_date = st.date_input(
+    "📅 Select Scan Date",
+    value=last_daily_date.date()
+)
+
+selected_date = pd.to_datetime(selected_date)
 
 # ==========================================
 # FUNCTIONS
 # ==========================================
+def filter_until_date(df, date):
+    df.index = pd.to_datetime(df.index)
+    return df[df.index <= date].copy()
 
 def get_macd_trend(series):
     macd, signal, hist = ta.MACD(series, 12, 26, 9)
-    if macd.dropna().shape[0] < 3:
+    macd = macd.dropna()
+    if len(macd) < 3:
         return None, None
     now = "Up Tick" if macd.iloc[-1] > macd.iloc[-2] else "Down Tick"
     prev = "Up Tick" if macd.iloc[-2] > macd.iloc[-3] else "Down Tick"
     return now, prev
-
 
 def classify_trend(d, d1, w, m):
 
@@ -49,11 +75,10 @@ def classify_trend(d, d1, w, m):
 
 
 # ==========================================
-# SCAN LOGIC
+# SCAN ENGINE
 # ==========================================
-
 @st.cache_data
-def run_scan():
+def run_scan(scan_date):
 
     results = []
 
@@ -63,10 +88,14 @@ def run_scan():
             df_w = pd.read_parquet(f"{DATA_W}/{symbol}.parquet")
             df_m = pd.read_parquet(f"{DATA_M}/{symbol}.parquet")
 
+            df_d = filter_until_date(df_d, scan_date)
+            df_w = filter_until_date(df_w, scan_date)
+            df_m = filter_until_date(df_m, scan_date)
+
             if len(df_d) < 100:
                 continue
 
-            # === MTF ===
+            # ===== MTF =====
             d_now, d_prev = get_macd_trend(df_d["close"])
             w_now, _ = get_macd_trend(df_w["close"])
             m_now, _ = get_macd_trend(df_m["close"])
@@ -76,7 +105,7 @@ def run_scan():
 
             trend_status = classify_trend(d_now, d_prev, w_now, m_now)
 
-            # === DAILY STRUCTURE ===
+            # ===== DAILY STRUCTURE =====
             df_d["ema13"] = ta.EMA(df_d["close"], 13)
             df_d["ema50"] = ta.EMA(df_d["close"], 50)
             df_d["ema100"] = ta.EMA(df_d["close"], 100)
@@ -125,31 +154,26 @@ def run_scan():
 
 
 # ==========================================
-# RUN SCAN BUTTON
+# RUN BUTTON
 # ==========================================
-
 if "scan_done" not in st.session_state:
     st.session_state.scan_done = False
 
-if st.button("🚀 Run Scan"):
-    st.session_state.df_result = run_scan()
+if st.button("🚀 Run Scan For Selected Date"):
+    st.session_state.df_result = run_scan(selected_date)
     st.session_state.scan_done = True
 
 # ==========================================
-# DISPLAY RESULTS
+# DISPLAY
 # ==========================================
-
 if st.session_state.scan_done:
 
     df_result = st.session_state.df_result
 
-    st.success("Scan Completed ✅")
+    st.success(f"Scan Completed For {selected_date.date()} ✅")
 
     col1, col2 = st.columns(2)
 
-    # ==========================
-    # CATEGORY 1 DROPDOWN
-    # ==========================
     with col1:
         cat1 = st.selectbox(
             "Category 1 Scan",
@@ -165,9 +189,6 @@ if st.session_state.scan_done:
             ]
         )
 
-    # ==========================
-    # CATEGORY 2 DROPDOWN
-    # ==========================
     with col2:
         cat2 = st.selectbox(
             "Category 2 Scan",
@@ -190,6 +211,7 @@ if st.session_state.scan_done:
 
     st.subheader("📊 Filtered Stocks")
     st.dataframe(filtered_df, use_container_width=True)
+
 
 
 st.markdown("""
