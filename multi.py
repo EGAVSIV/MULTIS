@@ -177,7 +177,9 @@ if os.path.exists(bg_path):
 def load_data(folder: str):
     data = {}
     if not os.path.exists(folder):
+        st.warning(f"Folder not found: {folder}")
         return data
+
 
     for f in os.listdir(folder):
         if not f.endswith(".parquet"):
