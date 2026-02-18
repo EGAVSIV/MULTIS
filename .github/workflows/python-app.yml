@@ -1,0 +1,39 @@
+name: Sync Stock Data Folders
+
+on:
+  schedule:
+    # Every 15 minutes between 03:30–10:30 UTC (9AM–4PM IST), Monday–Friday
+    - cron: "*/15 3-10 * * 1-5"
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Current Repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Dependencies
+        run: |
+          pip install requests
+
+      - name: Run Sync Script
+        run: |
+          python Datacopier.py
+
+      - name: Commit & Push Changes
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+
+          git add .
+
+          git diff --cached --quiet || git commit -m "🔄 Auto-sync stock data folders"
+
+          git push
