@@ -163,7 +163,7 @@ st.markdown(
     """,
     unsafe_allow_html=True,
 )
-bg_path = os.path.join(BASE_PATH, "Assets", "BG11.png")
+bg_path = os.path.join(BASE_PATH, "Assest", "BG11.png")
 
 if os.path.exists(bg_path):
     set_bg_image(bg_path)
