@@ -255,7 +255,7 @@ st.markdown("""
 <b>Designed by:-<br>
 Gaurav Singh Yadav</b><br><br>
 
-🩷💛🩵💙🩶💜🤍🤎💖 Built With Love 🫶<br>
+Built With 💖 🫶<br>
 Energy | Commodity | Quant Intelligence 📶<br><br>
 
 📱 +91-8003994518 〽️<br>
