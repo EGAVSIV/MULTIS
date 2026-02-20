@@ -7,7 +7,7 @@ import os
 
 st.set_page_config(page_title="Master Scanner", layout="wide",page_icon="🟢")
 
-st.title("📈 Wave Going Against The Tide + SW & MOM Scans")
+st.title("🌊 Wave Going Against The Tide + SW & MOM Scans")
 
 
 def set_bg_image(image_path: str):
