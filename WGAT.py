@@ -61,7 +61,7 @@ def get_last_daily_date():
 
 last_daily_date = get_last_daily_date()
 
-st.markdown("### 🕯 Last Candle (IST)")
+st.markdown("### 🕯 Lastest Candle")
 st.markdown(f"📅 **Daily: {last_daily_date.date()}**")
 
 # ==========================================
