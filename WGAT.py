@@ -256,7 +256,7 @@ st.markdown("""
 Gaurav Singh Yadav</b><br><br>
 
 Built With 💖 🫶<br>
-Energy | Commodity | Quant Intelligence 📶<br><br>
+Energyx🔥| Commodity🛢️ | Quant Intelligence 🧠<br><br>
 
 📱 +91-8003994518 〽️<br>
 
