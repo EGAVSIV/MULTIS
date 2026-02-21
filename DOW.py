@@ -9,7 +9,7 @@ from time import sleep
 # =====================================================
 # PAGE CONFIG
 # =====================================================
-st.set_page_config(page_title="Master Scanner - Dow Theory", layout="wide", page_icon="🟢")
+st.set_page_config(page_title="Master Scanner - Dow Theory", layout="wide", page_icon="🆑​")
 
 st.title("🌊 Dow Theory Trend + Fib Entry Scanner")
 
