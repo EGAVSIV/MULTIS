@@ -11,7 +11,6 @@ st.title("🌊 Wave Going Against The Tide + SW & MOM Scans")
 
 
 def set_rotating_background(image1_path: str, image2_path: str):
-
     import base64
 
     with open(image1_path, "rb") as f:
@@ -24,31 +23,23 @@ def set_rotating_background(image1_path: str, image2_path: str):
         f"""
         <style>
         .stApp {{
+            background: url("data:image/png;base64,{encoded1}") no-repeat center center fixed;
             background-size: cover;
-            background-position: center;
-            background-repeat: no-repeat;
-            background-attachment: fixed;
-            transition: background-image 1s ease-in-out;
+            animation: bgRotate 10s infinite;
         }}
-        </style>
 
-        <script>
-        const bg1 = "data:image/png;base64,{encoded1}";
-        const bg2 = "data:image/jpeg;base64,{encoded2}";
-
-        let current = 0;
-
-        function changeBackground() {{
-            const app = window.parent.document.querySelector('.stApp');
-            if (app) {{
-                app.style.backgroundImage = current === 0 ? `url(${bg1})` : `url(${bg2})`;
-                current = 1 - current;
+        @keyframes bgRotate {{
+            0% {{
+                background-image: url("data:image/png;base64,{encoded1}");
+            }}
+            50% {{
+                background-image: url("data:image/jpeg;base64,{encoded2}");
+            }}
+            100% {{
+                background-image: url("data:image/png;base64,{encoded1}");
             }}
         }}
-
-        changeBackground();
-        setInterval(changeBackground, 5000);
-        </script>
+        </style>
         """,
         unsafe_allow_html=True,
     )
