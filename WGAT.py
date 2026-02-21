@@ -14,6 +14,12 @@ def set_bg_image(image_path: str):
     with open(image_path, "rb") as f:
         encoded = base64.b64encode(f.read()).decode()
 
+
+
+
+
+
+
     st.markdown(
         f"""
         <style>
@@ -23,29 +29,43 @@ def set_bg_image(image_path: str):
             background-position: center;
             background-repeat: no-repeat;
             background-attachment: fixed;
+
         }}
         </style>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         """,
         unsafe_allow_html=True,
     )
-
-
-def hash_pwd(pwd: str) -> str:
-    return hashlib.sha256(pwd.encode()).hexdigest()
-
-# =====================================================
-# APPLY BACKGROUND
+@@ -34,237 +58,239 @@
 # =====================================================
 
 BASE_PATH = os.path.dirname(__file__)
+bg_path = os.path.join(BASE_PATH, "Assest", "BG11.png")
 
-bg1 = os.path.join(BASE_PATH, "Assest", "BG11.png")
-bg2 = os.path.join(BASE_PATH, "Assest", "BG2.jpeg")
+if os.path.exists(bg_path):
+    set_bg_image(bg_path)
 
-if os.path.exists(bg1) and os.path.exists(bg2):
-    set_rotating_background(bg1, bg2)
+
+
 else:
-    st.warning("Background images not found inside Assest folder")
+    st.warning(f"Background not found at: {bg_path}")
 
 # ==========================================
 # FOLDERS
