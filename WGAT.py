@@ -5,7 +5,7 @@ from pathlib import Path
 import base64
 import os
 
-st.set_page_config(page_title="Master Scanner", layout="wide",page_icon="🟢")
+st.set_page_config(page_title="Master Scanner", layout="wide",page_icon="🌊")
 
 st.title("🌊 Wave Going Against The Tide + SW & MOM Scans")
 
