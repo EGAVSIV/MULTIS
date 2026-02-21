@@ -53,7 +53,7 @@ def set_bg_image(image_path: str):
         """,
         unsafe_allow_html=True,
     )
-@@ -34,237 +58,239 @@
+
 # =====================================================
 
 BASE_PATH = os.path.dirname(__file__)
