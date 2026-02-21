@@ -1,24 +1,19 @@
 import streamlit as st
 import pandas as pd
-from pathlib import Path
+import numpy as np
 import base64
 import os
-
-st.set_page_config(page_title="MTF Dow Theory Scanner", layout="wide", page_icon="📊")
-
-st.title("📈 Multi-Timeframe Dow Theory + 50/61/78 Retracement Scanner")
-
-# ==============================
-# SESSION STATE INIT (PLACE HERE)
-# ==============================
-if "scan_done" not in st.session_state:
-    st.session_state.scan_done = False
-
-if "df_result" not in st.session_state:
-    st.session_state.df_result = None
+from pathlib import Path
 
 # =====================================================
-# BACKGROUND
+# PAGE CONFIG
+# =====================================================
+st.set_page_config(page_title="Master Scanner - Dow Theory", layout="wide", page_icon="🟢")
+
+st.title("🌊 Dow Theory Trend + 61% Fib Entry Scanner")
+
+# =====================================================
+# BACKGROUND IMAGE
 # =====================================================
 def set_bg_image(image_path: str):
     with open(image_path, "rb") as f:
@@ -31,6 +26,7 @@ def set_bg_image(image_path: str):
             background-image: url("data:image/png;base64,{encoded}");
             background-size: cover;
             background-position: center;
+            background-repeat: no-repeat;
             background-attachment: fixed;
         }}
         </style>
@@ -43,192 +39,329 @@ bg_path = os.path.join(BASE_PATH, "Assest", "BG11.png")
 
 if os.path.exists(bg_path):
     set_bg_image(bg_path)
+else:
+    st.warning(f"Background not found at: {bg_path}")
 
 # =====================================================
-# DATA FOLDERS
+# DATA FOLDERS (YOU CAN ADD 15m, 1H LATER)
 # =====================================================
-DATA_FOLDERS = {
-    "15M": "stock_data_15",
-    "1H": "stock_data_1H",
-    "Daily": "stock_data_D",
-    "Weekly": "stock_data_W",
-    "Monthly": "stock_data_M",
-}
+DATA_D = "stock_data_D"
+DATA_W = "stock_data_W"
+DATA_M = "stock_data_M"
 
-symbols = list(set([f.stem for f in Path(DATA_FOLDERS["Daily"]).glob("*.parquet")]))
+symbols = list(set([f.stem for f in Path(DATA_D).glob("*.parquet")]))
 
 # =====================================================
-# UTILITY
+# BASIC HELPERS
 # =====================================================
+def get_last_daily_date():
+    for f in Path(DATA_D).glob("*.parquet"):
+        df = pd.read_parquet(f)
+        df.index = pd.to_datetime(df.index)
+        return df.index.max()
+    return None
+
+last_daily_date = get_last_daily_date()
+
+st.markdown("### 🕯 Lastest Candle")
+if last_daily_date is not None:
+    st.markdown(f"📅 **Daily: {last_daily_date.date()}**")
+else:
+    st.markdown("No daily data found.")
+
+selected_date = st.date_input(
+    "📅 Select Scan Date",
+    value=last_daily_date.date() if last_daily_date is not None else pd.to_datetime("today").date()
+)
+selected_date = pd.to_datetime(selected_date)
+
+
 def filter_until_date(df, date):
+    df = df.copy()
     df.index = pd.to_datetime(df.index)
     return df[df.index <= date].copy()
 
 # =====================================================
-# SWING DETECTION
+# DOW THEORY SWING + TREND
 # =====================================================
-def detect_swings(df, lookback=3):
-    df = df.copy()
+def detect_swings(df, order=3):
+    """
+    Detect swing highs / lows with a simple window method.
+    order = bars left/right to check.
+    """
+    high = df["high"].values
+    low = df["low"].values
 
-    df["swing_high"] = df["high"][
-        (df["high"] > df["high"].shift(lookback)) &
-        (df["high"] > df["high"].shift(-lookback))
-    ]
+    swing_high = np.zeros(len(df), dtype=bool)
+    swing_low = np.zeros(len(df), dtype=bool)
 
-    df["swing_low"] = df["low"][
-        (df["low"] < df["low"].shift(lookback)) &
-        (df["low"] < df["low"].shift(-lookback))
-    ]
+    for i in range(order, len(df) - order):
+        if high[i] == max(high[i - order:i + order + 1]):
+            swing_high[i] = True
+        if low[i] == min(low[i - order:i + order + 1]):
+            swing_low[i] = True
 
-    swings = []
+    out = df.copy()
+    out["swing_high"] = swing_high
+    out["swing_low"] = swing_low
+    return out
 
-    for i in range(len(df)):
-        if not pd.isna(df["swing_high"].iloc[i]):
-            swings.append(("H", df["high"].iloc[i]))
-        if not pd.isna(df["swing_low"].iloc[i]):
-            swings.append(("L", df["low"].iloc[i]))
 
-    return swings[-6:]
+def label_structure(df):
+    """
+    From swing points, create sequence of HH, HL, LH, LL.
+    """
+    swings = df[(df["swing_high"]) | (df["swing_low"])].copy()
+    if swings.empty:
+        return swings
 
-# =====================================================
-# STRUCTURE CLASSIFICATION
-# =====================================================
-def classify_structure(swings):
-    if len(swings) < 4:
-        return "No Clear Trend", None
+    swings["type"] = np.where(swings["swing_high"], "H", "L")
+    swings["price"] = np.where(swings["swing_high"], swings["high"], swings["low"])
+    swings["label"] = None
 
-    types = [x[0] for x in swings[-4:]]
-    prices = [x[1] for x in swings[-4:]]
+    last_H = None
+    last_L = None
 
-    if types == ["H","L","H","L"]:
-        if prices[2] > prices[0] and prices[3] > prices[1]:
-            return "Uptrend", "bullish"
-        if prices[2] > prices[0] and prices[3] < prices[1]:
-            return "Reversal to Down", "bearish"
+    for idx in swings.index:
+        row = swings.loc[idx]
+        if row["type"] == "H":
+            if last_H is None:
+                swings.at[idx, "label"] = "H"
+            else:
+                swings.at[idx, "label"] = "HH" if row["price"] > last_H else "LH"
+            last_H = row["price"]
+        else:  # type L
+            if last_L is None:
+                swings.at[idx, "label"] = "L"
+            else:
+                swings.at[idx, "label"] = "HL" if row["price"] > last_L else "LL"
+            last_L = row["price"]
 
-    if types == ["L","H","L","H"]:
-        if prices[2] < prices[0] and prices[3] < prices[1]:
-            return "Downtrend", "bearish"
-        if prices[2] < prices[0] and prices[3] > prices[1]:
-            return "Reversal to Up", "bullish"
+    return swings
 
-    return "Triangle / Compression", None
 
-# =====================================================
-# RETRACEMENT CHECK
-# =====================================================
-def check_retracement(df, swings, bias, tolerance=0.01):
+def classify_last_bucket(swings):
+    """
+    Map last 4 labels to 5 buckets:
+    Uptrend, Downtrend, Reversal To Uptrend,
+    Reversal To Downtrend, Triangle / Sideways.
+    """
+    labels = list(swings["label"].dropna())
+    if len(labels) < 4:
+        return "Triangle / Sideways"
 
-    if len(swings) < 2:
-        return False, False, False
+    last4 = labels[-4:]
 
-    last_high = None
-    last_low = None
+    # exact reversal patterns
+    if last4 == ["HH", "HL", "LH", "LL"]:
+        return "Reversal To Downtrend"
+    if last4 == ["LL", "LH", "HL", "HH"]:
+        return "Reversal To Uptrend"
 
-    for s in reversed(swings):
-        if s[0] == "H" and last_high is None:
-            last_high = s[1]
-        if s[0] == "L" and last_low is None:
-            last_low = s[1]
-        if last_high and last_low:
-            break
+    # strong uptrend: combination of HH + HL
+    if all(l in ["HH", "HL"] for l in last4):
+        return "Uptrend"
 
-    if not last_high or not last_low:
-        return False, False, False
+    # strong downtrend
+    if all(l in ["LL", "LH"] for l in last4):
+        return "Downtrend"
 
-    current = df["close"].iloc[-1]
-
-    move = last_high - last_low
-
-    if bias == "bullish":
-        fib50 = last_high - 0.50 * move
-        fib61 = last_high - 0.618 * move
-        fib78 = last_high - 0.786 * move
-
-    elif bias == "bearish":
-        fib50 = last_low + 0.50 * move
-        fib61 = last_low + 0.618 * move
-        fib78 = last_low + 0.786 * move
-    else:
-        return False, False, False
-
-    hit50 = abs(current - fib50)/fib50 <= tolerance
-    hit61 = abs(current - fib61)/fib61 <= tolerance
-    hit78 = abs(current - fib78)/fib78 <= tolerance
-
-    return hit50, hit61, hit78
+    return "Triangle / Sideways"
 
 # =====================================================
-# SCAN ENGINE
+# 61% FIBONACCI RETRACEMENT
+# =====================================================
+def fib_61_zone_up(swings, tol=0.01):
+    """
+    Uptrend leg: last HL -> last HH.
+    level = 61.8% retracement of that leg.
+    """
+    sw = swings.copy()
+    last_HL = sw[sw["label"] == "HL"].tail(1)
+    last_HH = sw[sw["label"] == "HH"].tail(1)
+    if last_HL.empty or last_HH.empty:
+        return None
+
+    if last_HL.index[-1] > last_HH.index[-1]:
+        # low after high => leg not completed
+        return None
+
+    low_price = last_HL["price"].iloc[0]
+    high_price = last_HH["price"].iloc[0]
+
+    # price at 61.8% retrace from high towards low
+    level = high_price - (high_price - low_price) * 0.618
+    lo = level * (1 - tol)
+    hi = level * (1 + tol)
+    return level, lo, hi
+
+
+def fib_61_zone_down(swings, tol=0.01):
+    """
+    Downtrend leg: last LH -> last LL.
+    """
+    sw = swings.copy()
+    last_LH = sw[sw["label"] == "LH"].tail(1)
+    last_LL = sw[sw["label"] == "LL"].tail(1)
+    if last_LH.empty or last_LL.empty:
+        return None
+
+    if last_LH.index[-1] > last_LL.index[-1]:
+        return None
+
+    high_price = last_LH["price"].iloc[0]
+    low_price = last_LL["price"].iloc[0]
+
+    # price at 61.8% retrace from low towards high
+    level = low_price + (high_price - low_price) * 0.618
+    lo = level * (1 - tol)
+    hi = level * (1 + tol)
+    return level, lo, hi
+
+
+def check_61_entry(df, swings, bucket, tol=0.01):
+    """
+    Returns (is_entry, fib_level) for current close.
+    """
+    close = df["close"].iloc[-1]
+
+    if bucket == "Uptrend":
+        z = fib_61_zone_up(swings, tol)
+        if z is None:
+            return False, None
+        level, lo, hi = z
+        return (lo <= close <= hi), float(level)
+
+    if bucket == "Downtrend":
+        z = fib_61_zone_down(swings, tol)
+        if z is None:
+            return False, None
+        level, lo, hi = z
+        return (lo <= close <= hi), float(level)
+
+    return False, None
+
+# =====================================================
+# SCAN ENGINE (DAILY; EXTEND TO 15m/1H/W/M IF NEEDED)
 # =====================================================
 @st.cache_data
 def run_scan(scan_date):
-
     results = []
 
     for symbol in symbols:
         try:
-            row = {"Stock": symbol}
+            df_d = pd.read_parquet(f"{DATA_D}/{symbol}.parquet")
+            df_d = filter_until_date(df_d, scan_date)
 
-            for tf, folder in DATA_FOLDERS.items():
+            # need enough data for swings
+            if len(df_d) < 150:
+                continue
 
-                df = pd.read_parquet(f"{folder}/{symbol}.parquet")
-                df = filter_until_date(df, scan_date)
+            # ---- Dow Theory on Daily ----
+            df_sw = detect_swings(df_d, order=3)
+            swings = label_structure(df_sw)
+            if swings.empty or swings["label"].dropna().shape[0] < 4:
+                continue
 
-                if len(df) < 50:
-                    row[f"{tf} Trend"] = "No Data"
-                    continue
+            bucket = classify_last_bucket(swings)
+            is_61, lvl_61 = check_61_entry(df_d, swings, bucket, tol=0.01)
 
-                swings = detect_swings(df)
-                trend, bias = classify_structure(swings)
+            results.append({
+                "Stock": symbol,
+                "Trend Bucket": bucket,
+                "61% Bullish Entry": bool(is_61) if bucket == "Uptrend" else False,
+                "61% Bearish Entry": bool(is_61) if bucket == "Downtrend" else False,
+                "61% Level": lvl_61
+            })
 
-                row[f"{tf} Trend"] = trend
-
-                hit50, hit61, hit78 = check_retracement(df, swings, bias)
-
-                row[f"{tf} 50%"] = hit50
-                row[f"{tf} 61%"] = hit61
-                row[f"{tf} 78%"] = hit78
-
-            results.append(row)
-
-        except:
+        except Exception as e:
+            # you can use st.write or logging for debugging if required
             continue
+
+    if not results:
+        return pd.DataFrame(columns=[
+            "Stock", "Trend Bucket",
+            "61% Bullish Entry", "61% Bearish Entry", "61% Level"
+        ])
 
     return pd.DataFrame(results)
 
 # =====================================================
-# DATE SELECTOR
+# RUN BUTTON
 # =====================================================
-sample_file = list(Path(DATA_FOLDERS["Daily"]).glob("*.parquet"))[0]
-df_temp = pd.read_parquet(sample_file)
-df_temp.index = pd.to_datetime(df_temp.index)
-last_date = df_temp.index.max()
+if "scan_done" not in st.session_state:
+    st.session_state.scan_done = False
 
-selected_date = st.date_input("📅 Select Scan Date", value=last_date.date())
-selected_date = pd.to_datetime(selected_date)
-
-# =====================================================
-# RUN
-# =====================================================
-if st.button("🚀 Run Multi-TF Dow Scan"):
+if st.button("🚀 Run Dow Theory Scan For Selected Date"):
     st.session_state.df_result = run_scan(selected_date)
     st.session_state.scan_done = True
-if st.session_state.scan_done:
 
+# =====================================================
+# DISPLAY RESULTS + FILTERS
+# =====================================================
+if st.session_state.scan_done:
     df_result = st.session_state.df_result
 
-    st.success("Scan Completed ✅")
+    st.success(f"Scan Completed For {selected_date.date()} ✅")
 
-    trend_filter = st.selectbox(
-        "Filter Trend (Daily)",
-        ["All", "Uptrend", "Downtrend", "Reversal to Down", 
-         "Reversal to Up", "Triangle / Compression"]
-    )
+    col1, col2 = st.columns(2)
 
-    filtered = df_result.copy()
+    with col1:
+        cat1 = st.selectbox(
+            "Trend Scan (Dow Theory)",
+            [
+                "All",
+                "Uptrend",
+                "Downtrend",
+                "Reversal To Uptrend",
+                "Reversal To Downtrend",
+                "Triangle / Sideways"
+            ]
+        )
 
-    if trend_filter != "All":
-        filtered = filtered[filtered["Daily Trend"] == trend_filter]
+    with col2:
+        cat2 = st.selectbox(
+            "Entry Scan (61% Fib)",
+            [
+                "All",
+                "Bullish 61 Entry",
+                "Bearish 61 Entry"
+            ]
+        )
 
-    st.dataframe(filtered, use_container_width=True)
+    filtered_df = df_result.copy()
+
+    if cat1 != "All":
+        filtered_df = filtered_df[filtered_df["Trend Bucket"] == cat1]
+
+    if cat2 == "Bullish 61 Entry":
+        filtered_df = filtered_df[filtered_df["61% Bullish Entry"] == True]
+    elif cat2 == "Bearish 61 Entry":
+        filtered_df = filtered_df[filtered_df["61% Bearish Entry"] == True]
+
+    st.subheader("📊 Filtered Stocks")
+    st.dataframe(filtered_df, use_container_width=True)
+
+# =====================================================
+# FOOTER
+# =====================================================
+st.markdown("""
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+<div style="line-height: 1.6;">
+<b>Designed by:-<br>
+Gaurav Singh Yadav</b><br><br>
+
+Built With 💖 🫶<br>
+Energyx🔥 | Commodity🛢️ | Quant Intelligence 🧠<br><br>
+
+📱 +91-8003994518 〽️<br>
+
+💬
+<a href="https://wa.me/918003994518" target="_blank">
+<i class="fa fa-whatsapp" style="color:#25D366;"></i> WhatsApp
+</a><br>
+
+📧 <a href="mailto:yadav.gauravsingh@gmail.com">yadav.gauravsingh@gmail.com</a> ™️
+</div>
+""", unsafe_allow_html=True)
