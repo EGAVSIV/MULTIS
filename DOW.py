@@ -11,7 +11,7 @@ from time import sleep
 # =====================================================
 st.set_page_config(page_title="Master Scanner - Dow Theory", layout="wide", page_icon="🟢")
 
-st.title("🌊 Dow Theory Trend + 61% Fib Entry Scanner")
+st.title("🌊 Dow Theory Trend + Fib Entry Scanner")
 
 # =====================================================
 # BACKGROUND IMAGE
@@ -44,34 +44,64 @@ else:
     st.warning(f"Background not found at: {bg_path}")
 
 # =====================================================
-# DATA FOLDERS (D/W/M; 15m/1H CAN BE ADDED SIMILARLY)
+# DATA FOLDERS
 # =====================================================
-DATA_D = "stock_data_D"
-DATA_W = "stock_data_W"
-DATA_M = "stock_data_M"
+DATA_D   = "stock_data_D"
+DATA_W   = "stock_data_W"
+DATA_M   = "stock_data_M"
+DATA_15M = "stock_data_15"
+DATA_1H  = "stock_data_1H"
 
-symbols = sorted(list(set([f.stem for f in Path(DATA_D).glob("*.parquet")])))
+TIMEFRAME_MAP = {
+    "15 Min": DATA_15M,
+    "1 Hour": DATA_1H,
+    "Daily": DATA_D,
+    "Weekly": DATA_W,
+    "Monthly": DATA_M,
+}
 
 # =====================================================
-# BASIC HELPERS
+# TIMEFRAME + DATE SELECTION
 # =====================================================
-def get_last_daily_date():
-    for f in Path(DATA_D).glob("*.parquet"):
+st.markdown("### ⚙️ Scan Settings")
+
+col_tf, col_date = st.columns(2)
+
+with col_tf:
+    if "timeframe" not in st.session_state:
+        st.session_state.timeframe = "Daily"
+    timeframe = st.selectbox(
+        "⏱ Timeframe",
+        options=list(TIMEFRAME_MAP.keys()),
+        index=list(TIMEFRAME_MAP.keys()).index(st.session_state.timeframe)
+    )
+    st.session_state.timeframe = timeframe
+
+data_folder = TIMEFRAME_MAP[timeframe]
+
+def get_last_date_for_folder(folder):
+    folder_path = Path(folder)
+    if not folder_path.exists():
+        return None
+    for f in folder_path.glob("*.parquet"):
         df = pd.read_parquet(f)
         df.index = pd.to_datetime(df.index)
         return df.index.max()
     return None
 
-last_daily_date = get_last_daily_date()
+last_tf_date = get_last_date_for_folder(data_folder)
 
-st.markdown("### 🕯 Lastest Candle")
-if last_daily_date is not None:
-    st.markdown(f"📅 **Daily: {last_daily_date.date()}**")
-else:
-    st.markdown("No daily data found.")
+with col_date:
+    st.markdown("Latest candle in selected timeframe:")
+    if last_tf_date is not None:
+        st.markdown(f"📅 **{timeframe}: {last_tf_date.date()}**")
+        default_date = last_tf_date.date()
+    else:
+        st.markdown("No data found.")
+        default_date = pd.to_datetime("today").date()
 
 if "scan_date" not in st.session_state:
-    st.session_state.scan_date = last_daily_date.date() if last_daily_date is not None else pd.to_datetime("today").date()
+    st.session_state.scan_date = default_date
 
 selected_date = st.date_input(
     "📅 Select Scan Date",
@@ -80,6 +110,8 @@ selected_date = st.date_input(
 st.session_state.scan_date = selected_date
 scan_date_ts = pd.to_datetime(selected_date)
 
+# build symbol list for selected timeframe
+symbols = sorted(list(set([f.stem for f in Path(data_folder).glob("*.parquet")])))
 
 def filter_until_date(df, date):
     df = df.copy()
@@ -90,9 +122,6 @@ def filter_until_date(df, date):
 # DOW THEORY SWING + TREND
 # =====================================================
 def detect_swings(df, order=3):
-    """
-    Detect swing highs / lows with a simple window method.
-    """
     high = df["high"].values
     low = df["low"].values
 
@@ -112,9 +141,6 @@ def detect_swings(df, order=3):
 
 
 def label_structure(df):
-    """
-    From swing points, create sequence of HH, HL, LH, LL.
-    """
     swings = df[(df["swing_high"]) | (df["swing_low"])].copy()
     if swings.empty:
         return swings
@@ -134,7 +160,7 @@ def label_structure(df):
             else:
                 swings.at[idx, "label"] = "HH" if row["price"] > last_H else "LH"
             last_H = row["price"]
-        else:  # type L
+        else:
             if last_L is None:
                 swings.at[idx, "label"] = "L"
             else:
@@ -145,11 +171,6 @@ def label_structure(df):
 
 
 def classify_last_bucket(swings):
-    """
-    Map last 4 labels to 5 buckets:
-    Uptrend, Downtrend, Reversal To Uptrend,
-    Reversal To Downtrend, Triangle / Sideways.
-    """
     labels = list(swings["label"].dropna())
     if len(labels) < 4:
         return "Triangle / Sideways"
@@ -170,9 +191,25 @@ def classify_last_bucket(swings):
     return "Triangle / Sideways"
 
 # =====================================================
-# 61% FIBONACCI RETRACEMENT
+# FIBONACCI RETRACEMENTS (MULTI LEVEL)
 # =====================================================
-def fib_61_zone_up(swings, tol=0.01):
+FIB_LEVELS = {
+    "23%": 0.23,
+    "38%": 0.38,
+    "50%": 0.50,
+    "61.8%": 0.618,
+    "78%": 0.78,
+}
+
+FIB_RANGES = {
+    "23%": (0.21, 0.25),
+    "38%": (0.36, 0.40),
+    "50%": (0.49, 0.52),
+    "61.8%": (0.60, 0.62),
+    "78%": (0.76, 0.78),
+}
+
+def fib_levels_up(swings):
     sw = swings.copy()
     last_HL = sw[sw["label"] == "HL"].tail(1)
     last_HH = sw[sw["label"] == "HH"].tail(1)
@@ -184,14 +221,19 @@ def fib_61_zone_up(swings, tol=0.01):
 
     low_price = last_HL["price"].iloc[0]
     high_price = last_HH["price"].iloc[0]
+    if high_price == low_price:
+        return None
 
-    level = high_price - (high_price - low_price) * 0.618
-    lo = level * (1 - tol)
-    hi = level * (1 + tol)
-    return level, lo, hi
+    leg = high_price - low_price
+    out = {}
+    for name, pct in FIB_LEVELS.items():
+        # uptrend retracement from high toward low
+        price = high_price - leg * pct
+        out[name] = price
+    return out, low_price, high_price
 
 
-def fib_61_zone_down(swings, tol=0.01):
+def fib_levels_down(swings):
     sw = swings.copy()
     last_LH = sw[sw["label"] == "LH"].tail(1)
     last_LL = sw[sw["label"] == "LL"].tail(1)
@@ -203,77 +245,104 @@ def fib_61_zone_down(swings, tol=0.01):
 
     high_price = last_LH["price"].iloc[0]
     low_price = last_LL["price"].iloc[0]
+    if high_price == low_price:
+        return None
 
-    level = low_price + (high_price - low_price) * 0.618
-    lo = level * (1 - tol)
-    hi = level * (1 + tol)
-    return level, lo, hi
+    leg = high_price - low_price
+    out = {}
+    for name, pct in FIB_LEVELS.items():
+        # downtrend retracement from low toward high
+        price = low_price + leg * pct
+        out[name] = price
+    return out, low_price, high_price
 
 
-def check_61_entry(df, swings, bucket, tol=0.01):
+def check_fib_entries(df, swings, bucket):
     close = df["close"].iloc[-1]
 
+    fib_hits = {
+        "23% Bull": False, "38% Bull": False, "50% Bull": False,
+        "61.8% Bull": False, "78% Bull": False,
+        "23% Bear": False, "38% Bear": False, "50% Bear": False,
+        "61.8% Bear": False, "78% Bear": False,
+    }
+    fib_prices = {f"{k} Up": None for k in FIB_LEVELS.keys()}
+    fib_prices.update({f"{k} Down": None for k in FIB_LEVELS.keys()})
+
     if bucket == "Uptrend":
-        z = fib_61_zone_up(swings, tol)
-        if z is None:
-            return False, None
-        level, lo, hi = z
-        return lo <= close <= hi, float(level)
+        res = fib_levels_up(swings)
+        if res is None:
+            return fib_hits, fib_prices
+        prices_dict, low_price, high_price = res
+
+        for name, price in prices_dict.items():
+            low_pct, high_pct = FIB_RANGES[name]
+            # convert pct window in terms of price distance from high
+            leg = high_price - low_price
+            price_low = high_price - leg * high_pct
+            price_high = high_price - leg * low_pct
+            fib_prices[f"{name} Up"] = float(price)
+
+            if price_low <= close <= price_high:
+                fib_hits[f"{name} Bull"] = True
 
     if bucket == "Downtrend":
-        z = fib_61_zone_down(swings, tol)
-        if z is None:
-            return False, None
-        level, lo, hi = z
-        return lo <= close <= hi, float(level)
+        res = fib_levels_down(swings)
+        if res is None:
+            return fib_hits, fib_prices
+        prices_dict, low_price, high_price = res
 
-    return False, None
+        for name, price in prices_dict.items():
+            low_pct, high_pct = FIB_RANGES[name]
+            leg = high_price - low_price
+            price_low = low_price + leg * low_pct
+            price_high = low_price + leg * high_pct
+            fib_prices[f"{name} Down"] = float(price)
+
+            if price_low <= close <= price_high:
+                fib_hits[f"{name} Bear"] = True
+
+    return fib_hits, fib_prices
 
 # =====================================================
 # HEAVY SCAN FUNCTION (CACHED)
 # =====================================================
 @st.cache_data(show_spinner=False)
-def run_scan_cached(scan_date_str, symbol_list):
-    """
-    Heavy computation kept pure: only arguments are
-    simple types so cache works correctly.[web:38]
-    """
+def run_scan_cached(scan_date_str, symbol_list, tf_folder):
     scan_date = pd.to_datetime(scan_date_str)
     results = []
 
-    total = len(symbol_list)
-    for i, symbol in enumerate(symbol_list, start=1):
+    for symbol in symbol_list:
         try:
-            df_d = pd.read_parquet(f"{DATA_D}/{symbol}.parquet")
-            df_d = filter_until_date(df_d, scan_date)
-
-            if len(df_d) < 150:
+            df = pd.read_parquet(f"{tf_folder}/{symbol}.parquet")
+            df = filter_until_date(df, scan_date)
+            if len(df) < 150:
                 continue
 
-            df_sw = detect_swings(df_d, order=3)
+            df_sw = detect_swings(df, order=3)
             swings = label_structure(df_sw)
             if swings.empty or swings["label"].dropna().shape[0] < 4:
                 continue
 
             bucket = classify_last_bucket(swings)
-            is_61, lvl_61 = check_61_entry(df_d, swings, bucket, tol=0.01)
+            fib_hits, fib_prices = check_fib_entries(df, swings, bucket)
 
-            results.append({
+            row = {
                 "Stock": symbol,
+                "Timeframe": tf_folder,
                 "Trend Bucket": bucket,
-                "61% Bullish Entry": bool(is_61) if bucket == "Uptrend" else False,
-                "61% Bearish Entry": bool(is_61) if bucket == "Downtrend" else False,
-                "61% Level": lvl_61
-            })
+            }
+            row.update(fib_hits)
+            row.update(fib_prices)
+            results.append(row)
 
         except Exception:
             continue
 
     if not results:
-        return pd.DataFrame(columns=[
-            "Stock", "Trend Bucket",
-            "61% Bullish Entry", "61% Bearish Entry", "61% Level"
-        ])
+        cols = ["Stock", "Timeframe", "Trend Bucket"]
+        cols += list(fib_hits.keys()) + list(fib_prices.keys())
+        return pd.DataFrame(columns=cols)
 
     return pd.DataFrame(results)
 
@@ -294,21 +363,18 @@ def start_scan():
     st.session_state.is_scanning = True
     st.session_state.scan_done = False
 
-    # run heavy scan
-    df = run_scan_cached(str(st.session_state.scan_date), symbols)
+    df = run_scan_cached(str(st.session_state.scan_date), symbols, data_folder)
     st.session_state.df_result = df
     st.session_state.scan_done = True
     st.session_state.is_scanning = False
 
 # =====================================================
-# RUN BUTTON (ONLY TRIGGERS CALLBACK)
+# RUN BUTTON
 # =====================================================
-st.button("🚀 Run Dow Theory Scan For Selected Date", on_click=start_scan)
+st.button("🚀 Run Dow Theory + Fib Scan", on_click=start_scan)
 
-# Show progress indicator while scanning
 if st.session_state.is_scanning:
     with st.spinner("Scanning stocks... This may take some time."):
-        # small sleep so spinner is visible during callback rerun
         sleep(0.5)
 
 # =====================================================
@@ -317,7 +383,7 @@ if st.session_state.is_scanning:
 if st.session_state.scan_done and not st.session_state.df_result.empty:
     df_result = st.session_state.df_result
 
-    st.success(f"Scan Completed For {st.session_state.scan_date} ✅")
+    st.success(f"Scan Completed For {st.session_state.scan_date} ({timeframe}) ✅")
 
     col1, col2 = st.columns(2)
 
@@ -336,11 +402,11 @@ if st.session_state.scan_done and not st.session_state.df_result.empty:
 
     with col2:
         cat2 = st.selectbox(
-            "Entry Scan (61% Fib)",
+            "Fib Entry Type",
             [
                 "All",
-                "Bullish 61 Entry",
-                "Bearish 61 Entry"
+                "23% Bull", "38% Bull", "50% Bull", "61.8% Bull", "78% Bull",
+                "23% Bear", "38% Bear", "50% Bear", "61.8% Bear", "78% Bear",
             ]
         )
 
@@ -349,10 +415,8 @@ if st.session_state.scan_done and not st.session_state.df_result.empty:
     if cat1 != "All":
         filtered_df = filtered_df[filtered_df["Trend Bucket"] == cat1]
 
-    if cat2 == "Bullish 61 Entry":
-        filtered_df = filtered_df[filtered_df["61% Bullish Entry"] == True]
-    elif cat2 == "Bearish 61 Entry":
-        filtered_df = filtered_df[filtered_df["61% Bearish Entry"] == True]
+    if cat2 != "All":
+        filtered_df = filtered_df[filtered_df[cat2] == True]
 
     st.subheader("📊 Filtered Stocks")
     st.dataframe(filtered_df, use_container_width=True)
