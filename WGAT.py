@@ -60,7 +60,7 @@ def set_rotating_background(image1_path: str, image2_path: str):
 BASE_PATH = os.path.dirname(__file__)
 
 bg1 = os.path.join(BASE_PATH, "Assest", "BG11.png")
-bg2 = os.path.join(BASE_PATH, "Assest", "BG.jpeg")
+bg2 = os.path.join(BASE_PATH, "Assest", "BG2.jpeg")
 
 if os.path.exists(bg1) and os.path.exists(bg2):
     set_rotating_background(bg1, bg2)
