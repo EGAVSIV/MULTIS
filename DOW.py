@@ -8,6 +8,15 @@ st.set_page_config(page_title="MTF Dow Theory Scanner", layout="wide", page_icon
 
 st.title("📈 Multi-Timeframe Dow Theory + 50/61/78 Retracement Scanner")
 
+# ==============================
+# SESSION STATE INIT (PLACE HERE)
+# ==============================
+if "scan_done" not in st.session_state:
+    st.session_state.scan_done = False
+
+if "df_result" not in st.session_state:
+    st.session_state.df_result = None
+
 # =====================================================
 # BACKGROUND
 # =====================================================
