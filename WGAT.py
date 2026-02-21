@@ -10,39 +10,28 @@ st.set_page_config(page_title="Master Scanner", layout="wide",page_icon="🟢")
 st.title("🌊 Wave Going Against The Tide + SW & MOM Scans")
 
 
-def set_rotating_background(image1_path: str, image2_path: str):
-    import base64
-
-    with open(image1_path, "rb") as f:
-        encoded1 = base64.b64encode(f.read()).decode()
-
-    with open(image2_path, "rb") as f:
-        encoded2 = base64.b64encode(f.read()).decode()
+def set_bg_image(image_path: str):
+    with open(image_path, "rb") as f:
+        encoded = base64.b64encode(f.read()).decode()
 
     st.markdown(
         f"""
         <style>
         .stApp {{
-            background: url("data:image/png;base64,{encoded1}") no-repeat center center fixed;
+            background-image: url("data:image/png;base64,{encoded}");
             background-size: cover;
-            animation: bgRotate 10s infinite;
-        }}
-
-        @keyframes bgRotate {{
-            0% {{
-                background-image: url("data:image/png;base64,{encoded1}");
-            }}
-            50% {{
-                background-image: url("data:image/jpeg;base64,{encoded2}");
-            }}
-            100% {{
-                background-image: url("data:image/png;base64,{encoded1}");
-            }}
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
         }}
         </style>
         """,
         unsafe_allow_html=True,
     )
+
+
+def hash_pwd(pwd: str) -> str:
+    return hashlib.sha256(pwd.encode()).hexdigest()
 
 # =====================================================
 # APPLY BACKGROUND
