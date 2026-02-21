@@ -10,21 +10,45 @@ st.set_page_config(page_title="Master Scanner", layout="wide",page_icon="🟢")
 st.title("🌊 Wave Going Against The Tide + SW & MOM Scans")
 
 
-def set_bg_image(image_path: str):
-    with open(image_path, "rb") as f:
-        encoded = base64.b64encode(f.read()).decode()
+def set_rotating_background(image1_path: str, image2_path: str):
+
+    import base64
+
+    with open(image1_path, "rb") as f:
+        encoded1 = base64.b64encode(f.read()).decode()
+
+    with open(image2_path, "rb") as f:
+        encoded2 = base64.b64encode(f.read()).decode()
 
     st.markdown(
         f"""
         <style>
         .stApp {{
-            background-image: url("data:image/png;base64,{encoded}");
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
             background-attachment: fixed;
+            transition: background-image 1s ease-in-out;
         }}
         </style>
+
+        <script>
+        const bg1 = "data:image/png;base64,{encoded1}";
+        const bg2 = "data:image/jpeg;base64,{encoded2}";
+
+        let current = 0;
+
+        function changeBackground() {{
+            const app = window.parent.document.querySelector('.stApp');
+            if (app) {{
+                app.style.backgroundImage = current === 0 ? `url(${bg1})` : `url(${bg2})`;
+                current = 1 - current;
+            }}
+        }}
+
+        changeBackground();
+        setInterval(changeBackground, 5000);
+        </script>
         """,
         unsafe_allow_html=True,
     )
@@ -34,12 +58,14 @@ def set_bg_image(image_path: str):
 # =====================================================
 
 BASE_PATH = os.path.dirname(__file__)
-bg_path = os.path.join(BASE_PATH, "Assest", "BG11.png")
 
-if os.path.exists(bg_path):
-    set_bg_image(bg_path)
+bg1 = os.path.join(BASE_PATH, "Assest", "BG11.png")
+bg2 = os.path.join(BASE_PATH, "Assest", "BG.jpeg")
+
+if os.path.exists(bg1) and os.path.exists(bg2):
+    set_rotating_background(bg1, bg2)
 else:
-    st.warning(f"Background not found at: {bg_path}")
+    st.warning("Background images not found inside Assest folder")
 
 # ==========================================
 # FOLDERS
