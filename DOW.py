@@ -4,6 +4,7 @@ import numpy as np
 import base64
 import os
 from pathlib import Path
+from time import sleep
 
 # =====================================================
 # PAGE CONFIG
@@ -43,13 +44,13 @@ else:
     st.warning(f"Background not found at: {bg_path}")
 
 # =====================================================
-# DATA FOLDERS (YOU CAN ADD 15m, 1H LATER)
+# DATA FOLDERS (D/W/M; 15m/1H CAN BE ADDED SIMILARLY)
 # =====================================================
 DATA_D = "stock_data_D"
 DATA_W = "stock_data_W"
 DATA_M = "stock_data_M"
 
-symbols = list(set([f.stem for f in Path(DATA_D).glob("*.parquet")]))
+symbols = sorted(list(set([f.stem for f in Path(DATA_D).glob("*.parquet")])))
 
 # =====================================================
 # BASIC HELPERS
@@ -69,11 +70,15 @@ if last_daily_date is not None:
 else:
     st.markdown("No daily data found.")
 
+if "scan_date" not in st.session_state:
+    st.session_state.scan_date = last_daily_date.date() if last_daily_date is not None else pd.to_datetime("today").date()
+
 selected_date = st.date_input(
     "📅 Select Scan Date",
-    value=last_daily_date.date() if last_daily_date is not None else pd.to_datetime("today").date()
+    value=st.session_state.scan_date
 )
-selected_date = pd.to_datetime(selected_date)
+st.session_state.scan_date = selected_date
+scan_date_ts = pd.to_datetime(selected_date)
 
 
 def filter_until_date(df, date):
@@ -87,7 +92,6 @@ def filter_until_date(df, date):
 def detect_swings(df, order=3):
     """
     Detect swing highs / lows with a simple window method.
-    order = bars left/right to check.
     """
     high = df["high"].values
     low = df["low"].values
@@ -152,17 +156,14 @@ def classify_last_bucket(swings):
 
     last4 = labels[-4:]
 
-    # exact reversal patterns
     if last4 == ["HH", "HL", "LH", "LL"]:
         return "Reversal To Downtrend"
     if last4 == ["LL", "LH", "HL", "HH"]:
         return "Reversal To Uptrend"
 
-    # strong uptrend: combination of HH + HL
     if all(l in ["HH", "HL"] for l in last4):
         return "Uptrend"
 
-    # strong downtrend
     if all(l in ["LL", "LH"] for l in last4):
         return "Downtrend"
 
@@ -172,10 +173,6 @@ def classify_last_bucket(swings):
 # 61% FIBONACCI RETRACEMENT
 # =====================================================
 def fib_61_zone_up(swings, tol=0.01):
-    """
-    Uptrend leg: last HL -> last HH.
-    level = 61.8% retracement of that leg.
-    """
     sw = swings.copy()
     last_HL = sw[sw["label"] == "HL"].tail(1)
     last_HH = sw[sw["label"] == "HH"].tail(1)
@@ -183,13 +180,11 @@ def fib_61_zone_up(swings, tol=0.01):
         return None
 
     if last_HL.index[-1] > last_HH.index[-1]:
-        # low after high => leg not completed
         return None
 
     low_price = last_HL["price"].iloc[0]
     high_price = last_HH["price"].iloc[0]
 
-    # price at 61.8% retrace from high towards low
     level = high_price - (high_price - low_price) * 0.618
     lo = level * (1 - tol)
     hi = level * (1 + tol)
@@ -197,9 +192,6 @@ def fib_61_zone_up(swings, tol=0.01):
 
 
 def fib_61_zone_down(swings, tol=0.01):
-    """
-    Downtrend leg: last LH -> last LL.
-    """
     sw = swings.copy()
     last_LH = sw[sw["label"] == "LH"].tail(1)
     last_LL = sw[sw["label"] == "LL"].tail(1)
@@ -212,7 +204,6 @@ def fib_61_zone_down(swings, tol=0.01):
     high_price = last_LH["price"].iloc[0]
     low_price = last_LL["price"].iloc[0]
 
-    # price at 61.8% retrace from low towards high
     level = low_price + (high_price - low_price) * 0.618
     lo = level * (1 - tol)
     hi = level * (1 + tol)
@@ -220,9 +211,6 @@ def fib_61_zone_down(swings, tol=0.01):
 
 
 def check_61_entry(df, swings, bucket, tol=0.01):
-    """
-    Returns (is_entry, fib_level) for current close.
-    """
     close = df["close"].iloc[-1]
 
     if bucket == "Uptrend":
@@ -230,34 +218,38 @@ def check_61_entry(df, swings, bucket, tol=0.01):
         if z is None:
             return False, None
         level, lo, hi = z
-        return (lo <= close <= hi), float(level)
+        return lo <= close <= hi, float(level)
 
     if bucket == "Downtrend":
         z = fib_61_zone_down(swings, tol)
         if z is None:
             return False, None
         level, lo, hi = z
-        return (lo <= close <= hi), float(level)
+        return lo <= close <= hi, float(level)
 
     return False, None
 
 # =====================================================
-# SCAN ENGINE (DAILY; EXTEND TO 15m/1H/W/M IF NEEDED)
+# HEAVY SCAN FUNCTION (CACHED)
 # =====================================================
-@st.cache_data
-def run_scan(scan_date):
+@st.cache_data(show_spinner=False)
+def run_scan_cached(scan_date_str, symbol_list):
+    """
+    Heavy computation kept pure: only arguments are
+    simple types so cache works correctly.[web:38]
+    """
+    scan_date = pd.to_datetime(scan_date_str)
     results = []
 
-    for symbol in symbols:
+    total = len(symbol_list)
+    for i, symbol in enumerate(symbol_list, start=1):
         try:
             df_d = pd.read_parquet(f"{DATA_D}/{symbol}.parquet")
             df_d = filter_until_date(df_d, scan_date)
 
-            # need enough data for swings
             if len(df_d) < 150:
                 continue
 
-            # ---- Dow Theory on Daily ----
             df_sw = detect_swings(df_d, order=3)
             swings = label_structure(df_sw)
             if swings.empty or swings["label"].dropna().shape[0] < 4:
@@ -274,8 +266,7 @@ def run_scan(scan_date):
                 "61% Level": lvl_61
             })
 
-        except Exception as e:
-            # you can use st.write or logging for debugging if required
+        except Exception:
             continue
 
     if not results:
@@ -287,22 +278,46 @@ def run_scan(scan_date):
     return pd.DataFrame(results)
 
 # =====================================================
-# RUN BUTTON
+# SESSION STATE INITIALIZATION
 # =====================================================
 if "scan_done" not in st.session_state:
     st.session_state.scan_done = False
+if "df_result" not in st.session_state:
+    st.session_state.df_result = pd.DataFrame()
+if "is_scanning" not in st.session_state:
+    st.session_state.is_scanning = False
 
-if st.button("🚀 Run Dow Theory Scan For Selected Date"):
-    st.session_state.df_result = run_scan(selected_date)
+# =====================================================
+# BUTTON CALLBACK
+# =====================================================
+def start_scan():
+    st.session_state.is_scanning = True
+    st.session_state.scan_done = False
+
+    # run heavy scan
+    df = run_scan_cached(str(st.session_state.scan_date), symbols)
+    st.session_state.df_result = df
     st.session_state.scan_done = True
+    st.session_state.is_scanning = False
+
+# =====================================================
+# RUN BUTTON (ONLY TRIGGERS CALLBACK)
+# =====================================================
+st.button("🚀 Run Dow Theory Scan For Selected Date", on_click=start_scan)
+
+# Show progress indicator while scanning
+if st.session_state.is_scanning:
+    with st.spinner("Scanning stocks... This may take some time."):
+        # small sleep so spinner is visible during callback rerun
+        sleep(0.5)
 
 # =====================================================
 # DISPLAY RESULTS + FILTERS
 # =====================================================
-if st.session_state.scan_done:
+if st.session_state.scan_done and not st.session_state.df_result.empty:
     df_result = st.session_state.df_result
 
-    st.success(f"Scan Completed For {selected_date.date()} ✅")
+    st.success(f"Scan Completed For {st.session_state.scan_date} ✅")
 
     col1, col2 = st.columns(2)
 
