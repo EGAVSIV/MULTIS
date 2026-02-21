@@ -203,17 +203,23 @@ selected_date = pd.to_datetime(selected_date)
 # RUN
 # =====================================================
 if st.button("🚀 Run Multi-TF Dow Scan"):
+    st.session_state.df_result = run_scan(selected_date)
+    st.session_state.scan_done = True
+if st.session_state.scan_done:
 
-    df_result = run_scan(selected_date)
+    df_result = st.session_state.df_result
 
     st.success("Scan Completed ✅")
 
     trend_filter = st.selectbox(
         "Filter Trend (Daily)",
-        ["All", "Uptrend", "Downtrend", "Reversal to Down", "Reversal to Up", "Triangle / Compression"]
+        ["All", "Uptrend", "Downtrend", "Reversal to Down", 
+         "Reversal to Up", "Triangle / Compression"]
     )
 
-    if trend_filter != "All":
-        df_result = df_result[df_result["Daily Trend"] == trend_filter]
+    filtered = df_result.copy()
 
-    st.dataframe(df_result, use_container_width=True)
+    if trend_filter != "All":
+        filtered = filtered[filtered["Daily Trend"] == trend_filter]
+
+    st.dataframe(filtered, use_container_width=True)
