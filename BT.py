@@ -23,7 +23,7 @@ def calculate_macd(df, fast=12, slow=26, signal=9):
 def detect_burst(df, percent=3, min_candles=3):
 
     df = df.copy()
-    df['pct_move'] = (df['close'] - df['Open']) / df['Open'] * 100
+    df['pct_move'] = (df['close'] - df['open']) / df['open'] * 100
 
     results = []
 
