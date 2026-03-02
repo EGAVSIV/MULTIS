@@ -9,8 +9,8 @@ st.set_page_config(layout="wide")
 # MACD CALCULATION
 # ==============================
 def calculate_macd(df, fast=12, slow=26, signal=9):
-    df['EMA_fast'] = df['Close'].ewm(span=fast, adjust=False).mean()
-    df['EMA_slow'] = df['Close'].ewm(span=slow, adjust=False).mean()
+    df['EMA_fast'] = df['close'].ewm(span=fast, adjust=False).mean()
+    df['EMA_slow'] = df['close'].ewm(span=slow, adjust=False).mean()
     df['MACD'] = df['EMA_fast'] - df['EMA_slow']
     df['Signal'] = df['MACD'].ewm(span=signal, adjust=False).mean()
     df['Histogram'] = df['MACD'] - df['Signal']
@@ -23,7 +23,7 @@ def calculate_macd(df, fast=12, slow=26, signal=9):
 def detect_burst(df, percent=3, min_candles=3):
 
     df = df.copy()
-    df['pct_move'] = (df['Close'] - df['Open']) / df['Open'] * 100
+    df['pct_move'] = (df['close'] - df['Open']) / df['Open'] * 100
 
     results = []
 
@@ -79,8 +79,8 @@ def post_performance(df, timestamp, candles_forward=5):
     if idx + candles_forward >= len(df):
         return None
 
-    entry_price = df.iloc[idx]['Close']
-    exit_price = df.iloc[idx + candles_forward]['Close']
+    entry_price = df.iloc[idx]['close']
+    exit_price = df.iloc[idx + candles_forward]['close']
 
     return round((exit_price - entry_price) / entry_price * 100, 2)
 
