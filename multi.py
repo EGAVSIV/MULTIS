@@ -1210,6 +1210,40 @@ def ema_compression_expansion(df):
     return None
 
 
+def rsi_macd_cross_swing(df):
+    if len(df) < 50:
+        return None
+
+    rsi = talib.RSI(df["close"], 14)
+    macd, signal, _ = talib.MACD(df["close"], 12, 26, 9)
+
+    # Previous candle
+    rsi_prev = rsi.iloc[-2]
+    macd_prev = macd.iloc[-2]
+    signal_prev = signal.iloc[-2]
+
+    # Current candle
+    rsi_curr = rsi.iloc[-1]
+    macd_curr = macd.iloc[-1]
+    signal_curr = signal.iloc[-1]
+
+    # ---- Bullish Condition ----
+    if (
+        rsi_prev < 40 and rsi_curr > 40 and
+        macd_prev < signal_prev and macd_curr > signal_curr
+    ):
+        return "Bullish RSI+MACD Cross"
+
+    # ---- Bearish Condition ----
+    if (
+        rsi_prev > 60 and rsi_curr < 60 and
+        macd_prev > signal_prev and macd_curr < signal_curr
+    ):
+        return "Bearish RSI+MACD Cross"
+
+    return None
+
+
 def atr_percent(df, period=14):
     if len(df) < period + 1:
         return None
@@ -1611,6 +1645,7 @@ SCANNERS = [
     {"name": "Shakeout / Trap", "color": "#3498db"},
     {"name": "Hidden Pivot Reversal", "color": "#3498db"},
     {"name": "Springer Reversal", "color": "#3498db"},
+    {"name": "RSI + MACD Cross Swing", "color": "#9b59b6"},
 ]
 
 if "scanner" not in st.session_state:
@@ -2073,6 +2108,13 @@ if run:
 
         elif scanner == "Shakeout / Trap":
             sig = shakeout_trap(df)
+            if sig:
+                row = base_row.copy()
+                row["Signal"] = sig
+                results.append(row)
+
+        elif scanner == "RSI + MACD Cross Swing":
+            sig = rsi_macd_cross_swing(df)
             if sig:
                 row = base_row.copy()
                 row["Signal"] = sig
