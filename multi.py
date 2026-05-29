@@ -723,6 +723,7 @@ def macd_hook_up(df):
     if (
         macd.iloc[-1] > 0
         and macd.iloc[-1] > signal.iloc[-1]
+        and macd.iloc[-2] > signal.iloc[-2]      # Added
         and macd.iloc[-2] < macd.iloc[-3]
         and macd.iloc[-1] > macd.iloc[-2]
         and hist.iloc[-1] > hist.iloc[-2]
@@ -741,6 +742,7 @@ def macd_hook_down(df):
     if (
         macd.iloc[-1] < 0
         and macd.iloc[-1] < signal.iloc[-1]
+        and macd.iloc[-2] < signal.iloc[-2]
         and macd.iloc[-2] > macd.iloc[-3]
         and macd.iloc[-1] < macd.iloc[-2]
         and hist.iloc[-1] < hist.iloc[-2]
