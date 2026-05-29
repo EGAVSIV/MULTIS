@@ -910,6 +910,26 @@ def bearish_gsas(df_tf, df_htf):
     return None
 
 
+def rsi_swing(df):
+    if len(df) < 20:
+        return None
+
+    rsi = talib.RSI(df["close"], 14)
+
+    rsi_prev = rsi.iloc[-2]
+    rsi_curr = rsi.iloc[-1]
+
+    # Bullish Swing
+    if rsi_prev < 40 and rsi_curr > 40:
+        return "RSI Bullish Swing"
+
+    # Bearish Swing
+    if rsi_prev > 60 and rsi_curr < 60:
+        return "RSI Bearish Swing"
+
+    return None
+
+
 def ema50_fake_breakdown(df):
     if len(df) < 55:
         return None
@@ -1365,6 +1385,7 @@ def run_all_scanners_for_symbol(
     results["Range Expansion Day"] = range_expansion_day(df) is not None
     results["Failed Breakout / Breakdown"] = failed_breakout_breakdown(df) is not None
     results["EMA Compression → Expansion"] = ema_compression_expansion(df) is not None
+    results["RSI Swing"] = rsi_swing(df) is not None
 
     # ---------- Multi-TF scanners (RSI WM, MACD RD, GSAS) ----------
 
@@ -1648,6 +1669,7 @@ SCANNERS = [
     {"name": "Hidden Pivot Reversal", "color": "#3498db"},
     {"name": "Springer Reversal", "color": "#3498db"},
     {"name": "RSI + MACD Cross Swing", "color": "#9b59b6"},
+    {"name": "RSI Swing", "color": "#8e44ad"},
 ]
 
 if "scanner" not in st.session_state:
@@ -2139,6 +2161,13 @@ if run:
 
         elif scanner == "EMA Compression → Expansion":
             sig = ema_compression_expansion(df)
+            if sig:
+                row = base_row.copy()
+                row["Signal"] = sig
+                results.append(row)
+        
+        elif scanner == "RSI Swing":
+            sig = rsi_swing(df)
             if sig:
                 row = base_row.copy()
                 row["Signal"] = sig
