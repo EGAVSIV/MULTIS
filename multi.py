@@ -26,7 +26,7 @@ from streamlit.runtime.caching import cache_data
 
 
 st.set_page_config(
-    page_title="Rao_G",
+    page_title="Gaurav_Singh_Yaadav",
     layout="wide",
     page_icon="🧮"
 )
