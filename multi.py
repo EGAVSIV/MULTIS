@@ -2294,7 +2294,7 @@ st.markdown("""
 
 <div style="line-height: 1.6;">
 <b>Designed by:-<br>
-Gaurav Singh Yadav</b><br><br>
+Gaurav Singh Yaadav</b><br><br>
 
 🩷💛🩵💙🩶💜🤍🤎💖 Built With Love 🫶<br>
 Energy | Commodity | Quant Intelligence 📶<br><br>
