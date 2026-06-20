@@ -2231,31 +2231,47 @@ if run:
         st.dataframe(df_res, use_container_width=True, hide_index=True)
 
 
-        # RSI Market Pulse Donut Chart
+       # RSI Market Pulse Donut Chart
         if scanner == "RSI Market Pulse" and not df_res.empty:
-            zone_counts = df_res['Zone'].value_counts().reset_index()
-            zone_counts.columns = ['Zone', 'Count']
+            # Step 1: Clean and isolate valid data rows
+            df_res['Zone'] = df_res['Zone'].astype(str).str.strip()
+            df_filtered = df_res[df_res['Zone'].isin(["RSI > 60", "RSI 40–60", "RSI < 40"])]
+            
+            if not df_filtered.empty:
+                # Step 2: Calculate explicit counts
+                zone_counts = df_filtered['Zone'].value_counts().reset_index()
+                zone_counts.columns = ['Zone', 'Count']
 
-            fig = px.pie(
-                zone_counts,
-                names='Zone',
-                values='Count',
-                title="RSI Market Pulse Distribution",
-                hole=0.6,
-                color="Zone",
-                color_discrete_map={
-                    "RSI > 60": "#2ecc71",
-                    "RSI 40–60": "#f1c40f",
-                    "RSI < 40": "#e74c3c",
-                },
-            )
-            fig.update_layout(
-                title="RSI Market Pulse Distribution",
-                showlegend=True,
-                paper_bgcolor="rgba(0,0,0,0)",
-                plot_bgcolor="rgba(0,0,0,0)",
-            )
-            st.plotly_chart(fig, use_container_width=True)
+                # Step 3: Draw the Pie Chart with forced layout updates
+                fig = px.pie(
+                    zone_counts,
+                    names='Zone',
+                    values='Count',
+                    title="🎯 RSI Market Pulse Distribution",
+                    hole=0.5,
+                    color="Zone",
+                    color_discrete_map={
+                        "RSI > 60": "#2ecc71",   # Green
+                        "RSI 40–60": "#f1c40f",  # Yellow
+                        "RSI < 40": "#e74c3c",   # Red
+                    },
+                )
+                
+                # Step 4: Force display of the real counted value inside the pie slice
+                fig.update_traces(
+                    textinfo="percent+value", 
+                    textfont_size=13,
+                    marker=dict(line=dict(color='#FFFFFF', width=2))
+                )
+                
+                fig.update_layout(
+                    showlegend=True,
+                    paper_bgcolor="rgba(0,0,0,0)",
+                    plot_bgcolor="rgba(0,0,0,0)",
+                )
+                st.plotly_chart(fig, use_container_width=True)
+            else:
+                st.info("No matching RSI zones found to display in the chart.")
 
 
 st.markdown("---")
