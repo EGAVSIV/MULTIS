@@ -2,12 +2,18 @@ import os
 import sys
 import base64
 import hashlib
-
 import numpy as np
 import pandas as pd
-
 import talib
 import plotly.express as px
+import streamlit as st
+from streamlit.runtime.caching import cache_data
+
+st.set_page_config(
+    page_title="Gaurav_Singh_Yaadav",
+    layout="wide",
+    page_icon="🧮"
+)
 
 BASE_PATH = os.path.dirname(__file__)
 
@@ -25,11 +31,7 @@ import streamlit as st
 from streamlit.runtime.caching import cache_data
 
 
-st.set_page_config(
-    page_title="Gaurav_Singh_Yaadav",
-    layout="wide",
-    page_icon="🧮"
-)
+
 
 # THEN everything else
 
@@ -258,9 +260,17 @@ col1, col2 = st.columns([1, 6])
 
 with col1:
     if st.button("🔄 Refresh Data"):
-        cache_data.clear()   # <-- correct method
-        st.success("Fresh data loaded")
-        st.experimental_rerun()
+        # Safely clear cache
+        st.cache_data.clear()
+        
+        # Set a session state flag to notify success instead of immediate rerun disruption
+        st.session_state["needs_refresh_msg"] = True
+        st.rerun()
+
+# Display success elegantly after a clean rerun cycle initialization
+if st.session_state.get("needs_refresh_msg", False):
+    st.toast("🍏 Fresh data loaded successfully!", icon="✅")
+    st.session_state["needs_refresh_msg"] = False
 
 
 with col2:
