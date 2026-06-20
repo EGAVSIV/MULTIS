@@ -2223,13 +2223,14 @@ if run:
 
         # RSI Market Pulse Donut Chart
         if scanner == "RSI Market Pulse" and not df_res.empty:
-            zone_counts = df_res["Zone"].value_counts().reset_index()
-            zone_counts.columns = ["Zone", "Count"]
+            zone_counts = df_res['Zone'].value_counts().reset_index()
+            zone_counts.columns = ['Zone', 'Count']
 
             fig = px.pie(
                 zone_counts,
-                names="Zone",
-                values="Count",
+                names='Zone',
+                values='Count',
+                title="RSI Market Pulse Distribution",
                 hole=0.6,
                 color="Zone",
                 color_discrete_map={
