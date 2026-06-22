@@ -99,9 +99,9 @@ def set_bg_image(image_path: str):
 # AUTH
 # ==============================
 try:
-    #USERS = st.secrets["users"]
+    USERS = st.secrets["users"]
 except Exception:
-    #USERS = {}
+    USERS = {}
 
 
 
