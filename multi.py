@@ -98,19 +98,18 @@ def set_bg_image(image_path: str):
 # ==============================
 # AUTH
 # ==============================
+
 try:
     USERS = st.secrets["users"]
 except Exception:
     USERS = {}
-
-
-
 
 if "authenticated" not in st.session_state:
     st.session_state.authenticated = False
 
 if not st.session_state.authenticated:
     st.title("🔐 Login Required")
+
     u = st.text_input("Username")
     p = st.text_input("Password", type="password")
 
