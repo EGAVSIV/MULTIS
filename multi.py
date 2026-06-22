@@ -98,30 +98,30 @@ def set_bg_image(image_path: str):
 # ==============================
 # AUTH
 # ==============================
-#try:
+try:
     #USERS = st.secrets["users"]
-#except Exception:
+except Exception:
     #USERS = {}
 
 
 
 
-#if "authenticated" not in st.session_state:
+if "authenticated" not in st.session_state:
     #st.session_state.authenticated = False
 
-#if not st.session_state.authenticated:
-    #st.title("🔐 Login Required")
-    #u = st.text_input("Username")
-    #p = st.text_input("Password", type="password")
+if not st.session_state.authenticated:
+    st.title("🔐 Login Required")
+    u = st.text_input("Username")
+    p = st.text_input("Password", type="password")
 
-    #if st.button("Login"):
-        #if u in USERS and hash_pwd(p) == USERS[u]:
-            #st.session_state.authenticated = True
-            #st.rerun()
-        #else:
-            #st.error("Invalid credentials")
+    if st.button("Login"):
+        if u in USERS and hash_pwd(p) == USERS[u]:
+            st.session_state.authenticated = True
+            st.rerun()
+        else:
+            st.error("Invalid credentials")
 
-    #st.stop()
+    st.stop()
 
 
 
