@@ -8,6 +8,10 @@ import talib
 import plotly.express as px
 import streamlit as st
 from streamlit.runtime.caching import cache_data
+import hashlib
+
+def hash_pwd(password):
+    return hashlib.sha256(password.encode()).hexdigest()
 
 st.set_page_config(
     page_title="Gaurav_Singh_Yaadav",
