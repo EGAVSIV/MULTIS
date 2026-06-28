@@ -620,3 +620,33 @@ def get_disabled_count():
     conn.close()
 
     return count
+
+
+# ==========================================
+# ENABLE USER
+# ==========================================
+
+def enable_user(user_id):
+
+    conn = get_connection()
+
+    cur = conn.cursor()
+
+    cur.execute(
+        """
+        UPDATE users
+
+        SET status=?
+
+        WHERE id=?
+        """,
+
+        (
+            STATUS_APPROVED,
+            user_id
+        )
+    )
+
+    conn.commit()
+
+    conn.close()
