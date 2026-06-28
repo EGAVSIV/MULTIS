@@ -1,25 +1,17 @@
 # ==========================================
-# admin.py
-# Admin Dashboard
+# admin.py (PART-1)
 # ==========================================
-import streamlit as st
-st.title("👨‍💼 ADMIN PANEL")
-st.success("Admin Panel Loaded")
+
 import streamlit as st
 import pandas as pd
-from database import (
-    approve_user,
-    disable_user,
-    enable_user,
-    delete_user,
-)
 
 from database import (
     get_all_users,
     approve_user,
-    disable_user,
     delete_user,
-    extend_subscription
+    disable_user,
+    enable_user,
+    extend_subscription,
 )
 
 from utils import logout
@@ -31,179 +23,435 @@ from utils import logout
 
 def admin_panel():
 
-    st.sidebar.success("👨‍💼 Admin")
+    # ---------------------------
+    # Sidebar
+    # ---------------------------
+
+    st.sidebar.title("👨‍💼 Admin Panel")
 
     if st.sidebar.button("🚪 Logout"):
+
         logout()
 
-    st.title("👨‍💼 Admin Dashboard")
+    st.title("👨‍💼 NSE Scanner Admin Dashboard")
 
     users = get_all_users()
 
-    if len(users) == 0:
-
-        st.info("No users found.")
-
-        return
-
-    # ------------------------------------
+    # ---------------------------
     # Dashboard
-    # ------------------------------------
+    # ---------------------------
 
-    total = len(users)
+    total_users = len(users)
 
-    approved = sum(
-        1 for u in users if u["status"] == "Approved"
+    pending = len(
+        [u for u in users if u["status"] == "Pending"]
     )
 
-    pending = sum(
-        1 for u in users if u["status"] == "Pending"
+    approved = len(
+        [u for u in users if u["status"] == "Approved"]
     )
 
-    disabled = sum(
-        1 for u in users if u["status"] == "Disabled"
+    disabled = len(
+        [u for u in users if u["status"] == "Disabled"]
     )
 
-    c1, c2, c3, c4 = st.columns(4)
+    col1, col2, col3, col4 = st.columns(4)
 
-    c1.metric("Total Users", total)
-    c2.metric("Approved", approved)
-    c3.metric("Pending", pending)
-    c4.metric("Disabled", disabled)
+    col1.metric("👥 Total", total_users)
+    col2.metric("🟡 Pending", pending)
+    col3.metric("🟢 Approved", approved)
+    col4.metric("🔴 Disabled", disabled)
 
     st.divider()
 
-    # ------------------------------------
-    # User List
-    # ------------------------------------
+    # ---------------------------
+    # Tabs
+    # ---------------------------
 
-    st.subheader("Registered Users")
+    tab1, tab2, tab3, tab4 = st.tabs(
 
-    for user in users:
+        [
 
-        with st.expander(
-            f"{user['fullname']} ({user['username']})"
-        ):
+            "🟡 Pending Users",
 
-            st.write(f"**ID :** {user['id']}")
-            st.write(f"**Username :** {user['username']}")
-            st.write(f"**Full Name :** {user['fullname']}")
-            st.write(f"**Mobile :** {user['mobile']}")
-            st.write(f"**Email :** {user['email']}")
-            st.write(f"**Role :** {user['role']}")
-            st.write(f"**Status :** {user['status']}")
-            st.write(f"**Expiry :** {user['expiry_date']}")
+            "🟢 Approved Users",
 
-            col1, col2, col3, col4 = st.columns(4)
+            "🔴 Disabled Users",
 
-            # ------------------------------
-            # Approve
-            # ------------------------------
+            "📊 Reports"
 
-            with col1:
+        ]
 
-                if st.button(
-                    "✅ Approve",
-                    key=f"a{user['id']}"
+    )
+
+    # =====================================================
+    # Pending Users
+    # =====================================================
+
+    with tab1:
+
+        pending_users = [
+
+            u for u in users
+
+            if u["status"] == "Pending"
+
+        ]
+
+        if len(pending_users) == 0:
+
+            st.success("No Pending Users.")
+
+        else:
+
+            for user in pending_users:
+
+                with st.expander(
+
+                    f"{user['fullname']} ({user['username']})"
+
                 ):
 
-                    approve_user(user["id"])
+                    st.write(f"**Name :** {user['fullname']}")
+                    st.write(f"**Username :** {user['username']}")
+                    st.write(f"**Mobile :** {user['mobile']}")
+                    st.write(f"**Email :** {user['email']}")
+                    st.write(f"**Registered :** {user['created_on']}")
 
-                    st.success("User Approved")
+                    c1, c2 = st.columns(2)
 
-                    st.rerun()
+                    with c1:
 
-            # ------------------------------
-            # Disable
-            # ------------------------------
+                        if st.button(
 
-            with col2:
+                            "✅ Approve",
 
-                if st.button(
-                    "🚫 Disable",
-                    key=f"d{user['id']}"
+                            key=f"approve_{user['id']}"
+
+                        ):
+
+                            approve_user(user["id"])
+
+                            # Email will be added in Part-3
+
+                            st.success("User Approved")
+
+                            st.rerun()
+
+                    with c2:
+
+                        if st.button(
+
+                            "🗑 Delete",
+
+                            key=f"delete_pending_{user['id']}"
+
+                        ):
+
+                            delete_user(user["id"])
+
+                            st.warning("User Deleted")
+
+                            st.rerun()
+
+    # =====================================================
+    # Approved Users
+    # =====================================================
+
+    with tab2:
+
+        approved_users = [
+
+            u for u in users
+
+            if u["status"] == "Approved"
+
+        ]
+
+        if len(approved_users) == 0:
+
+            st.info("No Approved Users")
+
+        else:
+
+            for user in approved_users:
+
+                if user["role"] == "Admin":
+
+                    continue
+
+                with st.expander(
+
+                    f"{user['fullname']} ({user['username']})"
+
                 ):
 
-                    disable_user(user["id"])
+                    st.write(f"**Mobile :** {user['mobile']}")
+                    st.write(f"**Email :** {user['email']}")
+                    st.write(f"**Expiry :** {user['expiry_date']}")
 
-                    st.warning("User Disabled")
+                    c1, c2, c3 = st.columns(3)
 
-                    st.rerun()
+                    # Disable
 
-            # ------------------------------
-            # Extend Subscription
-            # ------------------------------
+                    with c1:
 
-            with col3:
+                        if st.button(
 
-                if st.button(
-                    "📅 +30 Days",
-                    key=f"e{user['id']}"
+                            "🚫 Disable",
+
+                            key=f"disable_{user['id']}"
+
+                        ):
+
+                            disable_user(user["id"])
+
+                            st.success("User Disabled")
+
+                            st.rerun()
+
+                    # Extend Subscription
+
+                    with c2:
+
+                        if st.button(
+
+                            "📅 +30 Days",
+
+                            key=f"extend_{user['id']}"
+
+                        ):
+
+                            extend_subscription(
+
+                                user["id"],
+
+                                30
+
+                            )
+
+                            st.success(
+
+                                "Subscription Extended"
+
+                            )
+
+                            st.rerun()
+
+                    # Delete
+
+                    with c3:
+
+                        if st.button(
+
+                            "🗑 Delete",
+
+                            key=f"delete_{user['id']}"
+
+                        ):
+
+                            delete_user(
+
+                                user["id"]
+
+                            )
+
+                            st.error("User Deleted")
+
+                            st.rerun()
+
+
+    # =====================================================
+    # Disabled Users
+    # =====================================================
+
+    with tab3:
+
+        disabled_users = [
+
+            u for u in users
+
+            if u["status"] == "Disabled"
+
+        ]
+
+        if len(disabled_users) == 0:
+
+            st.success("No Disabled Users")
+
+        else:
+
+            for user in disabled_users:
+
+                with st.expander(
+
+                    f"{user['fullname']} ({user['username']})"
+
                 ):
 
-                    extend_subscription(
-                        user["id"],
-                        30
+                    st.write(f"**Mobile :** {user['mobile']}")
+                    st.write(f"**Email :** {user['email']}")
+
+                    c1, c2 = st.columns(2)
+
+                    # Enable
+
+                    with c1:
+
+                        if st.button(
+
+                            "🟢 Enable",
+
+                            key=f"enable_{user['id']}"
+
+                        ):
+
+                            enable_user(
+
+                                user["id"]
+
+                            )
+
+                            st.success(
+
+                                "User Enabled"
+
+                            )
+
+                            st.rerun()
+
+                    # Delete
+
+                    with c2:
+
+                        if st.button(
+
+                            "🗑 Delete",
+
+                            key=f"delete_disabled_{user['id']}"
+
+                        ):
+
+                            delete_user(
+
+                                user["id"]
+
+                            )
+
+                            st.warning(
+
+                                "User Deleted"
+
+                            )
+
+                            st.rerun()
+
+
+    # =====================================================
+    # REPORTS
+    # =====================================================
+
+    with tab4:
+
+        st.subheader("📊 User Report")
+
+        df = pd.DataFrame([dict(u) for u in users])
+
+        if len(df):
+
+            st.dataframe(
+                df,
+                use_container_width=True,
+                hide_index=True
+            )
+
+            st.divider()
+
+            # --------------------------
+            # Search User
+            # --------------------------
+
+            search = st.text_input(
+                "🔍 Search User"
+            )
+
+            if search:
+
+                result = df[
+                    df.astype(str)
+                    .apply(
+                        lambda x: x.str.contains(
+                            search,
+                            case=False
+                        )
                     )
+                    .any(axis=1)
+                ]
 
-                    st.success("Subscription Extended")
+                st.dataframe(
+                    result,
+                    use_container_width=True,
+                    hide_index=True
+                )
 
-                    st.rerun()
+            st.divider()
 
-            # ------------------------------
-            # Delete User
-            # ------------------------------
+            # --------------------------
+            # Download CSV
+            # --------------------------
 
-            with col4:
+            csv = df.to_csv(
+                index=False
+            ).encode("utf-8")
 
-                if user["role"] != "Admin":
+            st.download_button(
 
-                    if st.button(
-                        "🗑 Delete",
-                        key=f"x{user['id']}"
-                    ):
+                "📥 Download Users CSV",
 
-                        delete_user(user["id"])
+                csv,
 
-                        st.error("User Deleted")
+                file_name="users.csv",
 
-                        st.rerun()
+                mime="text/csv"
+
+            )
+
+        else:
+
+            st.info("No Users Found")
 
     st.divider()
 
-    # ------------------------------------
-    # Export User List
-    # ------------------------------------
+    # =====================================================
+    # ADMIN SETTINGS
+    # =====================================================
 
-    st.subheader("Export Users")
+    st.subheader("⚙️ Admin Settings")
 
-    df = pd.DataFrame(
-        [dict(u) for u in users]
+    col1, col2 = st.columns(2)
+
+    with col1:
+
+        if st.button("🔑 Change Admin Password"):
+
+            st.info(
+                "Feature Coming Soon"
+            )
+
+    with col2:
+
+        if st.button("📧 Email Configuration"):
+
+            st.info(
+                "Feature Coming Soon"
+            )
+
+    st.divider()
+
+    # =====================================================
+    # SYSTEM INFORMATION
+    # =====================================================
+
+    st.caption(
+        "NSE Scanner Authentication System v1.0"
     )
-
-    st.dataframe(
-        df,
-        use_container_width=True
-    )
-
-    csv = df.to_csv(index=False).encode("utf-8")
-
-    st.download_button(
-        "📥 Download CSV",
-        csv,
-        file_name="users.csv",
-        mime="text/csv"
-    )
-
-if user["status"] == STATUS_DISABLED:
-
-    if st.button(
-        "🟢 Enable",
-        key=f"enable_{user['id']}"
-    ):
-
-        enable_user(user["id"])
-
-        st.success("User Enabled Successfully")
-
-        st.rerun()
