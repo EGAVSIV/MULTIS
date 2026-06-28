@@ -7,6 +7,12 @@ st.title("👨‍💼 ADMIN PANEL")
 st.success("Admin Panel Loaded")
 import streamlit as st
 import pandas as pd
+from database import (
+    approve_user,
+    disable_user,
+    enable_user,
+    delete_user,
+)
 
 from database import (
     get_all_users,
@@ -188,3 +194,16 @@ def admin_panel():
         file_name="users.csv",
         mime="text/csv"
     )
+
+if user["status"] == STATUS_DISABLED:
+
+    if st.button(
+        "🟢 Enable",
+        key=f"enable_{user['id']}"
+    ):
+
+        enable_user(user["id"])
+
+        st.success("User Enabled Successfully")
+
+        st.rerun()
