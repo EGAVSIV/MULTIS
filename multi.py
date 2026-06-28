@@ -10,6 +10,7 @@ from login import login_page
 from database import create_database
 from styles import load_css, show_footer
 from streamlit.runtime.caching import cache_data
+from admin import admin_panel
 
 
 
@@ -103,16 +104,23 @@ def set_bg_image(image_path: str):
     #return hashlib.sha256(pwd.encode()).hexdigest()
 
 
-# ======================================
-# Authentication
-# ======================================
-
 if "authenticated" not in st.session_state:
     st.session_state.authenticated = False
 
 if not st.session_state.authenticated:
 
     login_page()
+
+    st.stop()
+
+
+# ======================================
+# ADMIN PANEL
+# ======================================
+
+if st.session_state.get("role") == "Admin":
+
+    admin_panel()
 
     st.stop()
 
