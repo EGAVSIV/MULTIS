@@ -1,37 +1,98 @@
+# ==========================================
+# login.py
+# ==========================================
+
 import streamlit as st
 
-from login import login_page
-from admin import admin_panel
-from database import create_database
-from register import register_page
-
-# Create DB Automatically
-create_database()
-
-st.set_page_config(
-    page_title="NSE Scanner",
-    page_icon="📈",
-    layout="wide"
+from database import get_user
+from utils import (
+    verify_password,
+    login_user,
+    is_user_approved,
+    is_subscription_valid,
 )
+from config import LOGIN_TITLE, LOGIN_MESSAGE
 
-# Session
-if "authenticated" not in st.session_state:
-    st.session_state.authenticated = False
 
-# Login
-if not st.session_state.authenticated:
+def login_page():
 
-    login_page()
+    # -----------------------------
+    # Register Page
+    # -----------------------------
+    if st.session_state.get("show_register", False):
+        from register import register_page      # Import here to avoid circular import
+        register_page()
+        return
 
-    st.stop()
+    st.title(LOGIN_TITLE)
 
-# Admin Panel
-if st.session_state.role == "Admin":
+    username = st.text_input("Username")
 
-    admin_panel()
+    password = st.text_input(
+        "Password",
+        type="password"
+    )
 
-# -----------------------------
-# Your Scanner Starts Here
-# -----------------------------
+    col1, col2 = st.columns(2)
 
-st.title("📈 NSE Scanner")
+    with col1:
+        login_btn = st.button(
+            "🔐 Login",
+            use_container_width=True
+        )
+
+    with col2:
+        register_btn = st.button(
+            "📝 Create Account",
+            use_container_width=True
+        )
+
+    # -----------------------------
+    # Open Register Page
+    # -----------------------------
+    if register_btn:
+
+        st.session_state.show_register = True
+        st.rerun()
+
+    # -----------------------------
+    # Login
+    # -----------------------------
+    if login_btn:
+
+        if username.strip() == "" or password.strip() == "":
+
+            st.error("Please enter Username and Password.")
+            return
+
+        user = get_user(username)
+
+        if user is None:
+
+            st.error("Username not found.")
+            return
+
+        if not verify_password(password, user["password"]):
+
+            st.error("Incorrect Password.")
+            return
+
+        if not is_user_approved(user["status"]):
+
+            st.warning("Your account is waiting for Admin approval.")
+            return
+
+        if not is_subscription_valid(user["expiry_date"]):
+
+            st.error("Your subscription has expired.")
+            return
+
+        login_user(user)
+
+        st.success("Login Successful")
+
+        st.rerun()
+
+    st.markdown("---")
+
+    st.info(LOGIN_MESSAGE)
