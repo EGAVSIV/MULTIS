@@ -4,7 +4,48 @@
 # ==========================================
 
 import sqlite3
+from utils import hash_password
 from datetime import datetime, timedelta
+# Check if admin already exists
+cur.execute("SELECT * FROM users WHERE username=?", ("admin",))
+
+admin = cur.fetchone()
+
+if admin is None:
+
+    password = hash_password("admin123")
+
+    expiry = "2099-12-31"
+
+    cur.execute("""
+    INSERT INTO users
+    (
+        username,
+        password,
+        fullname,
+        mobile,
+        email,
+        role,
+        status,
+        expiry_date,
+        created_on
+    )
+    VALUES (?,?,?,?,?,?,?,?,?)
+    """,
+
+    (
+        "admin",
+        password,
+        "Administrator",
+        "",
+        "",
+        "Admin",
+        "Approved",
+        expiry,
+        datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    ))
+
+    conn.commit()
 
 from config import (
     DATABASE_PATH,
@@ -35,31 +76,44 @@ def create_database():
     conn = get_connection()
     cur = conn.cursor()
 
+    # Check if admin already exists
+cur.execute("SELECT * FROM users WHERE username=?", ("admin",))
+
+admin = cur.fetchone()
+
+if admin is None:
+
+    password = hash_password("admin123")
+
+    expiry = "2099-12-31"
+
     cur.execute("""
-    CREATE TABLE IF NOT EXISTS users(
-
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-
-        username TEXT UNIQUE,
-
-        password TEXT,
-
-        fullname TEXT,
-
-        mobile TEXT,
-
-        email TEXT,
-
-        role TEXT,
-
-        status TEXT,
-
-        expiry_date TEXT,
-
-        created_on TEXT
-
+    INSERT INTO users
+    (
+        username,
+        password,
+        fullname,
+        mobile,
+        email,
+        role,
+        status,
+        expiry_date,
+        created_on
     )
-    """)
+    VALUES (?,?,?,?,?,?,?,?,?)
+    """,
+
+    (
+        "admin",
+        password,
+        "Administrator",
+        "",
+        "",
+        "Admin",
+        "Approved",
+        expiry,
+        datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    ))
 
     conn.commit()
     conn.close()
