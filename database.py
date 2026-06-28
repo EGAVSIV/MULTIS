@@ -1,51 +1,9 @@
 # ==========================================
-# database.py
-# SQLite Database Functions
+# database.py (Part-1)
 # ==========================================
 
 import sqlite3
-from utils import hash_password
 from datetime import datetime, timedelta
-# Check if admin already exists
-cur.execute("SELECT * FROM users WHERE username=?", ("admin",))
-
-admin = cur.fetchone()
-
-if admin is None:
-
-    password = hash_password("admin123")
-
-    expiry = "2099-12-31"
-
-    cur.execute("""
-    INSERT INTO users
-    (
-        username,
-        password,
-        fullname,
-        mobile,
-        email,
-        role,
-        status,
-        expiry_date,
-        created_on
-    )
-    VALUES (?,?,?,?,?,?,?,?,?)
-    """,
-
-    (
-        "admin",
-        password,
-        "Administrator",
-        "",
-        "",
-        "Admin",
-        "Approved",
-        expiry,
-        datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    ))
-
-    conn.commit()
 
 from config import (
     DATABASE_PATH,
@@ -54,96 +12,88 @@ from config import (
     STATUS_PENDING,
     STATUS_APPROVED,
     STATUS_DISABLED,
-    DEFAULT_SUBSCRIPTION_DAYS,
+    DEFAULT_SUBSCRIPTION_DAYS
 )
 
+from utils import hash_password
+
+
 # ==========================================
-# CONNECT DATABASE
+# DATABASE CONNECTION
 # ==========================================
 
 def get_connection():
-    conn = sqlite3.connect(DATABASE_PATH, check_same_thread=False)
+
+    conn = sqlite3.connect(
+        DATABASE_PATH,
+        check_same_thread=False
+    )
+
     conn.row_factory = sqlite3.Row
+
     return conn
 
 
 # ==========================================
-# CREATE TABLE
+# CREATE DATABASE
 # ==========================================
 
 def create_database():
 
     conn = get_connection()
+
     cur = conn.cursor()
-
-    # Check if admin already exists
-cur.execute("SELECT * FROM users WHERE username=?", ("admin",))
-
-admin = cur.fetchone()
-
-if admin is None:
-
-    password = hash_password("admin123")
-
-    expiry = "2099-12-31"
 
     cur.execute("""
-    INSERT INTO users
-    (
-        username,
-        password,
-        fullname,
-        mobile,
-        email,
-        role,
-        status,
-        expiry_date,
-        created_on
+
+    CREATE TABLE IF NOT EXISTS users(
+
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+        username TEXT UNIQUE NOT NULL,
+
+        password TEXT NOT NULL,
+
+        fullname TEXT,
+
+        mobile TEXT,
+
+        email TEXT,
+
+        role TEXT,
+
+        status TEXT,
+
+        expiry_date TEXT,
+
+        created_on TEXT
+
     )
-    VALUES (?,?,?,?,?,?,?,?,?)
-    """,
 
-    (
-        "admin",
-        password,
-        "Administrator",
-        "",
-        "",
-        "Admin",
-        "Approved",
-        expiry,
-        datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    ))
+    """)
 
-    conn.commit()
-    conn.close()
-
-
-# ==========================================
-# CREATE DEFAULT ADMIN
-# Password should already be HASHED
-# ==========================================
-
-def create_admin(username, hashed_password):
-
-    conn = get_connection()
-    cur = conn.cursor()
+    # ---------------------------------
+    # Create Default Admin
+    # ---------------------------------
 
     cur.execute(
+
         "SELECT * FROM users WHERE username=?",
-        (username,)
+
+        ("admin",)
+
     )
 
-    if cur.fetchone() is None:
+    admin = cur.fetchone()
 
-        expiry = (
-            datetime.now() +
-            timedelta(days=3650)
-        ).strftime("%Y-%m-%d")
+    if admin is None:
+
+        password = hash_password("admin123")
 
         cur.execute("""
-        INSERT INTO users
-        (
+
+        INSERT INTO users(
+
             username,
             password,
             fullname,
@@ -153,24 +103,38 @@ def create_admin(username, hashed_password):
             status,
             expiry_date,
             created_on
+
         )
 
-        VALUES (?,?,?,?,?,?,?,?,?)
+        VALUES(?,?,?,?,?,?,?,?,?)
+
         """,
 
         (
-            username,
-            hashed_password,
+
+            "admin",
+
+            password,
+
             "Administrator",
+
             "",
+
             "",
+
             ADMIN_ROLE,
+
             STATUS_APPROVED,
-            expiry,
+
+            "2099-12-31",
+
             datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
         ))
 
-        conn.commit()
+        print("Admin Created")
+
+    conn.commit()
 
     conn.close()
 
@@ -180,19 +144,25 @@ def create_admin(username, hashed_password):
 # ==========================================
 
 def register_user(
-        username,
-        password,
-        fullname,
-        mobile,
-        email
+
+    username,
+    password,
+    fullname,
+    mobile,
+    email
+
 ):
 
     conn = get_connection()
+
     cur = conn.cursor()
 
     cur.execute(
+
         "SELECT * FROM users WHERE username=?",
+
         (username,)
+
     )
 
     if cur.fetchone():
@@ -202,52 +172,76 @@ def register_user(
         return False
 
     expiry = (
-        datetime.now() +
-        timedelta(days=DEFAULT_SUBSCRIPTION_DAYS)
+
+        datetime.now()
+
+        + timedelta(days=DEFAULT_SUBSCRIPTION_DAYS)
+
     ).strftime("%Y-%m-%d")
 
     cur.execute("""
 
     INSERT INTO users(
 
-    username,
-    password,
-    fullname,
-    mobile,
-    email,
-    role,
-    status,
-    expiry_date,
-    created_on
+        username,
+
+        password,
+
+        fullname,
+
+        mobile,
+
+        email,
+
+        role,
+
+        status,
+
+        expiry_date,
+
+        created_on
 
     )
 
-    VALUES(?,?,?,?,?,?,?,?,?)
+    VALUES(
+
+        ?,?,?,?,?,?,?,?,?
+
+    )
 
     """,
 
     (
 
         username,
+
         password,
+
         fullname,
+
         mobile,
+
         email,
+
         USER_ROLE,
+
         STATUS_PENDING,
+
         expiry,
+
         datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     ))
 
     conn.commit()
+
     conn.close()
 
     return True
 
 
 # ==========================================
-# LOGIN USER
+# GET USER
 # ==========================================
 
 def get_user(username):
@@ -257,8 +251,11 @@ def get_user(username):
     cur = conn.cursor()
 
     cur.execute(
+
         "SELECT * FROM users WHERE username=?",
+
         (username,)
+
     )
 
     row = cur.fetchone()
@@ -279,7 +276,9 @@ def get_all_users():
     cur = conn.cursor()
 
     cur.execute(
+
         "SELECT * FROM users ORDER BY id DESC"
+
     )
 
     rows = cur.fetchall()
@@ -290,7 +289,7 @@ def get_all_users():
 
 
 # ==========================================
-# PENDING USERS
+# GET PENDING USERS
 # ==========================================
 
 def get_pending_users():
@@ -300,8 +299,11 @@ def get_pending_users():
     cur = conn.cursor()
 
     cur.execute(
+
         "SELECT * FROM users WHERE status=?",
+
         (STATUS_PENDING,)
+
     )
 
     rows = cur.fetchall()
@@ -310,7 +312,6 @@ def get_pending_users():
 
     return rows
 
-
 # ==========================================
 # APPROVE USER
 # ==========================================
@@ -318,32 +319,21 @@ def get_pending_users():
 def approve_user(user_id):
 
     conn = get_connection()
-
     cur = conn.cursor()
 
     cur.execute(
-
         """
-
         UPDATE users
-
         SET status=?
-
         WHERE id=?
-
         """,
-
         (
-
             STATUS_APPROVED,
             user_id
-
         )
-
     )
 
     conn.commit()
-
     conn.close()
 
 
@@ -354,32 +344,21 @@ def approve_user(user_id):
 def disable_user(user_id):
 
     conn = get_connection()
-
     cur = conn.cursor()
 
     cur.execute(
-
         """
-
         UPDATE users
-
         SET status=?
-
         WHERE id=?
-
         """,
-
         (
-
             STATUS_DISABLED,
             user_id
-
         )
-
     )
 
     conn.commit()
-
     conn.close()
 
 
@@ -390,23 +369,39 @@ def disable_user(user_id):
 def delete_user(user_id):
 
     conn = get_connection()
-
     cur = conn.cursor()
 
     cur.execute(
-
         "DELETE FROM users WHERE id=?",
-
-        (
-
-            user_id,
-
-        )
-
+        (user_id,)
     )
 
     conn.commit()
+    conn.close()
 
+
+# ==========================================
+# UPDATE PASSWORD
+# ==========================================
+
+def update_password(username, hashed_password):
+
+    conn = get_connection()
+    cur = conn.cursor()
+
+    cur.execute(
+        """
+        UPDATE users
+        SET password=?
+        WHERE username=?
+        """,
+        (
+            hashed_password,
+            username
+        )
+    )
+
+    conn.commit()
     conn.close()
 
 
@@ -417,73 +412,211 @@ def delete_user(user_id):
 def extend_subscription(user_id, days):
 
     conn = get_connection()
-
     cur = conn.cursor()
 
-    expiry = (
-        datetime.now() +
-        timedelta(days=days)
-    ).strftime("%Y-%m-%d")
-
     cur.execute(
-
-        """
-
-        UPDATE users
-
-        SET expiry_date=?
-
-        WHERE id=?
-
-        """,
-
-        (
-
-            expiry,
-
-            user_id
-
-        )
-
+        "SELECT expiry_date FROM users WHERE id=?",
+        (user_id,)
     )
 
-    conn.commit()
+    row = cur.fetchone()
+
+    if row:
+
+        try:
+
+            current_expiry = datetime.strptime(
+                row["expiry_date"],
+                "%Y-%m-%d"
+            )
+
+            # If already expired, start from today
+            if current_expiry < datetime.now():
+
+                current_expiry = datetime.now()
+
+            new_expiry = current_expiry + timedelta(days=days)
+
+            cur.execute(
+                """
+                UPDATE users
+                SET expiry_date=?
+                WHERE id=?
+                """,
+                (
+                    new_expiry.strftime("%Y-%m-%d"),
+                    user_id
+                )
+            )
+
+            conn.commit()
+
+        except Exception as e:
+
+            print(e)
 
     conn.close()
 
 
 # ==========================================
-# CHANGE PASSWORD
+# GET USER BY ID
 # ==========================================
 
-def update_password(username, hashed_password):
+def get_user_by_id(user_id):
 
     conn = get_connection()
-
     cur = conn.cursor()
 
     cur.execute(
+        "SELECT * FROM users WHERE id=?",
+        (user_id,)
+    )
 
+    row = cur.fetchone()
+
+    conn.close()
+
+    return row
+
+
+# ==========================================
+# UPDATE PROFILE
+# ==========================================
+
+def update_profile(
+    user_id,
+    fullname,
+    mobile,
+    email
+):
+
+    conn = get_connection()
+    cur = conn.cursor()
+
+    cur.execute(
         """
-
         UPDATE users
 
-        SET password=?
+        SET
 
-        WHERE username=?
+        fullname=?,
+        mobile=?,
+        email=?
 
+        WHERE id=?
         """,
 
         (
-
-            hashed_password,
-
-            username
-
+            fullname,
+            mobile,
+            email,
+            user_id
         )
-
     )
 
     conn.commit()
+    conn.close()
+
+
+# ==========================================
+# USER EXISTS
+# ==========================================
+
+def user_exists(username):
+
+    conn = get_connection()
+    cur = conn.cursor()
+
+    cur.execute(
+        "SELECT id FROM users WHERE username=?",
+        (username,)
+    )
+
+    exists = cur.fetchone() is not None
 
     conn.close()
+
+    return exists
+
+
+# ==========================================
+# USER COUNT
+# ==========================================
+
+def get_user_count():
+
+    conn = get_connection()
+    cur = conn.cursor()
+
+    cur.execute(
+        "SELECT COUNT(*) FROM users"
+    )
+
+    count = cur.fetchone()[0]
+
+    conn.close()
+
+    return count
+
+
+# ==========================================
+# PENDING COUNT
+# ==========================================
+
+def get_pending_count():
+
+    conn = get_connection()
+    cur = conn.cursor()
+
+    cur.execute(
+        "SELECT COUNT(*) FROM users WHERE status=?",
+        (STATUS_PENDING,)
+    )
+
+    count = cur.fetchone()[0]
+
+    conn.close()
+
+    return count
+
+
+# ==========================================
+# APPROVED COUNT
+# ==========================================
+
+def get_approved_count():
+
+    conn = get_connection()
+    cur = conn.cursor()
+
+    cur.execute(
+        "SELECT COUNT(*) FROM users WHERE status=?",
+        (STATUS_APPROVED,)
+    )
+
+    count = cur.fetchone()[0]
+
+    conn.close()
+
+    return count
+
+
+# ==========================================
+# DISABLED COUNT
+# ==========================================
+
+def get_disabled_count():
+
+    conn = get_connection()
+    cur = conn.cursor()
+
+    cur.execute(
+        "SELECT COUNT(*) FROM users WHERE status=?",
+        (STATUS_DISABLED,)
+    )
+
+    count = cur.fetchone()[0]
+
+    conn.close()
+
+    return count
