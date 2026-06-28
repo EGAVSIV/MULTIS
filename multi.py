@@ -1,23 +1,29 @@
 import os
 import sys
 import base64
-import hashlib
 import numpy as np
 import pandas as pd
 import talib
 import plotly.express as px
 import streamlit as st
+from login import login_page
+from database import create_database
+from styles import load_css, show_footer
 from streamlit.runtime.caching import cache_data
-import hashlib
 
-def hash_pwd(password):
-    return hashlib.sha256(password.encode()).hexdigest()
+
 
 st.set_page_config(
     page_title="Gaurav_Singh_Yaadav",
     layout="wide",
     page_icon="🧮"
 )
+
+# Create database automatically
+create_database()
+
+# Load CSS
+load_css()
 
 BASE_PATH = os.path.dirname(__file__)
 
@@ -97,42 +103,16 @@ def set_bg_image(image_path: str):
     #return hashlib.sha256(pwd.encode()).hexdigest()
 
 
-
-
-# ==============================
-# AUTH
-# ==============================
-
-try:
-    USERS = st.secrets["users"]
-except Exception:
-    USERS = {}
+# ======================================
+# Authentication
+# ======================================
 
 if "authenticated" not in st.session_state:
     st.session_state.authenticated = False
 
 if not st.session_state.authenticated:
-    st.title("🔐 Login Required")
 
-    u = st.text_input("Username")
-    p = st.text_input("Password", type="password")
-
-    if st.button("Login"):
-        if u in USERS and hash_pwd(p) == USERS[u]:
-            st.session_state.authenticated = True
-            st.rerun()
-        else:
-            st.error("Invalid credentials")
-
-    st.info(
-        """
-        **Don't have a username or password?**
-
-        📞 Please contact **Gaurav Singh Yaadav**
-
-        **Mobile / WhatsApp:** +91 80039 94518
-        """
-    )
+    login_page()
 
     st.stop()
 
@@ -2350,3 +2330,4 @@ Energy | Commodity | Quant Intelligence 📶<br><br>
 📧 <a href="mailto:yadav.gauravsingh@gmail.com">yadav.gauravsingh@gmail.com</a> ™️
 </div>
 """, unsafe_allow_html=True)
+show_footer()
