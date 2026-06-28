@@ -2,6 +2,7 @@
 # admin.py
 # Admin Dashboard
 # ==========================================
+import streamlit as st
 st.title("👨‍💼 ADMIN PANEL")
 st.success("Admin Panel Loaded")
 import streamlit as st
