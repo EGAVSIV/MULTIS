@@ -3,6 +3,7 @@ import streamlit as st
 from login import login_page
 from admin import admin_panel
 from database import create_database
+from register import register_page
 
 # Create DB Automatically
 create_database()
