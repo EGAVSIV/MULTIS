@@ -124,6 +124,16 @@ if not st.session_state.authenticated:
         else:
             st.error("Invalid credentials")
 
+    st.info(
+        """
+        **Don't have a username or password?**
+
+        📞 Please contact **Gaurav Singh Yaadav**
+
+        **Mobile / WhatsApp:** +91 80039 94518
+        """
+    )
+
     st.stop()
 
 
