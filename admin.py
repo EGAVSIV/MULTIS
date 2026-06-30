@@ -6,6 +6,7 @@ import streamlit as st
 import pandas as pd
 from database import get_user, update_password
 from utils import hash_password, verify_password
+from database import create_user
 
 from database import (
     get_all_users,
