@@ -4,7 +4,7 @@
 
 import streamlit as st
 import pandas as pd
-from database import update_password
+from database import get_user, update_password
 from utils import hash_password, verify_password
 
 from database import (
@@ -424,11 +424,9 @@ def admin_panel():
 
     st.divider()
 
-    # =====================================================
-    # ADMIN SETTINGS
-    # =====================================================
 
- # =====================================================
+
+# =====================================================
 # ADMIN SETTINGS
 # =====================================================
 
