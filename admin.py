@@ -106,9 +106,42 @@ def admin_panel():
 
         if st.button("✅ Create User"):
 
-            if fullname == "" or username == "" or password == "":
+    # -------------------------
+    # Validation
+    # -------------------------
 
-                st.error("Please fill all mandatory fields.")
+            if fullname.strip() == "":
+                st.error("❌ Please enter Full Name.")
+
+            elif username.strip() == "":
+                st.error("❌ Please enter Username.")
+
+            elif len(username) < 4:
+                st.error("❌ Username must contain at least 4 characters.")
+
+            elif " " in username:
+                st.error("❌ Username cannot contain spaces.")
+
+            elif mobile.strip() == "":
+                st.error("❌ Please enter Mobile Number.")
+
+            elif not mobile.isdigit():
+                st.error("❌ Mobile Number must contain only digits.")
+
+            elif len(mobile) != 10:
+                st.error("❌ Mobile Number must be exactly 10 digits.")
+
+            elif email.strip() == "":
+                st.error("❌ Please enter Email Address.")
+
+            elif "@" not in email:
+                st.error("❌ Invalid Email Address.")
+
+            elif password.strip() == "":
+                st.error("❌ Please enter Password.")
+
+            elif len(password) < 8:
+                st.error("❌ Password must be at least 8 characters.")
 
             else:
 
@@ -122,15 +155,16 @@ def admin_panel():
                     email,
                     days
                 )
+
                 if success:
+
                     st.success(message)
+
                     st.rerun()
+
                 else:
+
                     st.error(message)
-
-                #st.success("User created successfully.")
-
-                st.rerun()
                 
     # =====================================================
     # Pending Users
