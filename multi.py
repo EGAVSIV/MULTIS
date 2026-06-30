@@ -9,7 +9,7 @@ import streamlit as st
 from login import login_page
 from database import create_database
 from styles import load_css, show_footer
-from utils import logout
+from utils import logout, greeting
 from streamlit.runtime.caching import cache_data
 from admin import admin_panel
 
@@ -130,18 +130,20 @@ if st.session_state.get("role") == "Admin":
 # ======================================
 # USER HEADER
 # ======================================
+# USER HEADER
+# ======================================
 
 col1, col2 = st.columns([6, 1])
 
 with col1:
 
     st.success(
-        f"👋 Welcome, {st.session_state.get('fullname', st.session_state.get('username', 'User'))}"
+        f"{greeting()}, {st.session_state.get('fullname', st.session_state.get('username', 'User'))}! 👋"
     )
 
     st.caption(
-        f"👤 Username : {st.session_state.get('username')} | "
-        f"💳 Role : {st.session_state.get('role')} | "
+        f"👤 Username : {st.session_state.get('username')}  |  "
+        f"💳 Role : {st.session_state.get('role')}  |  "
         f"📅 Expiry : {st.session_state.get('expiry_date')}"
     )
 
@@ -149,6 +151,7 @@ with col2:
 
     if st.button("🚪 Logout"):
         logout()
+
 
 
 
