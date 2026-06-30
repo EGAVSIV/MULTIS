@@ -653,47 +653,87 @@ def enable_user(user_id):
     conn.close()
 
 
-def create_user(
-    username,
-    password,
-    fullname,
-    mobile,
-    email,
-    days=30
-):
+
+
+    conn.commit()
+    conn.close()
+
+
+def create_user(username, password, fullname, mobile, email, days=30):
+
+    conn = get_connection()
+    cur = conn.cursor()
+
+    # Username already exists
+    cur.execute(
+        "SELECT 1 FROM users WHERE LOWER(username)=LOWER(?)",
+        (username,)
+    )
+
+    if cur.fetchone():
+        conn.close()
+        return False, "Username already taken."
+
+    # Email already exists
+    cur.execute(
+        "SELECT 1 FROM users WHERE LOWER(email)=LOWER(?)",
+        (email,)
+    )
+
+    if cur.fetchone():
+        conn.close()
+        return False, "Email is already registered."
+
+    # Mobile already exists
+    cur.execute(
+        "SELECT 1 FROM users WHERE mobile=?",
+        (mobile,)
+    )
+
+    if cur.fetchone():
+        conn.close()
+        return False, "Mobile number is already registered."
 
     expiry = (
         datetime.now() +
         timedelta(days=days)
     ).strftime("%Y-%m-%d")
 
-    conn = get_connection()
-    cur = conn.cursor()
+    try:
 
-    cur.execute("""
-        INSERT INTO users(
+        cur.execute("""
+            INSERT INTO users(
+                username,
+                password,
+                fullname,
+                mobile,
+                email,
+                role,
+                status,
+                expiry_date,
+                created_on
+            )
+            VALUES(?,?,?,?,?,?,?,?,?)
+        """,(
             username,
             password,
             fullname,
             mobile,
             email,
-            role,
-            status,
-            expiry_date,
-            created_on
-        )
-        VALUES(?,?,?,?,?,?,?,?,?)
-    """,(
-        username,
-        password,
-        fullname,
-        mobile,
-        email,
-        USER_ROLE,
-        STATUS_APPROVED,
-        expiry,
-        datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    ))
+            USER_ROLE,
+            STATUS_APPROVED,
+            expiry,
+            datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        ))
 
-    conn.commit()
-    conn.close()
+        conn.commit()
+
+        return True, "User created successfully."
+
+    except Exception as e:
+
+        return False, str(e)
+
+    finally:
+
+        conn.close()
