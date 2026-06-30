@@ -4,6 +4,8 @@
 
 import streamlit as st
 import pandas as pd
+from database import update_password
+from utils import hash_password, verify_password
 
 from database import (
     get_all_users,
@@ -426,27 +428,78 @@ def admin_panel():
     # ADMIN SETTINGS
     # =====================================================
 
-    st.subheader("⚙️ Admin Settings")
+ # =====================================================
+# ADMIN SETTINGS
+# =====================================================
 
-    col1, col2 = st.columns(2)
+st.subheader("⚙️ Admin Settings")
 
-    with col1:
+with st.expander("🔑 Change Admin Password", expanded=False):
 
-        if st.button("🔑 Change Admin Password"):
+    current_password = st.text_input(
+        "Current Password",
+        type="password",
+        key="admin_current_pwd"
+    )
 
-            st.info(
-                "Feature Coming Soon"
+    new_password = st.text_input(
+        "New Password",
+        type="password",
+        key="admin_new_pwd"
+    )
+
+    confirm_password = st.text_input(
+        "Confirm New Password",
+        type="password",
+        key="admin_confirm_pwd"
+    )
+
+    if st.button(
+        "✅ Update Password",
+        key="update_admin_password"
+    ):
+
+        admin = get_user(st.session_state.username)
+
+        if admin is None:
+
+            st.error("Admin user not found.")
+
+        elif not verify_password(
+            current_password,
+            admin["password"]
+        ):
+
+            st.error("❌ Current password is incorrect.")
+
+        elif new_password != confirm_password:
+
+            st.error("❌ New passwords do not match.")
+
+        elif len(new_password) < 8:
+
+            st.warning(
+                "Password must be at least 8 characters."
             )
 
-    with col2:
+        else:
 
-        if st.button("📧 Email Configuration"):
+            hashed_password = hash_password(new_password)
 
-            st.info(
-                "Feature Coming Soon"
+            update_password(
+                st.session_state.username,
+                hashed_password
             )
 
-    st.divider()
+            st.success(
+                "✅ Password updated successfully."
+            )
+
+            st.info(
+                "Please logout and login again using your new password."
+            )
+
+st.divider()
 
     # =====================================================
     # SYSTEM INFORMATION
