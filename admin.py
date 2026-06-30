@@ -426,78 +426,78 @@ def admin_panel():
 
 
 
-# =====================================================
-# ADMIN SETTINGS
-# =====================================================
+    # =====================================================
+    # ADMIN SETTINGS
+    # =====================================================
 
-st.subheader("⚙️ Admin Settings")
+    st.subheader("⚙️ Admin Settings")
 
-with st.expander("🔑 Change Admin Password", expanded=False):
+    with st.expander("🔑 Change Admin Password", expanded=False):
 
-    current_password = st.text_input(
-        "Current Password",
-        type="password",
-        key="admin_current_pwd"
-    )
+        current_password = st.text_input(
+            "Current Password",
+            type="password",
+            key="admin_current_pwd"
+        )
 
-    new_password = st.text_input(
-        "New Password",
-        type="password",
-        key="admin_new_pwd"
-    )
+        new_password = st.text_input(
+            "New Password",
+            type="password",
+            key="admin_new_pwd"
+        )
 
-    confirm_password = st.text_input(
-        "Confirm New Password",
-        type="password",
-        key="admin_confirm_pwd"
-    )
+        confirm_password = st.text_input(
+            "Confirm New Password",
+            type="password",
+            key="admin_confirm_pwd"
+        )
 
-    if st.button(
-        "✅ Update Password",
-        key="update_admin_password"
-    ):
-
-        admin = get_user(st.session_state.username)
-
-        if admin is None:
-
-            st.error("Admin user not found.")
-
-        elif not verify_password(
-            current_password,
-            admin["password"]
+        if st.button(
+            "✅ Update Password",
+            key="update_admin_password"
         ):
 
-            st.error("❌ Current password is incorrect.")
+            admin = get_user(st.session_state.username)
 
-        elif new_password != confirm_password:
+            if admin is None:
 
-            st.error("❌ New passwords do not match.")
+                st.error("Admin user not found.")
 
-        elif len(new_password) < 8:
+            elif not verify_password(
+                current_password,
+                admin["password"]
+            ):
 
-            st.warning(
-                "Password must be at least 8 characters."
-            )
+                st.error("❌ Current password is incorrect.")
 
-        else:
+            elif new_password != confirm_password:
 
-            hashed_password = hash_password(new_password)
+                st.error("❌ New passwords do not match.")
 
-            update_password(
-                st.session_state.username,
-                hashed_password
-            )
+            elif len(new_password) < 8:
 
-            st.success(
-                "✅ Password updated successfully."
-            )
+                st.warning(
+                    "Password must be at least 8 characters."
+                )
 
-            st.info(
-                "Please logout and login again using your new password."
-            )
+            else:
 
-st.divider()
+                hashed_password = hash_password(new_password)
+
+                update_password(
+                    st.session_state.username,
+                    hashed_password
+                )
+
+                st.success(
+                    "✅ Password updated successfully."
+                )
+
+                st.info(
+                    "Please logout and login again using your new password."
+                )
+
+    st.divider()
 
     # =====================================================
     # SYSTEM INFORMATION
