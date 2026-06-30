@@ -124,6 +124,20 @@ if st.session_state.get("role") == "Admin":
 
     st.stop()
 
+# ======================================
+# USER WELCOME
+# ======================================
+
+st.success(
+    f"👋 Welcome, {st.session_state.get('fullname', st.session_state.get('username', 'User'))}"
+)
+
+st.caption(
+    f"Logged in as: {st.session_state.get('username')} | "
+    f"Role: {st.session_state.get('role')} | "
+    f"Expiry: {st.session_state.get('expiry_date')}"
+)
+
 
 
 # ==============================
