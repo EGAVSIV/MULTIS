@@ -70,27 +70,66 @@ def admin_panel():
     # Tabs
     # ---------------------------
 
-    tab1, tab2, tab3, tab4 = st.tabs(
-
-        [
-
-            "🟡 Pending Users",
-
-            "🟢 Approved Users",
-
-            "🔴 Disabled Users",
-
-            "📊 Reports"
-
-        ]
-
-    )
+  tab1, tab2, tab3, tab4, tab5 = st.tabs(
+    [
+        "👤 Create User",
+        "🟡 Pending Users",
+        "🟢 Approved Users",
+        "🔴 Disabled Users",
+        "📊 Reports"
+    ]
+)
 
     # =====================================================
     # Pending Users
     # =====================================================
+    # =====================================================
+# CREATE USER
+# =====================================================
 
-    with tab1:
+with tab1:
+
+    st.subheader("👤 Create New User")
+
+    fullname = st.text_input("Full Name")
+
+    mobile = st.text_input("Mobile Number")
+
+    email = st.text_input("Email")
+
+    username = st.text_input("Username")
+
+    password = st.text_input("Password", type="password")
+
+    days = st.selectbox(
+        "Subscription",
+        [30, 90, 180, 365]
+    )
+
+    if st.button("✅ Create User"):
+
+        if fullname == "" or username == "" or password == "":
+
+            st.error("Please fill all mandatory fields.")
+
+        else:
+
+            hashed = hash_password(password)
+
+            create_user(
+                username,
+                hashed,
+                fullname,
+                mobile,
+                email,
+                days
+            )
+
+            st.success("User created successfully.")
+
+            st.rerun()
+            
+    with tab2:
 
         pending_users = [
 
@@ -160,7 +199,7 @@ def admin_panel():
     # Approved Users
     # =====================================================
 
-    with tab2:
+    with tab3:
 
         approved_users = [
 
@@ -267,7 +306,7 @@ def admin_panel():
     # Disabled Users
     # =====================================================
 
-    with tab3:
+    with tab4:
 
         disabled_users = [
 
@@ -353,7 +392,7 @@ def admin_panel():
     # REPORTS
     # =====================================================
 
-    with tab4:
+    with tab5:
 
         st.subheader("📊 User Report")
 
