@@ -15,7 +15,7 @@ from admin import admin_panel
 
 
 st.set_page_config(
-    page_title="Gaurav_Singh_Yaadav",
+    page_title="FNO_STOCK_SCAN",
     layout="wide",
     page_icon="🧮"
 )
