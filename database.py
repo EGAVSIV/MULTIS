@@ -650,3 +650,49 @@ def enable_user(user_id):
     conn.commit()
 
     conn.close()
+
+
+def create_user(
+    username,
+    password,
+    fullname,
+    mobile,
+    email,
+    days=30
+):
+
+    expiry = (
+        datetime.now() +
+        timedelta(days=days)
+    ).strftime("%Y-%m-%d")
+
+    conn = get_connection()
+    cur = conn.cursor()
+
+    cur.execute("""
+        INSERT INTO users(
+            username,
+            password,
+            fullname,
+            mobile,
+            email,
+            role,
+            status,
+            expiry_date,
+            created_on
+        )
+        VALUES(?,?,?,?,?,?,?,?,?)
+    """,(
+        username,
+        password,
+        fullname,
+        mobile,
+        email,
+        USER_ROLE,
+        STATUS_APPROVED,
+        expiry,
+        datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    ))
+
+    conn.commit()
+    conn.close()
