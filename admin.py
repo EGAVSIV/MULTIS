@@ -114,7 +114,7 @@ def admin_panel():
 
                 hashed = hash_password(password)
 
-                create_user(
+                success, message = create_user(
                     username,
                     hashed,
                     fullname,
@@ -122,8 +122,13 @@ def admin_panel():
                     email,
                     days
                 )
+                if success:
+                    st.success(message)
+                    st.rerun()
+                else:
+                    st.error(message)
 
-                st.success("User created successfully.")
+                #st.success("User created successfully.")
 
                 st.rerun()
                 
