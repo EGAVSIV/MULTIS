@@ -688,314 +688,314 @@ def macd_peak_bearish_divergence(df):
     return None
     
     
-    def macd_base_bullish_divergence(df):
-        if len(df) < 80:
-            return None
-    
-        macd, _, _ = talib.MACD(df["close"], 12, 26, 9)
-    
-        price_low1 = df["low"].iloc[-60:-30].min()
-        price_low2 = df["low"].iloc[-30:].min()
-    
-        macd_low1 = macd.iloc[-60:-30].min()
-        macd_low2 = macd.iloc[-30:].min()
-    
-        if price_low2 < price_low1 and macd_low2 > macd_low1:
-            return "Bullish MACD Base Divergence"
-    
+def macd_base_bullish_divergence(df):
+    if len(df) < 80:
         return None
     
+    macd, _, _ = talib.MACD(df["close"], 12, 26, 9)
     
-    def trend_alignment(df):
-        if len(df) < 100:
-            return None
+    price_low1 = df["low"].iloc[-60:-30].min()
+    price_low2 = df["low"].iloc[-30:].min()
     
-        ema20 = talib.EMA(df["close"], 20)
-        ema50 = talib.EMA(df["close"], 50)
-        ema100 = talib.EMA(df["close"], 100)
+    macd_low1 = macd.iloc[-60:-30].min()
+    macd_low2 = macd.iloc[-30:].min()
     
-        if ema20.iloc[-1] > ema50.iloc[-1] > ema100.iloc[-1]:
-            return "Strong Uptrend"
+    if price_low2 < price_low1 and macd_low2 > macd_low1:
+        return "Bullish MACD Base Divergence"
     
-        if ema20.iloc[-1] < ema50.iloc[-1] < ema100.iloc[-1]:
-            return "Strong Downtrend"
+    return None
     
+    
+def trend_alignment(df):
+    if len(df) < 100:
         return None
     
+    ema20 = talib.EMA(df["close"], 20)
+    ema50 = talib.EMA(df["close"], 50)
+    ema100 = talib.EMA(df["close"], 100)
     
-    def pullback_to_ema(df):
-        if len(df) < 60:
-            return None
+    if ema20.iloc[-1] > ema50.iloc[-1] > ema100.iloc[-1]:
+        return "Strong Uptrend"
     
-        ema20 = talib.EMA(df["close"], 20)
-        ema50 = talib.EMA(df["close"], 50)
+    if ema20.iloc[-1] < ema50.iloc[-1] < ema100.iloc[-1]:
+        return "Strong Downtrend"
     
-        last = df.iloc[-1]
+    return None
     
-        if ema20.iloc[-1] > ema50.iloc[-1]:
-            if last["low"] <= ema20.iloc[-1] and last["close"] > ema20.iloc[-1]:
-                return "Bullish EMA Pullback"
     
-        if ema20.iloc[-1] < ema50.iloc[-1]:
-            if last["high"] >= ema20.iloc[-1] and last["close"] < ema20.iloc[-1]:
-                return "Bearish EMA Pullback"
-    
+def pullback_to_ema(df):
+    if len(df) < 60:
         return None
     
+    ema20 = talib.EMA(df["close"], 20)
+    ema50 = talib.EMA(df["close"], 50)
     
-    def confluence_setup(df):
-        if len(df) < 60:
-            return None
+    last = df.iloc[-1]
     
-        rsi = talib.RSI(df["close"], 14).iloc[-1]
-        macd, sig, _ = talib.MACD(df["close"], 12, 26, 9)
-        ema20 = talib.EMA(df["close"], 20)
-        ema50 = talib.EMA(df["close"], 50)
+    if ema20.iloc[-1] > ema50.iloc[-1]:
+        if last["low"] <= ema20.iloc[-1] and last["close"] > ema20.iloc[-1]:
+            return "Bullish EMA Pullback"
     
-        if rsi > 50 and macd.iloc[-1] > sig.iloc[-1] and ema20.iloc[-1] > ema50.iloc[-1]:
-            return "Bullish Confluence"
+    if ema20.iloc[-1] < ema50.iloc[-1]:
+        if last["high"] >= ema20.iloc[-1] and last["close"] < ema20.iloc[-1]:
+            return "Bearish EMA Pullback"
     
-        if rsi < 50 and macd.iloc[-1] < sig.iloc[-1] and ema20.iloc[-1] < ema50.iloc[-1]:
-            return "Bearish Confluence"
+    return None
     
+    
+def confluence_setup(df):
+    if len(df) < 60:
         return None
     
+    rsi = talib.RSI(df["close"], 14).iloc[-1]
+    macd, sig, _ = talib.MACD(df["close"], 12, 26, 9)
+    ema20 = talib.EMA(df["close"], 20)
+    ema50 = talib.EMA(df["close"], 50)
     
-    def macd_hook_up(df):
-        if len(df) < 35:
-            return None
+    if rsi > 50 and macd.iloc[-1] > sig.iloc[-1] and ema20.iloc[-1] > ema50.iloc[-1]:
+        return "Bullish Confluence"
     
-        macd, signal, hist = talib.MACD(df["close"], 12, 26, 9)
+    if rsi < 50 and macd.iloc[-1] < sig.iloc[-1] and ema20.iloc[-1] < ema50.iloc[-1]:
+        return "Bearish Confluence"
     
-        if (
-            macd.iloc[-1] > 0
-            and macd.iloc[-1] > signal.iloc[-1]
-            and macd.iloc[-2] > signal.iloc[-2]      # Added
-            and macd.iloc[-2] < macd.iloc[-3]
-            and macd.iloc[-1] > macd.iloc[-2]
-            and hist.iloc[-1] > hist.iloc[-2]
-        ):
-            return "MACD Hook Up"
+    return None
     
+    
+def macd_hook_up(df):
+    if len(df) < 35:
         return None
     
+    macd, signal, hist = talib.MACD(df["close"], 12, 26, 9)
     
-    def macd_hook_down(df):
-        if len(df) < 35:
-            return None
+    if (
+        macd.iloc[-1] > 0
+        and macd.iloc[-1] > signal.iloc[-1]
+        and macd.iloc[-2] > signal.iloc[-2]      # Added
+        and macd.iloc[-2] < macd.iloc[-3]
+        and macd.iloc[-1] > macd.iloc[-2]
+        and hist.iloc[-1] > hist.iloc[-2]
+    ):
+        return "MACD Hook Up"
     
-        macd, signal, hist = talib.MACD(df["close"], 12, 26, 9)
+    return None
     
-        if (
-            macd.iloc[-1] < 0
-            and macd.iloc[-1] < signal.iloc[-1]
-            and macd.iloc[-2] < signal.iloc[-2]
-            and macd.iloc[-2] > macd.iloc[-3]
-            and macd.iloc[-1] < macd.iloc[-2]
-            and hist.iloc[-1] < hist.iloc[-2]
-        ):
-            return "MACD Hook Down"
     
+def macd_hook_down(df):
+    if len(df) < 35:
         return None
     
+    macd, signal, hist = talib.MACD(df["close"], 12, 26, 9)
     
-    def macd_histogram_divergence(df):
-        if len(df) < 50:
-            return None
+    if (
+        macd.iloc[-1] < 0
+        and macd.iloc[-1] < signal.iloc[-1]
+        and macd.iloc[-2] < signal.iloc[-2]
+        and macd.iloc[-2] > macd.iloc[-3]
+        and macd.iloc[-1] < macd.iloc[-2]
+        and hist.iloc[-1] < hist.iloc[-2]
+    ):
+        return "MACD Hook Down"
     
-        _, _, hist = talib.MACD(df["close"], 12, 26, 9)
+    return None
     
-        price_low1 = df["low"].iloc[-40:-20].min()
-        price_low2 = df["low"].iloc[-20:].min()
-        hist_low1 = hist.iloc[-40:-20].min()
-        hist_low2 = hist.iloc[-20:].min()
     
-        if price_low2 < price_low1 and hist_low2 > hist_low1:
-            return "Bullish Histogram Divergence"
-    
-        price_high1 = df["high"].iloc[-40:-20].max()
-        price_high2 = df["high"].iloc[-20:].max()
-        hist_high1 = hist.iloc[-40:-20].max()
-        hist_high2 = hist.iloc[-20:].max()
-    
-        if price_high2 > price_high1 and hist_high2 < hist_high1:
-            return "Bearish Histogram Divergence"
-    
+def macd_histogram_divergence(df):
+    if len(df) < 50:
         return None
     
+    _, _, hist = talib.MACD(df["close"], 12, 26, 9)
     
-    def ema50_stoch_oversold(df):
-        if len(df) < 50:
-            return None
+    price_low1 = df["low"].iloc[-40:-20].min()
+    price_low2 = df["low"].iloc[-20:].min()
+    hist_low1 = hist.iloc[-40:-20].min()
+    hist_low2 = hist.iloc[-20:].min()
     
-        ema50 = talib.EMA(df["close"], 50)
-        slowk, slowd = talib.STOCH(
-            df["high"], df["low"], df["close"], fastk_period=14, slowk_period=3, slowd_period=3
-        )
+    if price_low2 < price_low1 and hist_low2 > hist_low1:
+        return "Bullish Histogram Divergence"
     
-        price = df["close"].iloc[-1]
-        ema_val = ema50.iloc[-1]
+    price_high1 = df["high"].iloc[-40:-20].max()
+    price_high2 = df["high"].iloc[-20:].max()
+    hist_high1 = hist.iloc[-40:-20].max()
+    hist_high2 = hist.iloc[-20:].max()
     
-        near_ema = abs(price - ema_val) / ema_val <= 0.005
+    if price_high2 > price_high1 and hist_high2 < hist_high1:
+        return "Bearish Histogram Divergence"
     
-        stoch_cross = (
-            slowk.iloc[-2] < slowd.iloc[-2]
-            and slowk.iloc[-1] > slowd.iloc[-1]
-            and slowk.iloc[-1] < 20
-        )
+    return None
     
-        if near_ema and stoch_cross:
-            return "EMA50 + Stoch Oversold Buy"
     
+def ema50_stoch_oversold(df):
+    if len(df) < 50:
         return None
     
+    ema50 = talib.EMA(df["close"], 50)
+    slowk, slowd = talib.STOCH(
+        df["high"], df["low"], df["close"], fastk_period=14, slowk_period=3, slowd_period=3
+    )
     
-    def dark_cloud_cover(df):
-        if len(df) < 15:
-            return None
+    price = df["close"].iloc[-1]
+    ema_val = ema50.iloc[-1]
     
-        prev = df.iloc[-2]
-        curr = df.iloc[-1]
+    near_ema = abs(price - ema_val) / ema_val <= 0.005
     
-        if prev["close"] <= prev["open"]:
-            return None
+    stoch_cross = (
+        slowk.iloc[-2] < slowd.iloc[-2]
+        and slowk.iloc[-1] > slowd.iloc[-1]
+        and slowk.iloc[-1] < 20
+    )
     
-        rsi = talib.RSI(df["close"], 14)
-        if rsi.iloc[-2] <= 60:
-            return None
+    if near_ema and stoch_cross:
+        return "EMA50 + Stoch Oversold Buy"
     
-        if curr["close"] >= curr["open"]:
-            return None
-    
-        if curr["open"] <= prev["close"]:
-            return None
-    
-        mid = (prev["open"] + prev["close"]) / 2
-        if curr["close"] >= mid:
-            return None
-    
-        return "Dark Cloud Cover (Bearish | RSI>60)"
+    return None
     
     
-    def morning_star_bottom(df):
-        if len(df) < 60:
-            return None
-    
-        ema50 = talib.EMA(df["close"], 50)
-    
-        if df["close"].iloc[-1] > ema50.iloc[-1]:
-            return None
-    
-        pattern = talib.CDLMORNINGSTAR(
-            df["open"], df["high"], df["low"], df["close"]
-        ).iloc[-1]
-    
-        if pattern > 0:
-            return "Morning Star (Bottom)"
-    
+def dark_cloud_cover(df):
+    if len(df) < 15:
         return None
     
+    prev = df.iloc[-2]
+    curr = df.iloc[-1]
     
-    def evening_star_top(df):
-        if len(df) < 60:
-            return None
-    
-        ema50 = talib.EMA(df["close"], 50)
-    
-        if df["close"].iloc[-1] < ema50.iloc[-1]:
-            return None
-    
-        pattern = talib.CDLEVENINGSTAR(
-            df["open"], df["high"], df["low"], df["close"]
-        ).iloc[-1]
-    
-        if pattern < 0:
-            return "Evening Star (Top)"
-    
+    if prev["close"] <= prev["open"]:
         return None
     
-    
-    def bullish_gsas(df_tf, df_htf):
-        rsi = talib.RSI(df_tf["close"], 14)
-        adx = talib.ADX(df_tf["high"], df_tf["low"], df_tf["close"], 14)
-        ubb, _, _ = talib.BBANDS(df_tf["close"], 20)
-    
-        macd_htf, sig_htf, _ = talib.MACD(df_htf["close"], 12, 26, 9)
-        ema20_htf = talib.EMA(df_htf["close"], 20)
-    
-        if (
-            rsi.iloc[-1] > 60
-            and ubb.iloc[-1] > ubb.iloc[-2]
-            and adx.iloc[-1] > adx.iloc[-2]
-            and adx.iloc[-2] < adx.iloc[-3]
-            and macd_htf.iloc[-1] > sig_htf.iloc[-1]
-            and df_htf["close"].iloc[-1] > ema20_htf.iloc[-1]
-        ):
-            return "Bullish GSAS"
-    
+    rsi = talib.RSI(df["close"], 14)
+    if rsi.iloc[-2] <= 60:
         return None
     
-    
-    def bearish_gsas(df_tf, df_htf):
-        rsi = talib.RSI(df_tf["close"], 14)
-        adx = talib.ADX(df_tf["high"], df_tf["low"], df_tf["close"], 14)
-        _, _, lbb = talib.BBANDS(df_tf["close"], 20)
-    
-        macd_htf, sig_htf, _ = talib.MACD(df_htf["close"], 12, 26, 9)
-        ema20_htf = talib.EMA(df_htf["close"], 20)
-    
-        if (
-            rsi.iloc[-1] < 60
-            and lbb.iloc[-1] < lbb.iloc[-2]
-            and adx.iloc[-1] > adx.iloc[-2]
-            and adx.iloc[-2] < adx.iloc[-3]
-            and macd_htf.iloc[-1] < sig_htf.iloc[-1]
-            and df_htf["close"].iloc[-1] < ema20_htf.iloc[-1]
-        ):
-            return "Bearish GSAS"
-    
+    if curr["close"] >= curr["open"]:
         return None
     
-    
-    def rsi_swing(df):
-        if len(df) < 20:
-            return None
-    
-        rsi = talib.RSI(df["close"], 14)
-    
-        rsi_prev = rsi.iloc[-2]
-        rsi_curr = rsi.iloc[-1]
-    
-        # Bullish Swing
-        if rsi_prev < 40 and rsi_curr > 40:
-            return "RSI Bullish Swing"
-    
-        # Bearish Swing
-        if rsi_prev > 60 and rsi_curr < 60:
-            return "RSI Bearish Swing"
-    
+    if curr["open"] <= prev["close"]:
         return None
     
-    
-    def ema50_fake_breakdown(df):
-        if len(df) < 55:
-            return None
-    
-        df = df.copy()
-        df["EMA20"] = talib.EMA(df["close"], 20)
-        df["EMA50"] = talib.EMA(df["close"], 50)
-    
-        prev = df.iloc[-2]
-        curr = df.iloc[-1]
-    
-        if (
-            curr["close"] > curr["EMA50"]
-            and prev["close"] < prev["EMA50"]
-            and curr["EMA20"] > curr["EMA50"]
-        ):
-            return "50 EMA Fake Breakdown"
-    
+    mid = (prev["open"] + prev["close"]) / 2
+    if curr["close"] >= mid:
         return None
+    
+    return "Dark Cloud Cover (Bearish | RSI>60)"
+    
+    
+def morning_star_bottom(df):
+    if len(df) < 60:
+        return None
+    
+    ema50 = talib.EMA(df["close"], 50)
+    
+    if df["close"].iloc[-1] > ema50.iloc[-1]:
+        return None
+    
+    pattern = talib.CDLMORNINGSTAR(
+        df["open"], df["high"], df["low"], df["close"]
+    ).iloc[-1]
+    
+    if pattern > 0:
+        return "Morning Star (Bottom)"
+    
+    return None
+    
+    
+def evening_star_top(df):
+    if len(df) < 60:
+        return None
+    
+    ema50 = talib.EMA(df["close"], 50)
+    
+    if df["close"].iloc[-1] < ema50.iloc[-1]:
+        return None
+    
+    pattern = talib.CDLEVENINGSTAR(
+        df["open"], df["high"], df["low"], df["close"]
+    ).iloc[-1]
+    
+    if pattern < 0:
+        return "Evening Star (Top)"
+    
+    return None
+    
+    
+def bullish_gsas(df_tf, df_htf):
+    rsi = talib.RSI(df_tf["close"], 14)
+    adx = talib.ADX(df_tf["high"], df_tf["low"], df_tf["close"], 14)
+    ubb, _, _ = talib.BBANDS(df_tf["close"], 20)
+    
+    macd_htf, sig_htf, _ = talib.MACD(df_htf["close"], 12, 26, 9)
+    ema20_htf = talib.EMA(df_htf["close"], 20)
+    
+    if (
+        rsi.iloc[-1] > 60
+        and ubb.iloc[-1] > ubb.iloc[-2]
+        and adx.iloc[-1] > adx.iloc[-2]
+        and adx.iloc[-2] < adx.iloc[-3]
+        and macd_htf.iloc[-1] > sig_htf.iloc[-1]
+        and df_htf["close"].iloc[-1] > ema20_htf.iloc[-1]
+    ):
+        return "Bullish GSAS"
+    
+    return None
+    
+    
+def bearish_gsas(df_tf, df_htf):
+    rsi = talib.RSI(df_tf["close"], 14)
+    adx = talib.ADX(df_tf["high"], df_tf["low"], df_tf["close"], 14)
+    _, _, lbb = talib.BBANDS(df_tf["close"], 20)
+    
+    macd_htf, sig_htf, _ = talib.MACD(df_htf["close"], 12, 26, 9)
+    ema20_htf = talib.EMA(df_htf["close"], 20)
+    
+    if (
+        rsi.iloc[-1] < 60
+        and lbb.iloc[-1] < lbb.iloc[-2]
+        and adx.iloc[-1] > adx.iloc[-2]
+        and adx.iloc[-2] < adx.iloc[-3]
+        and macd_htf.iloc[-1] < sig_htf.iloc[-1]
+        and df_htf["close"].iloc[-1] < ema20_htf.iloc[-1]
+    ):
+        return "Bearish GSAS"
+    
+    return None
+    
+    
+def rsi_swing(df):
+    if len(df) < 20:
+        return None
+    
+    rsi = talib.RSI(df["close"], 14)
+    
+    rsi_prev = rsi.iloc[-2]
+    rsi_curr = rsi.iloc[-1]
+    
+    # Bullish Swing
+    if rsi_prev < 40 and rsi_curr > 40:
+        return "RSI Bullish Swing"
+    
+    # Bearish Swing
+    if rsi_prev > 60 and rsi_curr < 60:
+        return "RSI Bearish Swing"
+    
+    return None
+    
+    
+def ema50_fake_breakdown(df):
+    if len(df) < 55:
+        return None
+    
+    df = df.copy()
+    df["EMA20"] = talib.EMA(df["close"], 20)
+    df["EMA50"] = talib.EMA(df["close"], 50)
+    
+    prev = df.iloc[-2]
+    curr = df.iloc[-1]
+    
+    if (
+        curr["close"] > curr["EMA50"]
+        and prev["close"] < prev["EMA50"]
+        and curr["EMA20"] > curr["EMA50"]
+    ):
+        return "50 EMA Fake Breakdown"
+    
+    return None
     
     
     def ema50_fake_breakout(df):
