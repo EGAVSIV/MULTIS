@@ -1105,7 +1105,7 @@ def consecutive_close_momentum(df, min_count=3):
     
     count = 1
     
-        for i in range(len(closes) - 2, 0, -1):
+    for i in range(len(closes) - 2, 0, -1):
         if direction == "Bull":
             if closes[i] > closes[i - 1]:
                 count += 1
