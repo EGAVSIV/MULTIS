@@ -421,271 +421,271 @@ def nrb_7(df):
     return None
     
     
-    def counter_attack(df):
-        if len(df) < 2:
-            return None
-        prev, curr = df.iloc[-2], df.iloc[-1]
-        mid = (prev["open"] + prev["close"]) / 2
+def counter_attack(df):
+    if len(df) < 2:
+        return None
+    prev, curr = df.iloc[-2], df.iloc[-1]
+    mid = (prev["open"] + prev["close"]) / 2
     
-        if prev["close"] < prev["open"] and curr["close"] > curr["open"]:
-            if curr["open"] < prev["close"] and curr["close"] >= mid:
-                return "Bullish"
-        if prev["close"] > prev["open"] and curr["close"] < curr["open"]:
-            if curr["open"] > prev["close"] and curr["close"] <= mid:
-                return "Bearish"
+    if prev["close"] < prev["open"] and curr["close"] > curr["open"]:
+        if curr["open"] < prev["close"] and curr["close"] >= mid:
+            return "Bullish"
+    if prev["close"] > prev["open"] and curr["close"] < curr["open"]:
+        if curr["open"] > prev["close"] and curr["close"] <= mid:
+            return "Bearish"
+    return None
+    
+    
+def breakaway_gap(df):
+    if len(df) < 50:
+        return None
+    df = df.copy()
+    df["EMA20"] = talib.EMA(df["close"], 20)
+    df["EMA50"] = talib.EMA(df["close"], 50)
+    
+    prev, curr = df.iloc[-2], df.iloc[-1]
+    
+    if curr["open"] > prev["high"] * 1.005 and curr["low"] > prev["high"]:
+        if curr["EMA20"] < curr["EMA50"]:
+            return "Bullish Breakaway Gap"
+    
+    if curr["open"] < prev["low"] * 0.995 and curr["high"] < prev["low"]:
+        if curr["EMA20"] > curr["EMA50"]:
+            return "Bearish Breakaway Gap"
+    
+    return None
+    
+    
+def rsi_adx(df):
+    if len(df) < 20:
+        return None
+    rsi = talib.RSI(df["close"], 14).iloc[-1]
+    adx = talib.ADX(df["high"], df["low"], df["close"], 14).iloc[-1]
+    
+    if adx > 50 and rsi < 20:
+        return "Bullish Reversal"
+    if adx > 50 and rsi > 80:
+        return "Probabale Bearish Reversal"
+    return None
+    
+    
+def rsi_wm(df_tf, df_w, df_m):
+    r_tf = talib.RSI(df_tf["close"], 14).iloc[-1]
+    r_w = talib.RSI(df_w["close"], 14).iloc[-1]
+    r_m = talib.RSI(df_m["close"], 14).iloc[-1]
+    
+    if r_w > 60 and r_m > 60 and r_tf < 40:
+        return "Bullish WM Reversal"
+    if r_w < 40 and r_m < 40 and r_tf > 60:
+        return "Bearish WM Reversal"
+    return None
+    
+    
+def macd_market_pulse(df):
+    if len(df) < 30:
         return None
     
+    macd, signal, _ = talib.MACD(df["close"], 12, 26, 9)
     
-    def breakaway_gap(df):
-        if len(df) < 50:
-            return None
-        df = df.copy()
-        df["EMA20"] = talib.EMA(df["close"], 20)
-        df["EMA50"] = talib.EMA(df["close"], 50)
+    m, s = macd.iloc[-1], signal.iloc[-1]
+    pm = macd.iloc[-2]
     
-        prev, curr = df.iloc[-2], df.iloc[-1]
+    if m > 0 and m > s and m > pm:
+        return "Strong Bullish"
+    if m > 0 and m > s and m < pm:
+        return "Bullish Cooling"
+    if m > 0 and m < s and m > pm:
+        return "Bullish Reversal Watch"
+    if m > 0 and m < s and m < pm:
+        return "Weak Bullish"
     
-        if curr["open"] > prev["high"] * 1.005 and curr["low"] > prev["high"]:
-            if curr["EMA20"] < curr["EMA50"]:
-                return "Bullish Breakaway Gap"
+    if m < 0 and m > s and m > pm:
+        return "Bearish Reversal Watch"
+    if m < 0 and m > s and m < pm:
+        return "Weak Bearish"
+    if m < 0 and m < s and m > pm:
+        return "Bearish Recovery Attempt"
+    if m < 0 and m < s and m < pm:
+        return "Strong Bearish"
     
-        if curr["open"] < prev["low"] * 0.995 and curr["high"] < prev["low"]:
-            if curr["EMA20"] > curr["EMA50"]:
-                return "Bearish Breakaway Gap"
+    return None
     
+    
+def macd_normal_divergence(df, lookback=30):
+    if len(df) < lookback:
         return None
     
+    macd, _, _ = talib.MACD(df["close"], 12, 26, 9)
     
-    def rsi_adx(df):
-        if len(df) < 20:
-            return None
-        rsi = talib.RSI(df["close"], 14).iloc[-1]
-        adx = talib.ADX(df["high"], df["low"], df["close"], 14).iloc[-1]
+    price_low1 = df["low"].iloc[-lookback:-15].min()
+    price_low2 = df["low"].iloc[-15:].min()
+    macd_low1 = macd.iloc[-lookback:-15].min()
+    macd_low2 = macd.iloc[-15:].min()
     
-        if adx > 50 and rsi < 20:
-            return "Bullish Reversal"
-        if adx > 50 and rsi > 80:
-            return "Probabale Bearish Reversal"
+    if price_low2 < price_low1 and macd_low2 > macd_low1:
+        return "Bullish ND"
+    
+    price_high1 = df["high"].iloc[-lookback:-15].max()
+    price_high2 = df["high"].iloc[-15:].max()
+    macd_high1 = macd.iloc[-lookback:-15].max()
+    macd_high2 = macd.iloc[-15:].max()
+    
+    if price_high2 > price_high1 and macd_high2 < macd_high1:
+        return "Bearish ND"
+    
+    return None
+    
+    
+def macd_rd(df, df_htf):
+    if len(df) < 60 or len(df_htf) < 30:
         return None
     
+    macd, signal, _ = talib.MACD(df["close"], 12, 26, 9)
+    latest = macd.iloc[-1]
+    prev = macd.iloc[-2]
+    sig = signal.iloc[-1]
     
-    def rsi_wm(df_tf, df_w, df_m):
-        r_tf = talib.RSI(df_tf["close"], 14).iloc[-1]
-        r_w = talib.RSI(df_w["close"], 14).iloc[-1]
-        r_m = talib.RSI(df_m["close"], 14).iloc[-1]
+    max60 = macd.rolling(60).max().iloc[-1]
     
-        if r_w > 60 and r_m > 60 and r_tf < 40:
-            return "Bullish WM Reversal"
-        if r_w < 40 and r_m < 40 and r_tf > 60:
-            return "Bearish WM Reversal"
+    macd_htf, _, _ = talib.MACD(df_htf["close"], 12, 26, 9)
+    macd_htf_val = macd_htf.iloc[-1]
+    macd_htf_now = macd_htf.iloc[-1]
+    macd_htf_prev = macd_htf.iloc[-2]
+    macd_htf_uptick = macd_htf_now > macd_htf_prev
+    
+    ema50_ltf = talib.EMA(df["close"], 50).iloc[-1]
+    ema50_htf = talib.EMA(df_htf["close"], 50).iloc[-1]
+    
+    close_ltf = df["close"].iloc[-1]
+    close_htf = df_htf["close"].iloc[-1]
+    
+    ema_condition = close_ltf > ema50_ltf and close_htf > ema50_htf
+    
+    if (
+        latest > prev
+        and latest > 0
+        and sig < latest
+        and macd_htf_val > 0
+        and max60 > 0
+        and (latest / max60) < 0.25
+        and ema_condition
+        and macd_htf_uptick
+    ):
+        return "MACD RD (Compression + Trend Aligned)"
+    
+    return None
+    
+    
+def third_wave_finder(df, lookback_cross=50, tolerance=0.02):
+    if len(df) < lookback_cross + 5:
+        return False
+    
+    close = df["close"]
+    ema20 = talib.EMA(close, 20)
+    ema50 = talib.EMA(close, 50)
+    
+    cross_idx = None
+    for i in range(len(close) - 1, 0, -1):
+        if ema20.iloc[i] > ema50.iloc[i] and ema20.iloc[i - 1] <= ema50.iloc[i - 1]:
+            cross_idx = i
+            break
+    
+    if cross_idx is None:
+        return False
+    
+    start_idx = max(0, cross_idx - lookback_cross)
+    pre_ema20 = ema20.iloc[start_idx:cross_idx]
+    pre_ema50 = ema50.iloc[start_idx:cross_idx]
+    
+    if pre_ema20.empty:
+        return False
+    
+    bearish_ratio = (pre_ema20 < pre_ema50).mean()
+    if bearish_ratio < 0.7:
+        return False
+    
+    ema50_now = ema50.iloc[-1]
+    price_now = close.iloc[-1]
+    
+    if ema50_now == 0 or np.isnan(ema50_now):
+        return False
+    
+    dist = abs(price_now - ema50_now) / ema50_now
+    if dist > tolerance:
+        return False
+    
+    if ema20.iloc[-1] <= ema50.iloc[-1]:
+        return False
+    
+    return True
+    
+    
+def c_wave_finder(df, lookback_cross=50, tolerance=0.02):
+    if len(df) < lookback_cross + 5:
+        return False
+    
+    close = df["close"]
+    ema20 = talib.EMA(close, 20)
+    ema50 = talib.EMA(close, 50)
+    
+    cross_idx = None
+    for i in range(len(close) - 1, 0, -1):
+        if ema20.iloc[i] < ema50.iloc[i] and ema20.iloc[i - 1] >= ema50.iloc[i - 1]:
+            cross_idx = i
+            break
+    
+    if cross_idx is None:
+        return False
+    
+    start_idx = max(0, cross_idx - lookback_cross)
+    pre_ema20 = ema20.iloc[start_idx:cross_idx]
+    pre_ema50 = ema50.iloc[start_idx:cross_idx]
+    
+    if pre_ema20.empty:
+        return False
+    
+    bullish_ratio = (pre_ema20 > pre_ema50).mean()
+    if bullish_ratio < 0.7:
+        return False
+    
+    ema50_now = ema50.iloc[-1]
+    price_now = close.iloc[-1]
+    
+    if ema50_now == 0 or np.isnan(ema50_now):
+        return False
+    
+    dist = abs(price_now - ema50_now) / ema50_now
+    if dist > tolerance:
+        return False
+    
+    if ema20.iloc[-1] >= ema50.iloc[-1]:
+        return False
+    
+    return True
+    
+    
+def macd_peak_bearish_divergence(df):
+    if len(df) < 80:
         return None
     
+    macd, _, _ = talib.MACD(df["close"], 12, 26, 9)
     
-    def macd_market_pulse(df):
-        if len(df) < 30:
-            return None
+    old_slice = slice(-60, -30)
+    new_slice = slice(-30, None)
     
-        macd, signal, _ = talib.MACD(df["close"], 12, 26, 9)
+    price_high1 = df["high"].iloc[old_slice].max()
+    price_high2 = df["high"].iloc[new_slice].max()
     
-        m, s = macd.iloc[-1], signal.iloc[-1]
-        pm = macd.iloc[-2]
+    idx1 = df["high"].iloc[old_slice].idxmax()
+    idx2 = df["high"].iloc[new_slice].idxmax()
     
-        if m > 0 and m > s and m > pm:
-            return "Strong Bullish"
-        if m > 0 and m > s and m < pm:
-            return "Bullish Cooling"
-        if m > 0 and m < s and m > pm:
-            return "Bullish Reversal Watch"
-        if m > 0 and m < s and m < pm:
-            return "Weak Bullish"
+    macd_high1 = macd.loc[idx1]
+    macd_high2 = macd.loc[idx2]
     
-        if m < 0 and m > s and m > pm:
-            return "Bearish Reversal Watch"
-        if m < 0 and m > s and m < pm:
-            return "Weak Bearish"
-        if m < 0 and m < s and m > pm:
-            return "Bearish Recovery Attempt"
-        if m < 0 and m < s and m < pm:
-            return "Strong Bearish"
+    if price_high2 > price_high1 and macd_high2 < macd_high1:
+        return "Bearish MACD Peak Divergence"
     
-        return None
-    
-    
-    def macd_normal_divergence(df, lookback=30):
-        if len(df) < lookback:
-            return None
-    
-        macd, _, _ = talib.MACD(df["close"], 12, 26, 9)
-    
-        price_low1 = df["low"].iloc[-lookback:-15].min()
-        price_low2 = df["low"].iloc[-15:].min()
-        macd_low1 = macd.iloc[-lookback:-15].min()
-        macd_low2 = macd.iloc[-15:].min()
-    
-        if price_low2 < price_low1 and macd_low2 > macd_low1:
-            return "Bullish ND"
-    
-        price_high1 = df["high"].iloc[-lookback:-15].max()
-        price_high2 = df["high"].iloc[-15:].max()
-        macd_high1 = macd.iloc[-lookback:-15].max()
-        macd_high2 = macd.iloc[-15:].max()
-    
-        if price_high2 > price_high1 and macd_high2 < macd_high1:
-            return "Bearish ND"
-    
-        return None
-    
-    
-    def macd_rd(df, df_htf):
-        if len(df) < 60 or len(df_htf) < 30:
-            return None
-    
-        macd, signal, _ = talib.MACD(df["close"], 12, 26, 9)
-        latest = macd.iloc[-1]
-        prev = macd.iloc[-2]
-        sig = signal.iloc[-1]
-    
-        max60 = macd.rolling(60).max().iloc[-1]
-    
-        macd_htf, _, _ = talib.MACD(df_htf["close"], 12, 26, 9)
-        macd_htf_val = macd_htf.iloc[-1]
-        macd_htf_now = macd_htf.iloc[-1]
-        macd_htf_prev = macd_htf.iloc[-2]
-        macd_htf_uptick = macd_htf_now > macd_htf_prev
-    
-        ema50_ltf = talib.EMA(df["close"], 50).iloc[-1]
-        ema50_htf = talib.EMA(df_htf["close"], 50).iloc[-1]
-    
-        close_ltf = df["close"].iloc[-1]
-        close_htf = df_htf["close"].iloc[-1]
-    
-        ema_condition = close_ltf > ema50_ltf and close_htf > ema50_htf
-    
-        if (
-            latest > prev
-            and latest > 0
-            and sig < latest
-            and macd_htf_val > 0
-            and max60 > 0
-            and (latest / max60) < 0.25
-            and ema_condition
-            and macd_htf_uptick
-        ):
-            return "MACD RD (Compression + Trend Aligned)"
-    
-        return None
-    
-    
-    def third_wave_finder(df, lookback_cross=50, tolerance=0.02):
-        if len(df) < lookback_cross + 5:
-            return False
-    
-        close = df["close"]
-        ema20 = talib.EMA(close, 20)
-        ema50 = talib.EMA(close, 50)
-    
-        cross_idx = None
-        for i in range(len(close) - 1, 0, -1):
-            if ema20.iloc[i] > ema50.iloc[i] and ema20.iloc[i - 1] <= ema50.iloc[i - 1]:
-                cross_idx = i
-                break
-    
-        if cross_idx is None:
-            return False
-    
-        start_idx = max(0, cross_idx - lookback_cross)
-        pre_ema20 = ema20.iloc[start_idx:cross_idx]
-        pre_ema50 = ema50.iloc[start_idx:cross_idx]
-    
-        if pre_ema20.empty:
-            return False
-    
-        bearish_ratio = (pre_ema20 < pre_ema50).mean()
-        if bearish_ratio < 0.7:
-            return False
-    
-        ema50_now = ema50.iloc[-1]
-        price_now = close.iloc[-1]
-    
-        if ema50_now == 0 or np.isnan(ema50_now):
-            return False
-    
-        dist = abs(price_now - ema50_now) / ema50_now
-        if dist > tolerance:
-            return False
-    
-        if ema20.iloc[-1] <= ema50.iloc[-1]:
-            return False
-    
-        return True
-    
-    
-    def c_wave_finder(df, lookback_cross=50, tolerance=0.02):
-        if len(df) < lookback_cross + 5:
-            return False
-    
-        close = df["close"]
-        ema20 = talib.EMA(close, 20)
-        ema50 = talib.EMA(close, 50)
-    
-        cross_idx = None
-        for i in range(len(close) - 1, 0, -1):
-            if ema20.iloc[i] < ema50.iloc[i] and ema20.iloc[i - 1] >= ema50.iloc[i - 1]:
-                cross_idx = i
-                break
-    
-        if cross_idx is None:
-            return False
-    
-        start_idx = max(0, cross_idx - lookback_cross)
-        pre_ema20 = ema20.iloc[start_idx:cross_idx]
-        pre_ema50 = ema50.iloc[start_idx:cross_idx]
-    
-        if pre_ema20.empty:
-            return False
-    
-        bullish_ratio = (pre_ema20 > pre_ema50).mean()
-        if bullish_ratio < 0.7:
-            return False
-    
-        ema50_now = ema50.iloc[-1]
-        price_now = close.iloc[-1]
-    
-        if ema50_now == 0 or np.isnan(ema50_now):
-            return False
-    
-        dist = abs(price_now - ema50_now) / ema50_now
-        if dist > tolerance:
-            return False
-    
-        if ema20.iloc[-1] >= ema50.iloc[-1]:
-            return False
-    
-        return True
-    
-    
-    def macd_peak_bearish_divergence(df):
-        if len(df) < 80:
-            return None
-    
-        macd, _, _ = talib.MACD(df["close"], 12, 26, 9)
-    
-        old_slice = slice(-60, -30)
-        new_slice = slice(-30, None)
-    
-        price_high1 = df["high"].iloc[old_slice].max()
-        price_high2 = df["high"].iloc[new_slice].max()
-    
-        idx1 = df["high"].iloc[old_slice].idxmax()
-        idx2 = df["high"].iloc[new_slice].idxmax()
-    
-        macd_high1 = macd.loc[idx1]
-        macd_high2 = macd.loc[idx2]
-    
-        if price_high2 > price_high1 and macd_high2 < macd_high1:
-            return "Bearish MACD Peak Divergence"
-    
-        return None
+    return None
     
     
     def macd_base_bullish_divergence(df):
