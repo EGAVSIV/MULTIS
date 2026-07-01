@@ -32,7 +32,7 @@ create_database()
 upgrade_database()
     
  # Load CSS
- load_css()
+load_css()
     
 BASE_PATH = os.path.dirname(__file__)
     
