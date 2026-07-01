@@ -161,22 +161,19 @@ def days_left(expiry_date):
 
 def greeting():
 
-    ist_time = datetime.now(
-        ZoneInfo("Asia/Kolkata")
-    )
+    ist_time = datetime.now(ZoneInfo("Asia/Kolkata"))
+
+    st.sidebar.write(f"🕒 IST Time: {ist_time.strftime('%d-%m-%Y %H:%M:%S')}")
 
     hour = ist_time.hour
 
     if hour < 12:
-
         return "🌅 Good Morning"
 
     elif hour < 17:
-
         return "☀️ Good Afternoon"
 
     else:
-
         return "🌙 Good Evening"
 
 # ==========================================
