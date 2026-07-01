@@ -1622,10 +1622,10 @@ def shakeout_trap(df, lookback=20):
     last = df.iloc[-1]
     
 if prev["low"] < low and last["close"] > low:
-        return "Bullish Shakeout"
+    return "Bullish Shakeout"
     
 if prev["high"] > high and last["close"] < high:
-        return "Bearish Shakeout"
+    return "Bearish Shakeout"
     
 return None
     
