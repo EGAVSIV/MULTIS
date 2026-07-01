@@ -22,32 +22,32 @@ st.set_page_config(
     page_icon="🧮"
 )
     
-    from config import EMAIL_ADDRESS, EMAIL_PASSWORD
+from config import EMAIL_ADDRESS, EMAIL_PASSWORD
     
-    st.write("Config Email:", repr(EMAIL_ADDRESS))
-    st.write("Config Password Length:", len(EMAIL_PASSWORD))
+st.write("Config Email:", repr(EMAIL_ADDRESS))
+st.write("Config Password Length:", len(EMAIL_PASSWORD))
     
-    # Create database automatically
-   create_database()
-   upgrade_database()
+# Create database automatically
+create_database()
+upgrade_database()
     
-    # Load CSS
-    load_css()
+ # Load CSS
+ load_css()
     
-    BASE_PATH = os.path.dirname(__file__)
-    
-    
+BASE_PATH = os.path.dirname(__file__)
     
     
-    # --- Python 3.13 image hack (as you had) ---
-    if sys.version_info >= (3, 13):
-        import types
-        imghdr = types.ModuleType("imghdr")
-        imghdr.what = lambda *args, **kwargs: None
-        sys.modules["imghdr"] = imghdr
     
-    import streamlit as st
-    from streamlit.runtime.caching import cache_data
+    
+# --- Python 3.13 image hack (as you had) ---
+if sys.version_info >= (3, 13):
+    import types
+    imghdr = types.ModuleType("imghdr")
+    imghdr.what = lambda *args, **kwargs: None
+    sys.modules["imghdr"] = imghdr
+    
+import streamlit as st
+from streamlit.runtime.caching import cache_data
     
     
     
@@ -58,23 +58,23 @@ st.set_page_config(
     # ==============================
     # GLOBAL CONFIG
     # ==============================
-    SAFE_COLS = [
-        "Symbol",
-        "Signal",
-        "Trend",
-        "State",
-        "Setup",
-        "Divergence",
-        "RSI",
-        "Zone",
-        "Confluence",
-        "Bias",
-        "Probability",
-        "TV_Link",
+SAFE_COLS = [
+    "Symbol",
+    "Signal",
+    "Trend",
+    "State",
+    "Setup",
+    "Divergence",
+    "RSI",
+    "Zone",
+    "Confluence",
+    "Bias",
+    "Probability",
+    "TV_Link",
     ]
     
-    BULL_KEYWORDS = ["Bullish", "BUY", "Breakout", "Uptrend", "Momentum"]
-    BEAR_KEYWORDS = ["Bearish", "SELL", "Breakdown", "Downtrend"]
+BULL_KEYWORDS = ["Bullish", "BUY", "Breakout", "Uptrend", "Momentum"]
+BEAR_KEYWORDS = ["Bearish", "SELL", "Breakdown", "Downtrend"]
     
     
     
@@ -83,54 +83,54 @@ st.set_page_config(
     
     
     
-    def empty_result_df():
-        return pd.DataFrame({c: [] for c in SAFE_COLS})
+def empty_result_df():
+    return pd.DataFrame({c: [] for c in SAFE_COLS})
     
     
     
-    def set_bg_image(image_path: str):
-        with open(image_path, "rb") as f:
-            encoded = base64.b64encode(f.read()).decode()
+def set_bg_image(image_path: str):
+    with open(image_path, "rb") as f:
+        encoded = base64.b64encode(f.read()).decode()
     
-        st.markdown(
-            f"""
-            <style>
-            .stApp {{
-                background-image: url("data:image/png;base64,{encoded}");
-                background-size: cover;
-                background-position: center;
-                background-repeat: no-repeat;
-                background-attachment: fixed;
-            }}
-            </style>
-            """,
-            unsafe_allow_html=True,
-        )
+    st.markdown(
+        f"""
+        <style>
+        .stApp {{
+            background-image: url("data:image/png;base64,{encoded}");
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+        }}
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
     
     
     #def hash_pwd(pwd: str) -> str:
         #return hashlib.sha256(pwd.encode()).hexdigest()
     
     
-    if "authenticated" not in st.session_state:
-        st.session_state.authenticated = False
+if "authenticated" not in st.session_state:
+    st.session_state.authenticated = False
     
-    if not st.session_state.authenticated:
+if not st.session_state.authenticated:
     
-        login_page()
+    login_page()
     
-        st.stop()
+    st.stop()
     
     
     # ======================================
     # ADMIN PANEL
     # ======================================
     
-    if st.session_state.get("role") == "Admin":
+if st.session_state.get("role") == "Admin":
     
-        admin_panel()
+    admin_panel()
     
-        st.stop()
+    st.stop()
     
     # ======================================
     # USER WELCOME
@@ -140,24 +140,24 @@ st.set_page_config(
     # USER HEADER
     # ======================================
     
-    col1, col2 = st.columns([6, 1])
+col1, col2 = st.columns([6, 1])
     
-    with col1:
+with col1:
     
-        st.success(
-            f"{greeting()}, {st.session_state.get('fullname', st.session_state.get('username', 'User'))}! 👋"
-        )
+    st.success(
+        f"{greeting()}, {st.session_state.get('fullname', st.session_state.get('username', 'User'))}! 👋"
+    )
     
-        st.caption(
-            f"👤 Username : {st.session_state.get('username')}  |  "
-            f"💳 Role : {st.session_state.get('role')}  |  "
-            f"📅 Expiry : {st.session_state.get('expiry_date')}"
-        )
+    st.caption(
+        f"👤 Username : {st.session_state.get('username')}  |  "
+        f"💳 Role : {st.session_state.get('role')}  |  "
+        f"📅 Expiry : {st.session_state.get('expiry_date')}"
+    )
     
-    with col2:
+with col2:
     
-        if st.button("🚪 Logout"):
-            logout()
+    if st.button("🚪 Logout"):
+        logout()
     
     
     
@@ -165,42 +165,42 @@ st.set_page_config(
     # ==============================
     # LAST CANDLE TIME HELPERS
     # ==============================
-    def get_last_candle_by_tf(folder_path: str):
-        last_dt = None
+def get_last_candle_by_tf(folder_path: str):
+    last_dt = None
     
-        if not os.path.isdir(folder_path):
-            return None
+    if not os.path.isdir(folder_path):
+        return None
     
-        for f in os.listdir(folder_path):
-            if not f.endswith(".parquet"):
+    for f in os.listdir(folder_path):
+        if not f.endswith(".parquet"):
                 continue
-            try:
-                df = pd.read_parquet(os.path.join(folder_path, f))
-                if df.empty:
-                    continue
+        try:
+            df = pd.read_parquet(os.path.join(folder_path, f))
+            if df.empty:
+                continue
     
-                if isinstance(df.index, pd.DatetimeIndex):
-                    dt = df.index[-1]
-                elif "datetime" in df.columns:
-                    dt = pd.to_datetime(df["datetime"]).iloc[-1]
-                else:
-                    continue
+            if isinstance(df.index, pd.DatetimeIndex):
+                dt = df.index[-1]
+            elif "datetime" in df.columns:
+                dt = pd.to_datetime(df["datetime"]).iloc[-1]
+            else:
+                continue
     
                 # Assume UTC → convert to IST
-                if dt.tzinfo is None:
-                    dt = dt.tz_localize("UTC")
-                else:
-                    dt = dt.tz_convert("UTC")
+            if dt.tzinfo is None:
+                dt = dt.tz_localize("UTC")
+            else:
+                dt = dt.tz_convert("UTC")
     
-                dt = dt.tz_convert("Asia/Kolkata")
+            dt = dt.tz_convert("Asia/Kolkata")
     
-                if last_dt is None or dt > last_dt:
-                    last_dt = dt
+            if last_dt is None or dt > last_dt:
+                last_dt = dt
     
-            except Exception:
-                continue
+        except Exception:
+            continue
     
-        return last_dt
+    return last_dt
     
     
     # ==============================
