@@ -18,7 +18,34 @@ from config import (
 
 from utils import hash_password
 
+# ==========================================
+# UPGRADE DATABASE
+# ==========================================
 
+def upgrade_database():
+
+    conn = get_connection()
+
+    cur = conn.cursor()
+
+    cur.execute("PRAGMA table_info(users)")
+
+    columns = [row["name"] for row in cur.fetchall()]
+
+    if "otp" not in columns:
+        cur.execute("ALTER TABLE users ADD COLUMN otp TEXT")
+
+    if "otp_expiry" not in columns:
+        cur.execute("ALTER TABLE users ADD COLUMN otp_expiry TEXT")
+
+    if "otp_attempts" not in columns:
+        cur.execute(
+            "ALTER TABLE users ADD COLUMN otp_attempts INTEGER DEFAULT 0"
+        )
+
+    conn.commit()
+
+    conn.close()
 # ==========================================
 # DATABASE CONNECTION
 # ==========================================
@@ -66,6 +93,14 @@ def create_database():
         status TEXT,
 
         expiry_date TEXT,
+
+        created_on TEXT,
+        
+        otp TEXT,
+
+        otp_expiry TEXT,
+
+        otp_attempts INTEGER DEFAULT 0,
 
         created_on TEXT
 
@@ -737,3 +772,165 @@ def create_user(username, password, fullname, mobile, email, days=30):
     finally:
 
         conn.close()
+
+
+def save_otp(username, otp, expiry):
+
+    conn = get_connection()
+
+    cur = conn.cursor()
+
+    cur.execute(
+        """
+        UPDATE users
+        SET
+            otp=?,
+            otp_expiry=?,
+            otp_attempts=0
+        WHERE username=?
+        """,
+        (
+            otp,
+            expiry,
+            username
+        )
+    )
+
+    conn.commit()
+
+    conn.close()
+
+
+def get_user_by_username_email(username, email):
+
+    conn = get_connection()
+
+    cur = conn.cursor()
+
+    cur.execute(
+        """
+        SELECT *
+        FROM users
+        WHERE username=?
+        AND email=?
+        """,
+        (
+            username,
+            email
+        )
+    )
+
+    row = cur.fetchone()
+
+    conn.close()
+
+    return row
+
+
+def get_user_by_username_email(username, email):
+
+    conn = get_connection()
+
+    cur = conn.cursor()
+
+    cur.execute(
+        """
+        SELECT *
+        FROM users
+        WHERE username=?
+        AND email=?
+        """,
+        (
+            username,
+            email
+        )
+    )
+
+    row = cur.fetchone()
+
+    conn.close()
+
+    return row
+
+
+def update_password(username, hashed_password):
+
+    conn = get_connection()
+
+    cur = conn.cursor()
+
+    cur.execute(
+        """
+        UPDATE users
+        SET password=?
+        WHERE username=?
+        """,
+        (
+            hashed_password,
+            username
+        )
+    )
+
+    conn.commit()
+
+    conn.close()
+
+def verify_saved_otp(username, otp):
+
+    conn = get_connection()
+
+    cur = conn.cursor()
+
+    cur.execute(
+        """
+        SELECT otp,
+               otp_expiry,
+               otp_attempts
+        FROM users
+        WHERE username=?
+        """,
+        (
+            username,
+        )
+    )
+
+    row = cur.fetchone()
+
+    if row is None:
+
+        conn.close()
+
+        return False, "User not found."
+
+    attempts = row["otp_attempts"] or 0
+
+    if attempts >= 5:
+
+        conn.close()
+
+        return False, "Maximum OTP attempts exceeded."
+
+    if row["otp"] != otp:
+
+        cur.execute(
+            """
+            UPDATE users
+            SET otp_attempts=otp_attempts+1
+            WHERE username=?
+            """,
+            (
+                username,
+            )
+        )
+
+        conn.commit()
+
+        conn.close()
+
+        return False, "Invalid OTP."
+
+    conn.close()
+
+    return True, row["otp_expiry"]
+
+
