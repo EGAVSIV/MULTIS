@@ -3,6 +3,7 @@
 # ==========================================
 
 import streamlit as st
+from forgot_password import forgot_password_page
 
 from database import get_user
 from utils import (
@@ -33,7 +34,7 @@ def login_page():
         type="password"
     )
 
-    col1, col2 = st.columns(2)
+    col1, col2, col3 = st.columns(3)
 
     with col1:
         login_btn = st.button(
@@ -47,6 +48,11 @@ def login_page():
             use_container_width=True
         )
 
+    with col3:
+        forgot_btn = st.button(
+            "🔑 Forgot Password",
+            use_container_width=True
+        )
     # -----------------------------
     # Open Register Page
     # -----------------------------
