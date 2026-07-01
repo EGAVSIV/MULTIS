@@ -2374,4 +2374,4 @@ Energy | Commodity | Quant Intelligence 📶<br><br>
 📧 <a href="mailto:yadav.gauravsingh@gmail.com">yadav.gauravsingh@gmail.com</a> ™️
 </div>
     """, unsafe_allow_html=True)
-    show_footer()
+show_footer()
