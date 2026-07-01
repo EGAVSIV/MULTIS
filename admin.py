@@ -7,6 +7,7 @@ import pandas as pd
 from database import get_user, update_password
 from utils import hash_password, verify_password
 from database import create_user
+from email_service import send_email
 
 from database import (
     get_all_users,
@@ -469,9 +470,11 @@ def admin_panel():
     from email_service import send_email
 
     test_email = st.text_input(
-        "yadav.gauravsingh@gmail.com",
-        value=st.session_state.get("username", "")
+        "Recipient Email",
+        value="yadav.gauravsingh@gmail.com"
     )
+    st.write("Sender Email:", repr(EMAIL_ADDRESS))
+    st.write("Password Length:", len(EMAIL_PASSWORD)
 
     if st.button("📨 Send Test Email"):
 
