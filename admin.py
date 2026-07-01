@@ -491,15 +491,10 @@ def admin_panel():
     st.divider()
 
     st.caption(
-        "NSE Scanner Authentication System v1.0"
+        "NSE Scanner Authentication System v1.4_Beta-X"
     )
 
-    st.divider()
 
-    # =====================================================
-    # SYSTEM INFORMATION
-    # =====================================================
 
-    st.caption(
-        "NSE Scanner Authentication System v1.0"
-    )
+   
+
