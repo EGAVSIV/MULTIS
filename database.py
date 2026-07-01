@@ -418,25 +418,30 @@ def delete_user(user_id):
 # UPDATE PASSWORD
 # ==========================================
 
-def update_password(username, hashed_password):
+def get_user_by_username_email(username, email):
 
     conn = get_connection()
+
     cur = conn.cursor()
 
     cur.execute(
         """
-        UPDATE users
-        SET password=?
+        SELECT *
+        FROM users
         WHERE username=?
+        AND email=?
         """,
         (
-            hashed_password,
-            username
+            username,
+            email
         )
     )
 
-    conn.commit()
+    row = cur.fetchone()
+
     conn.close()
+
+    return row
 
 
 # ==========================================
@@ -799,7 +804,7 @@ def save_otp(username, otp, expiry):
     conn.close()
 
 
-def update_password()_email(username, email):
+def update_password(username, hashed_password):
 
     conn = get_connection()
 
@@ -807,22 +812,19 @@ def update_password()_email(username, email):
 
     cur.execute(
         """
-        SELECT *
-        FROM users
+        UPDATE users
+        SET password=?
         WHERE username=?
-        AND email=?
         """,
         (
-            username,
-            email
+            hashed_password,
+            username
         )
     )
 
-    row = cur.fetchone()
+    conn.commit()
 
     conn.close()
-
-    return row
 
 
 
