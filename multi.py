@@ -998,547 +998,547 @@ def ema50_fake_breakdown(df):
     return None
     
     
-    def ema50_fake_breakout(df):
-        if len(df) < 55:
-            return None
-    
-        df = df.copy()
-        df["EMA20"] = talib.EMA(df["close"], 20)
-        df["EMA50"] = talib.EMA(df["close"], 50)
-    
-        prev = df.iloc[-2]
-        curr = df.iloc[-1]
-    
-        if (
-            curr["close"] < curr["EMA50"]
-            and prev["close"] > prev["EMA50"]
-            and curr["EMA20"] < curr["EMA50"]
-        ):
-            return "50 EMA Fake Breakout"
-    
+def ema50_fake_breakout(df):
+    if len(df) < 55:
         return None
     
+    df = df.copy()
+    df["EMA20"] = talib.EMA(df["close"], 20)
+    df["EMA50"] = talib.EMA(df["close"], 50)
     
-    def kdj(df, period=9, signal=3):
-        low_min = df["low"].rolling(period).min()
-        high_max = df["high"].rolling(period).max()
+    prev = df.iloc[-2]
+    curr = df.iloc[-1]
     
-        rng = (high_max - low_min).replace(0, np.nan)
+    if (
+        curr["close"] < curr["EMA50"]
+        and prev["close"] > prev["EMA50"]
+        and curr["EMA20"] < curr["EMA50"]
+    ):
+        return "50 EMA Fake Breakout"
     
-        rsv = 100 * (df["close"] - low_min) / rng
-        rsv = rsv.clip(lower=0, upper=100)
-    
-        def bcwsma(series, length, m=1):
-            out = []
-            for i, val in enumerate(series):
-                if i == 0 or np.isnan(val):
-                    out.append(val)
-                else:
-                    out.append((m * val + (length - m) * out[i - 1]) / length)
-            return pd.Series(out, index=series.index)
-    
-        pK = bcwsma(rsv, signal, 1)
-        pD = bcwsma(pK, signal, 1)
-        pJ = 3 * pK - 2 * pD
-    
-        return pK, pD, pJ
+    return None
     
     
-    def kdj_buy(df):
-        if len(df) < 20:
-            return None
+def kdj(df, period=9, signal=3):
+    low_min = df["low"].rolling(period).min()
+    high_max = df["high"].rolling(period).max()
     
-        pK, pD, pJ = kdj(df)
+    rng = (high_max - low_min).replace(0, np.nan)
     
-        if (
-            pd.isna(pD.iloc[-1])
-            or pd.isna(pD.iloc[-2])
-            or pd.isna(pJ.iloc[-1])
-            or pd.isna(pJ.iloc[-2])
-        ):
-            return None
+    rsv = 100 * (df["close"] - low_min) / rng
+    rsv = rsv.clip(lower=0, upper=100)
     
-        crossed_up = (pJ.iloc[-2] < pD.iloc[-2]) and (pJ.iloc[-1] > pD.iloc[-1])
-        oversold = (pD.iloc[-1] < 30) and (pJ.iloc[-1] < 30)
+    def bcwsma(series, length, m=1):
+        out = []
+        for i, val in enumerate(series):
+            if i == 0 or np.isnan(val):
+                out.append(val)
+            else:
+                out.append((m * val + (length - m) * out[i - 1]) / length)
+        return pd.Series(out, index=series.index)
     
-        if crossed_up and oversold:
-            return "KDJ BUY (J↑D oversold)"
+    pK = bcwsma(rsv, signal, 1)
+    pD = bcwsma(pK, signal, 1)
+    pJ = 3 * pK - 2 * pD
     
+    return pK, pD, pJ
+    
+    
+def kdj_buy(df):
+    if len(df) < 20:
         return None
     
+    pK, pD, pJ = kdj(df)
     
-    def kdj_sell(df):
-        if len(df) < 20:
-            return None
-    
-        pK, pD, pJ = kdj(df)
-    
-        if (
-            pd.isna(pD.iloc[-1])
-            or pd.isna(pD.iloc[-2])
-            or pd.isna(pJ.iloc[-1])
-            or pd.isna(pJ.iloc[-2])
-        ):
-            return None
-    
-        crossed_down = (pJ.iloc[-2] > pD.iloc[-2]) and (pJ.iloc[-1] < pD.iloc[-1])
-        overbought = (pD.iloc[-1] > 70) and (pJ.iloc[-1] > 70)
-    
-        if crossed_down and overbought:
-            return "KDJ SELL (J↓D overbought)"
-    
+    if (
+        pd.isna(pD.iloc[-1])
+        or pd.isna(pD.iloc[-2])
+        or pd.isna(pJ.iloc[-1])
+        or pd.isna(pJ.iloc[-2])
+    ):
         return None
     
+    crossed_up = (pJ.iloc[-2] < pD.iloc[-2]) and (pJ.iloc[-1] > pD.iloc[-1])
+    oversold = (pD.iloc[-1] < 30) and (pJ.iloc[-1] < 30)
     
-    def consecutive_close_momentum(df, min_count=3):
-        if len(df) < min_count + 1:
-            return None
+    if crossed_up and oversold:
+        return "KDJ BUY (J↑D oversold)"
     
-        closes = df["close"].values
+    return None
     
-        if closes[-1] > closes[-2]:
-            direction = "Bull"
-        elif closes[-1] < closes[-2]:
-            direction = "Bear"
-        else:
-            return None
     
-        count = 1
+def kdj_sell(df):
+    if len(df) < 20:
+        return None
+    
+    pK, pD, pJ = kdj(df)
+    
+    if (
+        pd.isna(pD.iloc[-1])
+        or pd.isna(pD.iloc[-2])
+        or pd.isna(pJ.iloc[-1])
+        or pd.isna(pJ.iloc[-2])
+    ):
+        return None
+    
+    crossed_down = (pJ.iloc[-2] > pD.iloc[-2]) and (pJ.iloc[-1] < pD.iloc[-1])
+    overbought = (pD.iloc[-1] > 70) and (pJ.iloc[-1] > 70)
+    
+    if crossed_down and overbought:
+        return "KDJ SELL (J↓D overbought)"
+    
+    return None
+    
+    
+def consecutive_close_momentum(df, min_count=3):
+    if len(df) < min_count + 1:
+        return None
+    
+    closes = df["close"].values
+    
+    if closes[-1] > closes[-2]:
+        direction = "Bull"
+    elif closes[-1] < closes[-2]:
+        direction = "Bear"
+    else:
+        return None
+    
+    count = 1
     
         for i in range(len(closes) - 2, 0, -1):
-            if direction == "Bull":
-                if closes[i] > closes[i - 1]:
-                    count += 1
-                else:
-                    break
+        if direction == "Bull":
+            if closes[i] > closes[i - 1]:
+                count += 1
             else:
-                if closes[i] < closes[i - 1]:
-                    count += 1
-                else:
-                    break
-    
-        if count >= min_count:
-            return direction, count
-    
-        return None
-    
-    
-    def camarilla_breakout(df):
-        if len(df) < 2:
-            return None
-    
-        prev = df.iloc[-2]
-        curr = df.iloc[-1]
-    
-        high = prev["high"]
-        low = prev["low"]
-        close = prev["close"]
-    
-        rng = high - low
-    
-        H4 = close + (rng * 1.1 / 2)
-        L4 = close - (rng * 1.1 / 2)
-    
-        if curr["close"] > H4:
-            return "Bullish Camarilla Breakout"
-    
-        if curr["close"] < L4:
-            return "Bearish Camarilla Breakdown"
-    
-        return None
-    
-    
-    def cpr_breakout(df):
-        if len(df) < 2:
-            return None
-    
-        prev = df.iloc[-2]
-        curr = df.iloc[-1]
-    
-        high = prev["high"]
-        low = prev["low"]
-        close = prev["close"]
-    
-        pivot = (high + low + close) / 3
-        bc = (high + low) / 2
-        tc = (pivot * 2) - bc
-    
-        top = max(tc, bc)
-        bottom = min(tc, bc)
-    
-        if curr["close"] > top:
-            return "Bullish CPR Breakout"
-    
-        if curr["close"] < bottom:
-            return "Bearish CPR Breakdown"
-    
-        return None
-    
-    
-    def inside_bar_breakout(df):
-        # Mother -4, inside -3, -2, breakout -1
-        if len(df) < 4:
-            return None
-    
-        mother = df.iloc[-4]
-        inside1 = df.iloc[-3]
-        inside2 = df.iloc[-2]
-        curr = df.iloc[-1]
-    
-        inside_ok = (
-            inside1["high"] < mother["high"]
-            and inside1["low"] > mother["low"]
-            and inside2["high"] < mother["high"]
-            and inside2["low"] > mother["low"]
-        )
-    
-        if not inside_ok:
-            return None
-    
-        if curr["close"] > mother["high"]:
-            return "Bullish Inside Bar Breakout (3-bar coil)"
-        if curr["close"] < mother["low"]:
-            return "Bearish Inside Bar Breakdown (3-bar coil)"
-    
-        return None
-    
-    
-    def adx_expansion(df):
-        if len(df) < 30:
-            return None
-    
-        adx = talib.ADX(df["high"], df["low"], df["close"], 14)
-        ema20 = talib.EMA(df["close"], 20)
-    
-        if adx.iloc[-2] < 20 and adx.iloc[-1] > 25:
-            if df["close"].iloc[-1] > ema20.iloc[-1]:
-                return "Bullish ADX Expansion"
-            if df["close"].iloc[-1] < ema20.iloc[-1]:
-                return "Bearish ADX Expansion"
-    
-        return None
-    
-    
-    def range_expansion_day(df, lookback=5):
-        if len(df) < lookback + 2:
-            return None
-    
-        today = df.iloc[-1]
-        avg_range = (df["high"] - df["low"]).iloc[-lookback - 1 : -1].mean()
-        today_range = today["high"] - today["low"]
-    
-        if today_range > 1.5 * avg_range:
-            if today["close"] > today["open"]:
-                return "Bullish Range Expansion Day"
+                break
+        else:
+            if closes[i] < closes[i - 1]:
+                count += 1
             else:
-                return "Bearish Range Expansion Day"
+                break
     
+    if count >= min_count:
+        return direction, count
+    
+    return None
+    
+    
+def camarilla_breakout(df):
+    if len(df) < 2:
         return None
     
+    prev = df.iloc[-2]
+    curr = df.iloc[-1]
     
-    def failed_breakout_breakdown(df, lookback=20):
-        if len(df) < lookback + 2:
-            return None
+    high = prev["high"]
+    low = prev["low"]
+    close = prev["close"]
     
-        recent_high = df["high"].iloc[-lookback:-1].max()
-        recent_low = df["low"].iloc[-lookback:-1].min()
+    rng = high - low
     
-        prev = df.iloc[-2]
-        curr = df.iloc[-1]
+    H4 = close + (rng * 1.1 / 2)
+    L4 = close - (rng * 1.1 / 2)
     
-        if prev["high"] > recent_high and curr["close"] < recent_high:
-            return "Failed Breakout (Bearish)"
+    if curr["close"] > H4:
+        return "Bullish Camarilla Breakout"
     
-        if prev["low"] < recent_low and curr["close"] > recent_low:
-            return "Failed Breakdown (Bullish)"
+    if curr["close"] < L4:
+        return "Bearish Camarilla Breakdown"
     
+    return None
+    
+    
+def cpr_breakout(df):
+    if len(df) < 2:
         return None
     
+    prev = df.iloc[-2]
+    curr = df.iloc[-1]
     
-    def ema_compression_expansion(df):
-        if len(df) < 60:
-            return None
+    high = prev["high"]
+    low = prev["low"]
+    close = prev["close"]
     
-        ema20 = talib.EMA(df["close"], 20)
-        ema50 = talib.EMA(df["close"], 50)
-        ema100 = talib.EMA(df["close"], 100)
+    pivot = (high + low + close) / 3
+    bc = (high + low) / 2
+    tc = (pivot * 2) - bc
     
-        compression = (
-            abs(ema20.iloc[-2] - ema50.iloc[-2]) / ema50.iloc[-2] < 0.003
-            and abs(ema50.iloc[-2] - ema100.iloc[-2]) / ema100.iloc[-2] < 0.003
-        )
+    top = max(tc, bc)
+    bottom = min(tc, bc)
     
-        if not compression:
-            return None
+    if curr["close"] > top:
+        return "Bullish CPR Breakout"
     
-        if ema20.iloc[-1] > ema50.iloc[-1] > ema100.iloc[-1]:
-            return "Bullish EMA Compression Break"
-        if ema20.iloc[-1] < ema50.iloc[-1] < ema100.iloc[-1]:
-            return "Bearish EMA Compression Break"
+    if curr["close"] < bottom:
+        return "Bearish CPR Breakdown"
     
+    return None
+    
+    
+def inside_bar_breakout(df):
+     # Mother -4, inside -3, -2, breakout -1
+    if len(df) < 4:
         return None
     
+    mother = df.iloc[-4]
+    inside1 = df.iloc[-3]
+    inside2 = df.iloc[-2]
+    curr = df.iloc[-1]
     
-    def rsi_macd_cross_swing(df):
-        if len(df) < 50:
-            return None
+    inside_ok = (
+        inside1["high"] < mother["high"]
+        and inside1["low"] > mother["low"]
+        and inside2["high"] < mother["high"]
+        and inside2["low"] > mother["low"]
+    )
     
-        rsi = talib.RSI(df["close"], 14)
-        macd, signal, _ = talib.MACD(df["close"], 12, 26, 9)
-    
-        # Previous candle
-        rsi_prev = rsi.iloc[-2]
-        macd_prev = macd.iloc[-2]
-        signal_prev = signal.iloc[-2]
-    
-        # Current candle
-        rsi_curr = rsi.iloc[-1]
-        macd_curr = macd.iloc[-1]
-        signal_curr = signal.iloc[-1]
-    
-        # ---- Bullish Condition ----
-        if (
-            rsi_prev < 40 and rsi_curr > 40 and
-            macd_prev < signal_prev and macd_curr > signal_curr
-        ):
-            return "Bullish RSI+MACD Cross"
-    
-        # ---- Bearish Condition ----
-        if (
-            rsi_prev > 60 and rsi_curr < 60 and
-            macd_prev > signal_prev and macd_curr < signal_curr
-        ):
-            return "Bearish RSI+MACD Cross"
-    
+    if not inside_ok:
         return None
     
+    if curr["close"] > mother["high"]:
+        return "Bullish Inside Bar Breakout (3-bar coil)"
+    if curr["close"] < mother["low"]:
+        return "Bearish Inside Bar Breakdown (3-bar coil)"
     
-    def atr_percent(df, period=14):
-        if len(df) < period + 1:
-            return None
-        atr = talib.ATR(df["high"], df["low"], df["close"], timeperiod=period)
-        val = atr.iloc[-1]
-        close = df["close"].iloc[-1]
-        if pd.isna(val) or close <= 0:
-            return None
-        return (val / close) * 100.0
+    return None
     
     
-    def calculate_confluence(row):
-        score = 0
-        text = " ".join(
-            [
-                str(row.get("Signal", "")),
-                str(row.get("Trend", "")),
-                str(row.get("State", "")),
-                str(row.get("Setup", "")),
-                str(row.get("Divergence", "")),
-            ]
-        )
+def adx_expansion(df):
+    if len(df) < 30:
+        return None
     
-        for k in BULL_KEYWORDS:
-            if k in text:
-                score += 1
+    adx = talib.ADX(df["high"], df["low"], df["close"], 14)
+    ema20 = talib.EMA(df["close"], 20)
     
-        for k in BEAR_KEYWORDS:
-            if k in text:
-                score -= 1
+    if adx.iloc[-2] < 20 and adx.iloc[-1] > 25:
+        if df["close"].iloc[-1] > ema20.iloc[-1]:
+            return "Bullish ADX Expansion"
+        if df["close"].iloc[-1] < ema20.iloc[-1]:
+            return "Bearish ADX Expansion"
     
-        score = max(min(score, 5), -5)
+    return None
     
-        if score > 0:
-            bias = "Bullish"
-        elif score < 0:
-            bias = "Bearish"
+    
+def range_expansion_day(df, lookback=5):
+    if len(df) < lookback + 2:
+        return None
+    
+    today = df.iloc[-1]
+    avg_range = (df["high"] - df["low"]).iloc[-lookback - 1 : -1].mean()
+    today_range = today["high"] - today["low"]
+    
+    if today_range > 1.5 * avg_range:
+        if today["close"] > today["open"]:
+            return "Bullish Range Expansion Day"
         else:
-            bias = "Neutral"
+            return "Bearish Range Expansion Day"
     
-        abs_score = abs(score)
+    return None
     
-        if abs_score >= 4:
-            prob = "High"
-        elif abs_score >= 3:
-            prob = "Medium"
-        else:
-            prob = "Low"
     
-        return score, bias, prob
+def failed_breakout_breakdown(df, lookback=20):
+    if len(df) < lookback + 2:
+        return None
     
-    def run_all_scanners_for_symbol(
-        sym,
-        df,
-        tf,
-        analysis_date,
-        data_all_tfs,
+    recent_high = df["high"].iloc[-lookback:-1].max()
+    recent_low = df["low"].iloc[-lookback:-1].min()
+    
+    prev = df.iloc[-2]
+    curr = df.iloc[-1]
+    
+    if prev["high"] > recent_high and curr["close"] < recent_high:
+        return "Failed Breakout (Bearish)"
+    
+    if prev["low"] < recent_low and curr["close"] > recent_low:
+        return "Failed Breakdown (Bullish)"
+    
+    return None
+    
+    
+def ema_compression_expansion(df):
+    if len(df) < 60:
+        return None
+    
+    ema20 = talib.EMA(df["close"], 20)
+    ema50 = talib.EMA(df["close"], 50)
+    ema100 = talib.EMA(df["close"], 100)
+    
+    compression = (
+        abs(ema20.iloc[-2] - ema50.iloc[-2]) / ema50.iloc[-2] < 0.003
+        and abs(ema50.iloc[-2] - ema100.iloc[-2]) / ema100.iloc[-2] < 0.003
+    )
+    
+    if not compression:
+        return None
+    
+    if ema20.iloc[-1] > ema50.iloc[-1] > ema100.iloc[-1]:
+        return "Bullish EMA Compression Break"
+    if ema20.iloc[-1] < ema50.iloc[-1] < ema100.iloc[-1]:
+        return "Bearish EMA Compression Break"
+    
+    return None
+    
+    
+def rsi_macd_cross_swing(df):
+    if len(df) < 50:
+        return None
+    
+    rsi = talib.RSI(df["close"], 14)
+    macd, signal, _ = talib.MACD(df["close"], 12, 26, 9)
+    
+     # Previous candle
+    rsi_prev = rsi.iloc[-2]
+    macd_prev = macd.iloc[-2]
+    signal_prev = signal.iloc[-2]
+    
+    # Current candle
+    rsi_curr = rsi.iloc[-1]
+    macd_curr = macd.iloc[-1]
+    signal_curr = signal.iloc[-1]
+    
+       # ---- Bullish Condition ----
+    if (
+        rsi_prev < 40 and rsi_curr > 40 and
+        macd_prev < signal_prev and macd_curr > signal_curr
     ):
-        """
-        Returns dict: {scanner_name: True/False} for given symbol & timeframe.
-        True = इस symbol पर वो scanner trigger हुआ।
-        data_all_tfs: dict जैसे {"TF": data_dict}  → ex: {"Daily": load_data(...), "Weekly": ...}
-        """
+        return "Bullish RSI+MACD Cross"
     
-        results = {}
+    # ---- Bearish Condition ----
+    if (
+        rsi_prev > 60 and rsi_curr < 60 and
+        macd_prev > signal_prev and macd_curr < signal_curr
+    ):
+        return "Bearish RSI+MACD Cross"
     
-        # ---------- बेसिक single-TF scanners ----------
+    return None
+    
+    
+def atr_percent(df, period=14):
+    if len(df) < period + 1:
+        return None
+    atr = talib.ATR(df["high"], df["low"], df["close"], timeperiod=period)
+    val = atr.iloc[-1]
+    close = df["close"].iloc[-1]
+    if pd.isna(val) or close <= 0:
+        return None
+    return (val / close) * 100.0
+    
+    
+def calculate_confluence(row):
+    score = 0
+    text = " ".join(
+        [
+            str(row.get("Signal", "")),
+            str(row.get("Trend", "")),
+            str(row.get("State", "")),
+            str(row.get("Setup", "")),
+            str(row.get("Divergence", "")),
+        ]
+    )
+    
+    for k in BULL_KEYWORDS:
+        if k in text:
+            score += 1
+    
+    for k in BEAR_KEYWORDS:
+        if k in text:
+            score -= 1
+    
+    score = max(min(score, 5), -5)
+    
+    if score > 0:
+        bias = "Bullish"
+    elif score < 0:
+        bias = "Bearish"
+    else:
+        bias = "Neutral"
+    
+    abs_score = abs(score)
+    
+    if abs_score >= 4:
+        prob = "High"
+    elif abs_score >= 3:
+        prob = "Medium"
+    else:
+        prob = "Low"
+    
+    return score, bias, prob
+    
+def run_all_scanners_for_symbol(
+    sym,
+    df,
+    tf,
+    analysis_date,
+    data_all_tfs,
+):
+    """
+    Returns dict: {scanner_name: True/False} for given symbol & timeframe.
+    True = इस symbol पर वो scanner trigger हुआ।
+    data_all_tfs: dict जैसे {"TF": data_dict}  → ex: {"Daily": load_data(...), "Weekly": ...}
+    """
+    
+    results = {}
+    
+      # ---------- बेसिक single-TF scanners ----------
     
         # 1) RSI Market Pulse
-        results["RSI Market Pulse"] = rsi_market_pulse(df) is not None
+    results["RSI Market Pulse"] = rsi_market_pulse(df) is not None
     
         # 2) Volume Shocker
-        results["Volume Shocker"] = volume_shocker(df)
+    results["Volume Shocker"] = volume_shocker(df)
     
         # 3) NRB-7 Breakout
-        results["NRB-7 Breakout"] = nrb_7(df) is not None
+    results["NRB-7 Breakout"] = nrb_7(df) is not None
     
         # 4) Counter Attack
-        results["Counter Attack"] = counter_attack(df) is not None
+    results["Counter Attack"] = counter_attack(df) is not None
     
         # 5) Breakaway Gaps
-        results["Breakaway Gaps"] = breakaway_gap(df) is not None
+    results["Breakaway Gaps"] = breakaway_gap(df) is not None
     
         # 6) RSI + ADX
-        results["RSI + ADX"] = rsi_adx(df) is not None
+    results["RSI + ADX"] = rsi_adx(df) is not None
     
         # 8) MACD Market Pulse
-        results["MACD Market Pulse"] = macd_market_pulse(df) is not None
+    results["MACD Market Pulse"] = macd_market_pulse(df) is not None
     
         # 9) MACD Normal Divergence
-        results["MACD Normal Divergence"] = macd_normal_divergence(df) is not None
+    results["MACD Normal Divergence"] = macd_normal_divergence(df) is not None
     
         # 12) EMA / MACD structure based
-        results["MACD Bearish Peak Divergence"] = macd_peak_bearish_divergence(df) is not None
-        results["MACD Bullish Base Divergence"] = macd_base_bullish_divergence(df) is not None
-        results["Trend Alignment (EMA)"] = trend_alignment(df) is not None
-        results["Pullback to EMA"] = pullback_to_ema(df) is not None
-        results["High Probability Confluence"] = confluence_setup(df) is not None
-        results["MACD Hook Up"] = macd_hook_up(df) is not None
-        results["MACD Hook Down"] = macd_hook_down(df) is not None
-        results["MACD Histogram Divergence"] = macd_histogram_divergence(df) is not None
-        results["EMA50 + Stoch Oversold"] = ema50_stoch_oversold(df) is not None
-        results["Dark Cloud Cover"] = dark_cloud_cover(df) is not None
-        results["Morning Star (Bottom)"] = morning_star_bottom(df) is not None
-        results["Evening Star (Top)"] = evening_star_top(df) is not None
-        results["50 EMA Fake Breakdown"] = ema50_fake_breakdown(df) is not None
-        results["50 EMA Fake Breakout"] = ema50_fake_breakout(df) is not None
-        results["KDJ BUY (Oversold)"] = kdj_buy(df) is not None
-        results["KDJ SELL (Overbought)"] = kdj_sell(df) is not None
-        results["Probable Momentum (Consecutive Close)"] = (
-            consecutive_close_momentum(df, min_count=3) is not None
-        )
-        results["Camarilla Breakout / Breakdown"] = camarilla_breakout(df) is not None
-        results["CPR Breakout / Breakdown"] = cpr_breakout(df) is not None
-        results["Inside Bar Breakout"] = inside_bar_breakout(df) is not None
-        results["ADX Expansion (Trend Ignition)"] = adx_expansion(df) is not None
-        results["Range Expansion Day"] = range_expansion_day(df) is not None
-        results["Failed Breakout / Breakdown"] = failed_breakout_breakdown(df) is not None
-        results["EMA Compression → Expansion"] = ema_compression_expansion(df) is not None
-        results["RSI Swing"] = rsi_swing(df) is not None
+    results["MACD Bearish Peak Divergence"] = macd_peak_bearish_divergence(df) is not None
+    results["MACD Bullish Base Divergence"] = macd_base_bullish_divergence(df) is not None
+    results["Trend Alignment (EMA)"] = trend_alignment(df) is not None
+    results["Pullback to EMA"] = pullback_to_ema(df) is not None
+    results["High Probability Confluence"] = confluence_setup(df) is not None
+    results["MACD Hook Up"] = macd_hook_up(df) is not None
+    results["MACD Hook Down"] = macd_hook_down(df) is not None
+    results["MACD Histogram Divergence"] = macd_histogram_divergence(df) is not None
+    results["EMA50 + Stoch Oversold"] = ema50_stoch_oversold(df) is not None
+    results["Dark Cloud Cover"] = dark_cloud_cover(df) is not None
+    results["Morning Star (Bottom)"] = morning_star_bottom(df) is not None
+    results["Evening Star (Top)"] = evening_star_top(df) is not None
+    results["50 EMA Fake Breakdown"] = ema50_fake_breakdown(df) is not None
+    results["50 EMA Fake Breakout"] = ema50_fake_breakout(df) is not None
+    results["KDJ BUY (Oversold)"] = kdj_buy(df) is not None
+    results["KDJ SELL (Overbought)"] = kdj_sell(df) is not None
+    results["Probable Momentum (Consecutive Close)"] = (
+        consecutive_close_momentum(df, min_count=3) is not None
+    )
+    results["Camarilla Breakout / Breakdown"] = camarilla_breakout(df) is not None
+    results["CPR Breakout / Breakdown"] = cpr_breakout(df) is not None
+    results["Inside Bar Breakout"] = inside_bar_breakout(df) is not None
+    results["ADX Expansion (Trend Ignition)"] = adx_expansion(df) is not None
+    results["Range Expansion Day"] = range_expansion_day(df) is not None
+    results["Failed Breakout / Breakdown"] = failed_breakout_breakdown(df) is not None
+    results["EMA Compression → Expansion"] = ema_compression_expansion(df) is not None
+    results["RSI Swing"] = rsi_swing(df) is not None
     
         # ---------- Multi-TF scanners (RSI WM, MACD RD, GSAS) ----------
     
         # RSI WM 60–40  → needs Weekly & Monthly
-        if "Weekly" in data_all_tfs and "Monthly" in data_all_tfs:
-            data_w = data_all_tfs["Weekly"]
-            data_m = data_all_tfs["Monthly"]
-            if sym in data_w and sym in data_m:
-                df_w = trim_df_to_date(data_w[sym], analysis_date)
-                df_m = trim_df_to_date(data_m[sym], analysis_date)
-                if df_w is not None and df_m is not None:
-                    results["RSI WM 60–40"] = rsi_wm(df, df_w, df_m) is not None
-                else:
-                    results["RSI WM 60–40"] = False
+    if "Weekly" in data_all_tfs and "Monthly" in data_all_tfs:
+        data_w = data_all_tfs["Weekly"]
+        data_m = data_all_tfs["Monthly"]
+        if sym in data_w and sym in data_m:
+            df_w = trim_df_to_date(data_w[sym], analysis_date)
+            df_m = trim_df_to_date(data_m[sym], analysis_date)
+            if df_w is not None and df_m is not None:
+                results["RSI WM 60–40"] = rsi_wm(df, df_w, df_m) is not None
             else:
                 results["RSI WM 60–40"] = False
         else:
             results["RSI WM 60–40"] = False
+    else:
+        results["RSI WM 60–40"] = False
     
         # MACD RD (4th Wave) + Bullish/Bearish GSAS  → need HTF mapping
-        htf_map = {
-            "15 Min": "1 Hour",
-            "1 Hour": "Daily",
-            "Daily": "Weekly",
-            "Weekly": "Monthly",
-        }
-        if tf in htf_map and htf_map[tf] in data_all_tfs:
-            data_htf = data_all_tfs[htf_map[tf]]
-        else:
-            data_htf = None
+    htf_map = {
+        "15 Min": "1 Hour",
+        "1 Hour": "Daily",
+        "Daily": "Weekly",
+        "Weekly": "Monthly",
+    }
+    if tf in htf_map and htf_map[tf] in data_all_tfs:
+        data_htf = data_all_tfs[htf_map[tf]]
+    else:
+        data_htf = None
     
         # 10) MACD RD (4th Wave)
-        if data_htf is not None and sym in data_htf:
-            df_htf = trim_df_to_date(data_htf[sym], analysis_date)
-            if df_htf is not None:
-                results["MACD RD (4th Wave)"] = macd_rd(df, df_htf) is not None
-            else:
-                results["MACD RD (4th Wave)"] = False
+    if data_htf is not None and sym in data_htf:
+        df_htf = trim_df_to_date(data_htf[sym], analysis_date)
+        if df_htf is not None:
+            results["MACD RD (4th Wave)"] = macd_rd(df, df_htf) is not None
         else:
             results["MACD RD (4th Wave)"] = False
+    else:
+        results["MACD RD (4th Wave)"] = False
     
         # 11) Probable 3rd / C Wave (same TF)
-        results["Probable 3rd Wave"] = third_wave_finder(df)
-        results["Probable C Wave"] = c_wave_finder(df)
+    results["Probable 3rd Wave"] = third_wave_finder(df)
+    results["Probable C Wave"] = c_wave_finder(df)
     
         # 24) Bullish / Bearish GSAS  (same TF + HTF)
-        if data_htf is not None and sym in data_htf:
-            df_htf = trim_df_to_date(data_htf[sym], analysis_date)
-            if df_htf is not None:
-                results["Bullish GSAS"] = bullish_gsas(df, df_htf) is not None
-                results["Bearish GSAS"] = bearish_gsas(df, df_htf) is not None
-            else:
-                results["Bullish GSAS"] = False
-                results["Bearish GSAS"] = False
+    if data_htf is not None and sym in data_htf:
+        df_htf = trim_df_to_date(data_htf[sym], analysis_date)
+        if df_htf is not None:
+            results["Bullish GSAS"] = bullish_gsas(df, df_htf) is not None
+            results["Bearish GSAS"] = bearish_gsas(df, df_htf) is not None
         else:
             results["Bullish GSAS"] = False
             results["Bearish GSAS"] = False
+    else:
+        results["Bullish GSAS"] = False
+        results["Bearish GSAS"] = False
     
         # ---------- Top 10 by ATR % (per-stock flag only) ----------
         # यहाँ सिर्फ यह check कर रहे हैं कि ATR% valid है या नहीं;
         # actual "Top 10" ranking main scanner में ही रहेगा.
-        atr_val = atr_percent(df)
-        results["Top 10 by ATR %"] = atr_val is not None
+    atr_val = atr_percent(df)
+    results["Top 10 by ATR %"] = atr_val is not None
     
-        return results
+    return results
     
     
     
-    def liquidity_sweep_reversal(df, lookback=20):
-        if len(df) < lookback + 2:
-            return None
+def liquidity_sweep_reversal(df, lookback=20):
+    if len(df) < lookback + 2:
+        return None
     
-        prev_high = df["high"].iloc[-lookback:-1].max()
-        prev_low = df["low"].iloc[-lookback:-1].min()
+    prev_high = df["high"].iloc[-lookback:-1].max()
+    prev_low = df["low"].iloc[-lookback:-1].min()
     
-        last = df.iloc[-1]
+    last = df.iloc[-1]
     
         # Bullish sweep
-        if last["low"] < prev_low and last["close"] > prev_low:
-            return "Bullish Liquidity Sweep"
+    if last["low"] < prev_low and last["close"] > prev_low:
+        return "Bullish Liquidity Sweep"
     
         # Bearish sweep
-        if last["high"] > prev_high and last["close"] < prev_high:
-            return "Bearish Liquidity Sweep"
+    if last["high"] > prev_high and last["close"] < prev_high:
+        return "Bearish Liquidity Sweep"
     
+    return None
+    
+    
+def island_reversal(df):
+    if len(df) < 5:
         return None
     
-    
-    def island_reversal(df):
-        if len(df) < 5:
-            return None
-    
-        a = df.iloc[-4]
-        b = df.iloc[-3]
-        c = df.iloc[-2]
-        d = df.iloc[-1]
+    a = df.iloc[-4]
+    b = df.iloc[-3]
+    c = df.iloc[-2]
+    d = df.iloc[-1]
     
         # Bullish island
-        if b["low"] > a["high"] and d["open"] < c["low"]:
-            return "Bullish Island Reversal"
+    if b["low"] > a["high"] and d["open"] < c["low"]:
+        return "Bullish Island Reversal"
     
-        # Bearish island
-        if b["high"] < a["low"] and d["open"] > c["high"]:
-            return "Bearish Island Reversal"
+    # Bearish island
+    if b["high"] < a["low"] and d["open"] > c["high"]:
+        return "Bearish Island Reversal"
     
-        return None
+    return None
     
     
     def wyckoff_spring_upthrust(df, lookback=30):
