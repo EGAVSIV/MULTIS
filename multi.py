@@ -225,103 +225,103 @@ def get_last_candle_by_tf(folder_path: str):
     # ==============================
     # DATA LOADER
     # ==============================
-    @st.cache_data(show_spinner=False)
-    def load_data(folder: str):
-        data = {}
-        if not os.path.exists(folder):
-            st.warning(f"Folder not found: {folder}")
-            return data
-    
-    
-        for f in os.listdir(folder):
-            if not f.endswith(".parquet"):
-                continue
-    
-            sym = f.replace(".parquet", "")
-            df = pd.read_parquet(os.path.join(folder, f))
-    
-            if isinstance(df.index, pd.MultiIndex):
-                df = df.reset_index()
-    
-            if "datetime" in df.columns:
-                df["datetime"] = pd.to_datetime(df["datetime"])
-                df = df.sort_values("datetime").set_index("datetime")
-    
-            needed = {"open", "high", "low", "close", "volume"}
-            if not needed.issubset(df.columns):
-                continue
-    
-            data[sym] = df
-    
+@st.cache_data(show_spinner=False)
+def load_data(folder: str):
+    data = {}
+    if not os.path.exists(folder):
+        st.warning(f"Folder not found: {folder}")
         return data
     
-    def make_tradingview_link(sym: str) -> str:
-        base = "https://in.tradingview.com/chart/LqUZraZ9/"
-        return f"{base}?symbol=NSE%3A{sym}"
+    
+    for f in os.listdir(folder):
+        if not f.endswith(".parquet"):
+            continue
+    
+        sym = f.replace(".parquet", "")
+        df = pd.read_parquet(os.path.join(folder, f))
+    
+        if isinstance(df.index, pd.MultiIndex):
+            df = df.reset_index()
+    
+        if "datetime" in df.columns:
+            df["datetime"] = pd.to_datetime(df["datetime"])
+            df = df.sort_values("datetime").set_index("datetime")
+    
+        needed = {"open", "high", "low", "close", "volume"}
+        if not needed.issubset(df.columns):
+            continue
+    
+        data[sym] = df
+    
+    return data
+    
+def make_tradingview_link(sym: str) -> str:
+    base = "https://in.tradingview.com/chart/LqUZraZ9/"
+    return f"{base}?symbol=NSE%3A{sym}"
     # 1) TIMEFRAMES
-    TIMEFRAMES = {
-        "15 Min": os.path.join(BASE_PATH, "stock_data_15"),
-        "1 Hour": os.path.join(BASE_PATH, "stock_data_1H"),
-        "Daily": os.path.join(BASE_PATH, "stock_data_D"),
-        "Weekly": os.path.join(BASE_PATH, "stock_data_W"),
-        "Monthly": os.path.join(BASE_PATH, "stock_data_M"),
-    }
+TIMEFRAMES = {
+    "15 Min": os.path.join(BASE_PATH, "stock_data_15"),
+    "1 Hour": os.path.join(BASE_PATH, "stock_data_1H"),
+    "Daily": os.path.join(BASE_PATH, "stock_data_D"),
+    "Weekly": os.path.join(BASE_PATH, "stock_data_W"),
+    "Monthly": os.path.join(BASE_PATH, "stock_data_M"),
+}
     
     
     
     # ... last_15m, last_1h, etc, top header code ...
     
     # 2) Sidebar: timeframe (यह block पहले से मौजूद है, इसे ऊपर लाओ)
-    tf_options = list(TIMEFRAMES.keys())
-    tf = st.sidebar.selectbox(
-        "Timeframe", tf_options, index=tf_options.index("Daily")
-    )
+tf_options = list(TIMEFRAMES.keys())
+tf = st.sidebar.selectbox(
+    "Timeframe", tf_options, index=tf_options.index("Daily")
+)
     
     # 3) अब यहाँ single-stock dropdown वाला code रखो
-    sample_data = load_data(TIMEFRAMES[tf])
-    all_symbols = sorted(sample_data.keys()) if sample_data else []
-    st.sidebar.markdown("### 🔍 Single Stock Scan")
-    selected_symbol = st.sidebar.selectbox(
-        "Select Stock (for current timeframe)",
-        all_symbols if all_symbols else ["NA"],
-    )
+sample_data = load_data(TIMEFRAMES[tf])
+all_symbols = sorted(sample_data.keys()) if sample_data else []
+st.sidebar.markdown("### 🔍 Single Stock Scan")
+selected_symbol = st.sidebar.selectbox(
+    "Select Stock (for current timeframe)",
+    all_symbols if all_symbols else ["NA"],
+)
     
     
-    last_15m = get_last_candle_by_tf(TIMEFRAMES["15 Min"])
-    last_1h = get_last_candle_by_tf(TIMEFRAMES["1 Hour"])
-    last_d = get_last_candle_by_tf(TIMEFRAMES["Daily"])
-    last_w = get_last_candle_by_tf(TIMEFRAMES["Weekly"])
-    last_m = get_last_candle_by_tf(TIMEFRAMES["Monthly"])
+last_15m = get_last_candle_by_tf(TIMEFRAMES["15 Min"])
+last_1h = get_last_candle_by_tf(TIMEFRAMES["1 Hour"])
+last_d = get_last_candle_by_tf(TIMEFRAMES["Daily"])
+last_w = get_last_candle_by_tf(TIMEFRAMES["Weekly"])
+last_m = get_last_candle_by_tf(TIMEFRAMES["Monthly"])
     
-    col1, col2 = st.columns([1, 6])
+col1, col2 = st.columns([1, 6])
     
-    with col1:
-        if st.button("🔄 Refresh Data"):
+with col1:
+    if st.button("🔄 Refresh Data"):
             # Safely clear cache
-            st.cache_data.clear()
+        st.cache_data.clear()
             
             # Set a session state flag to notify success instead of immediate rerun disruption
-            st.session_state["needs_refresh_msg"] = True
-            st.rerun()
+        st.session_state["needs_refresh_msg"] = True
+        st.rerun()
     
     # Display success elegantly after a clean rerun cycle initialization
-    if st.session_state.get("needs_refresh_msg", False):
-        st.toast("🍏 Fresh data loaded successfully!", icon="✅")
-        st.session_state["needs_refresh_msg"] = False
+if st.session_state.get("needs_refresh_msg", False):
+    st.toast("🍏 Fresh data loaded successfully!", icon="✅")
+    st.session_state["needs_refresh_msg"] = False
     
     
-    with col2:
-        st.markdown(
-            f"""
-    🕯 **Last Candle (IST)**  
-    ⏱ **15 Min**: {last_15m.strftime('%d %b %Y %H:%M') if last_15m else 'NA'}  |  
-    ⏰ **1 Hour**: {last_1h.strftime('%d %b %Y %H:%M') if last_1h else 'NA'}  |  
-    📅 **Daily**: {last_d.date() if last_d else 'NA'}  |  
-    📆 **Weekly**: {last_w.date() if last_w else 'NA'}  |  
-    🗓 **Monthly**: {last_m.date() if last_m else 'NA'}
-    """,
-            unsafe_allow_html=False,
-        )
+with col2:
+    st.markdown(
+        f"""
+🕯 **Last Candle (IST)**  
+⏱ **15 Min**: {last_15m.strftime('%d %b %Y %H:%M') if last_15m else 'NA'}  |  
+⏰ **1 Hour**: {last_1h.strftime('%d %b %Y %H:%M') if last_1h else 'NA'}  |  
+📅 **Daily**: {last_d.date() if last_d else 'NA'}  |  
+📆 **Weekly**: {last_w.date() if last_w else 'NA'}  |  
+🗓 **Monthly**: {last_m.date() if last_m else 'NA'}
+ """,
+        unsafe_allow_html=False,
+    )
     
     st.markdown("---")
     
