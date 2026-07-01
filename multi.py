@@ -323,35 +323,35 @@ with col2:
         unsafe_allow_html=False,
     )
     
-    st.markdown("---")
+st.markdown("---")
     
     # ==============================
     # BACKTEST DATE
     # ==============================
-    st.sidebar.markdown("### 📅 Backtest Date")
-    analysis_date = st.sidebar.date_input(
-        "Select Analysis Date",
-        value=last_d.date() if last_d else pd.Timestamp.today().date(),
-    )
-    st.sidebar.info(f"Backtest Mode Active\nData cutoff: {analysis_date}")
-    st.sidebar.caption(f"Scans will run as of: {analysis_date}")
+st.sidebar.markdown("### 📅 Backtest Date")
+analysis_date = st.sidebar.date_input(
+    "Select Analysis Date",
+    value=last_d.date() if last_d else pd.Timestamp.today().date(),
+)
+st.sidebar.info(f"Backtest Mode Active\nData cutoff: {analysis_date}")
+st.sidebar.caption(f"Scans will run as of: {analysis_date}")
     
     
-    def trim_df_to_date(df: pd.DataFrame, anchor_date):
-        if df is None or df.empty:
-            return None
+def trim_df_to_date(df: pd.DataFrame, anchor_date):
+    if df is None or df.empty:
+        return None
     
-        df = df.copy()
+    df = df.copy()
     
-        if isinstance(df.index, pd.DatetimeIndex):
-            df = df[df.index.date <= anchor_date]
-        elif "datetime" in df.columns:
-            df = df[df["datetime"].dt.date <= anchor_date]
+    if isinstance(df.index, pd.DatetimeIndex):
+        df = df[df.index.date <= anchor_date]
+    elif "datetime" in df.columns:
+        df = df[df["datetime"].dt.date <= anchor_date]
     
-        if len(df) < 120:
-            return None
+    if len(df) < 120:
+        return None
     
-        return df
+    return df
     
     
     
@@ -362,63 +362,63 @@ with col2:
     # ==============================
     # SCANNERS (PURE FUNCTIONS)
     # ==============================
-    def rsi_market_pulse(df):
-        if len(df) < 14:
-            return None
-        rsi = talib.RSI(df["close"], 14).iloc[-1]
-        if rsi > 60:
-            zone = "RSI > 60"
-        elif rsi < 40:
-            zone = "RSI < 40"
-        else:
-            zone = "RSI 40–60"
-        return round(rsi, 2), zone
-    
-    
-    def volume_shocker(df):
-        if len(df) < 20:
-            return False
-        vol_sma = df["volume"].rolling(10).mean()
-        last, prev = df.iloc[-1], df.iloc[-2]
-        return (
-            last["volume"] > 2 * vol_sma.iloc[-1]
-            and prev["close"] * 0.95 <= last["close"] <= prev["close"] * 1.05
-        )
-    
-    
-    def nrb_7(df):
-        if len(df) < 20:
-            return None
-        base = df.iloc[-7]
-        inside = df.iloc[-6:-1]
-        last = df.iloc[-1]
-    
-        base_high = base["high"]
-        base_low = base["low"]
-    
-        cond_high_low = inside["high"].max() <= base_high and inside["low"].min() >= base_low
-        cond_open_close = (
-            inside["open"].max() <= base_high
-            and inside["open"].min() >= base_low
-            and inside["close"].max() <= base_high
-            and inside["close"].min() >= base_low
-        )
-    
-        is_nrb = cond_high_low and cond_open_close
-        if not is_nrb:
-            return None
-    
-        avg_vol = df["volume"].rolling(10).mean().iloc[-2]
-        if last["volume"] < 1.5 * avg_vol:
-            return None
-    
-        if last["close"] > base_high:
-            return "NRB-7 Bullish Breakout + Volume"
-    
-        if last["close"] < base_low:
-            return "NRB-7 Bearish Breakdown + Volume"
-    
+def rsi_market_pulse(df):
+    if len(df) < 14:
         return None
+    rsi = talib.RSI(df["close"], 14).iloc[-1]
+    if rsi > 60:
+        zone = "RSI > 60"
+    elif rsi < 40:
+        zone = "RSI < 40"
+    else:
+        zone = "RSI 40–60"
+    return round(rsi, 2), zone
+    
+    
+def volume_shocker(df):
+    if len(df) < 20:
+        return False
+    vol_sma = df["volume"].rolling(10).mean()
+    last, prev = df.iloc[-1], df.iloc[-2]
+    return (
+        last["volume"] > 2 * vol_sma.iloc[-1]
+        and prev["close"] * 0.95 <= last["close"] <= prev["close"] * 1.05
+    )
+    
+    
+def nrb_7(df):
+    if len(df) < 20:
+        return None
+    base = df.iloc[-7]
+    inside = df.iloc[-6:-1]
+    last = df.iloc[-1]
+    
+    base_high = base["high"]
+    base_low = base["low"]
+    
+    cond_high_low = inside["high"].max() <= base_high and inside["low"].min() >= base_low
+    cond_open_close = (
+        inside["open"].max() <= base_high
+        and inside["open"].min() >= base_low
+        and inside["close"].max() <= base_high
+        and inside["close"].min() >= base_low
+    )
+    
+    is_nrb = cond_high_low and cond_open_close
+    if not is_nrb:
+        return None
+    
+    avg_vol = df["volume"].rolling(10).mean().iloc[-2]
+    if last["volume"] < 1.5 * avg_vol:
+        return None
+    
+    if last["close"] > base_high:
+        return "NRB-7 Bullish Breakout + Volume"
+    
+    if last["close"] < base_low:
+        return "NRB-7 Bearish Breakdown + Volume"
+    
+    return None
     
     
     def counter_attack(df):
