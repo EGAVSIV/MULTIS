@@ -122,14 +122,16 @@ STATUS_LIST = [
 ]
 
 
-import streamlit as st
+
 
 # ----------------------------
 # EMAIL CONFIGURATION
 # ----------------------------
 
-EMAIL_ADDRESS = st.secrets["EMAIL_ADDRESS"]
-EMAIL_PASSWORD = st.secrets["EMAIL_PASSWORD"]
+import streamlit as st
+
+EMAIL_ADDRESS = st.secrets.get("EMAIL_ADDRESS", "")
+EMAIL_PASSWORD = st.secrets.get("EMAIL_PASSWORD", "")
 
 SMTP_SERVER = "smtp.gmail.com"
 SMTP_PORT = 587
