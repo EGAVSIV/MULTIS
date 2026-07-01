@@ -1627,7 +1627,7 @@ if prev["low"] < low and last["close"] > low:
 if prev["high"] > high and last["close"] < high:
         return "Bearish Shakeout"
     
-    return None
+return None
     
     
     
