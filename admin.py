@@ -33,7 +33,6 @@ def admin_panel():
     st.sidebar.title("👨‍💼 Admin Panel")
 
     if st.sidebar.button("🚪 Logout"):
-
         logout()
 
     st.title("👨‍💼 NSE Scanner Admin Dashboard")
@@ -90,13 +89,9 @@ def admin_panel():
         st.subheader("👤 Create New User")
 
         fullname = st.text_input("Full Name")
-
         mobile = st.text_input("Mobile Number")
-
         email = st.text_input("Email")
-
         username = st.text_input("Username")
-
         password = st.text_input("Password", type="password")
 
         days = st.selectbox(
@@ -106,9 +101,9 @@ def admin_panel():
 
         if st.button("✅ Create User"):
 
-    # -------------------------
-    # Validation
-    # -------------------------
+            # -------------------------
+            # Validation (Fixed Indentation Here)
+            # -------------------------
 
             if fullname.strip() == "":
                 st.error("❌ Please enter Full Name.")
@@ -144,7 +139,6 @@ def admin_panel():
                 st.error("❌ Password must be at least 8 characters.")
 
             else:
-
                 hashed = hash_password(password)
 
                 success, message = create_user(
@@ -157,13 +151,9 @@ def admin_panel():
                 )
 
                 if success:
-
                     st.success(message)
-
                     st.rerun()
-
                 else:
-
                     st.error(message)
                 
     # =====================================================
@@ -173,27 +163,17 @@ def admin_panel():
     with tab2:
 
         pending_users = [
-
             u for u in users
-
             if u["status"] == "Pending"
-
         ]
 
         if len(pending_users) == 0:
-
             st.success("No Pending Users.")
-
         else:
-
             for user in pending_users:
-
                 with st.expander(
-
                     f"{user['fullname']} ({user['username']})"
-
                 ):
-
                     st.write(f"**Name :** {user['fullname']}")
                     st.write(f"**Username :** {user['username']}")
                     st.write(f"**Mobile :** {user['mobile']}")
@@ -203,37 +183,22 @@ def admin_panel():
                     c1, c2 = st.columns(2)
 
                     with c1:
-
                         if st.button(
-
                             "✅ Approve",
-
                             key=f"approve_{user['id']}"
-
                         ):
-
                             approve_user(user["id"])
-
                             # Email will be added in Part-3
-
                             st.success("User Approved")
-
                             st.rerun()
 
                     with c2:
-
                         if st.button(
-
                             "🗑 Delete",
-
                             key=f"delete_pending_{user['id']}"
-
                         ):
-
                             delete_user(user["id"])
-
                             st.warning("User Deleted")
-
                             st.rerun()
 
     # =====================================================
@@ -243,31 +208,20 @@ def admin_panel():
     with tab3:
 
         approved_users = [
-
             u for u in users
-
             if u["status"] == "Approved"
-
         ]
 
         if len(approved_users) == 0:
-
             st.info("No Approved Users")
-
         else:
-
             for user in approved_users:
-
                 if user["role"] == "Admin":
-
                     continue
 
                 with st.expander(
-
                     f"{user['fullname']} ({user['username']})"
-
                 ):
-
                     st.write(f"**Mobile :** {user['mobile']}")
                     st.write(f"**Email :** {user['email']}")
                     st.write(f"**Expiry :** {user['expiry_date']}")
@@ -275,71 +229,40 @@ def admin_panel():
                     c1, c2, c3 = st.columns(3)
 
                     # Disable
-
                     with c1:
-
                         if st.button(
-
                             "🚫 Disable",
-
                             key=f"disable_{user['id']}"
-
                         ):
-
                             disable_user(user["id"])
-
                             st.success("User Disabled")
-
                             st.rerun()
 
                     # Extend Subscription
-
                     with c2:
-
                         if st.button(
-
                             "📅 +30 Days",
-
                             key=f"extend_{user['id']}"
-
                         ):
-
                             extend_subscription(
-
                                 user["id"],
-
                                 30
-
                             )
-
                             st.success(
-
                                 "Subscription Extended"
-
                             )
-
                             st.rerun()
 
                     # Delete
-
                     with c3:
-
                         if st.button(
-
                             "🗑 Delete",
-
                             key=f"delete_{user['id']}"
-
                         ):
-
                             delete_user(
-
                                 user["id"]
-
                             )
-
                             st.error("User Deleted")
-
                             st.rerun()
 
 
@@ -350,82 +273,48 @@ def admin_panel():
     with tab4:
 
         disabled_users = [
-
             u for u in users
-
             if u["status"] == "Disabled"
-
         ]
 
         if len(disabled_users) == 0:
-
             st.success("No Disabled Users")
-
         else:
-
             for user in disabled_users:
-
                 with st.expander(
-
                     f"{user['fullname']} ({user['username']})"
-
                 ):
-
                     st.write(f"**Mobile :** {user['mobile']}")
                     st.write(f"**Email :** {user['email']}")
 
                     c1, c2 = st.columns(2)
 
                     # Enable
-
                     with c1:
-
                         if st.button(
-
                             "🟢 Enable",
-
                             key=f"enable_{user['id']}"
-
                         ):
-
                             enable_user(
-
                                 user["id"]
-
                             )
-
                             st.success(
-
                                 "User Enabled"
-
                             )
-
                             st.rerun()
 
                     # Delete
-
                     with c2:
-
                         if st.button(
-
                             "🗑 Delete",
-
                             key=f"delete_disabled_{user['id']}"
-
                         ):
-
                             delete_user(
-
                                 user["id"]
-
                             )
-
                             st.warning(
-
                                 "User Deleted"
-
                             )
-
                             st.rerun()
 
 
@@ -440,7 +329,6 @@ def admin_panel():
         df = pd.DataFrame([dict(u) for u in users])
 
         if len(df):
-
             st.dataframe(
                 df,
                 use_container_width=True,
@@ -458,7 +346,6 @@ def admin_panel():
             )
 
             if search:
-
                 result = df[
                     df.astype(str)
                     .apply(
@@ -487,23 +374,16 @@ def admin_panel():
             ).encode("utf-8")
 
             st.download_button(
-
                 "📥 Download Users CSV",
-
                 csv,
-
                 file_name="users.csv",
-
                 mime="text/csv"
-
             )
 
         else:
-
             st.info("No Users Found")
 
     st.divider()
-
 
 
     # =====================================================
@@ -540,28 +420,23 @@ def admin_panel():
             admin = get_user(st.session_state.username)
 
             if admin is None:
-
                 st.error("Admin user not found.")
 
             elif not verify_password(
                 current_password,
                 admin["password"]
             ):
-
                 st.error("❌ Current password is incorrect.")
 
             elif new_password != confirm_password:
-
                 st.error("❌ New passwords do not match.")
 
             elif len(new_password) < 8:
-
                 st.warning(
                     "Password must be at least 8 characters."
                 )
 
             else:
-
                 hashed_password = hash_password(new_password)
 
                 update_password(
@@ -588,7 +463,7 @@ def admin_panel():
     from email_service import send_email
 
     test_email = st.text_input(
-        "Recipient Email",
+        "yadav.gauravsingh@gmail.com",
         value=st.session_state.get("username", "")
     )
 
@@ -610,7 +485,6 @@ def admin_panel():
     st.caption(
         "NSE Scanner Authentication System v1.0"
     )
-    
 
     st.divider()
 
@@ -621,4 +495,3 @@ def admin_panel():
     st.caption(
         "NSE Scanner Authentication System v1.0"
     )
-
