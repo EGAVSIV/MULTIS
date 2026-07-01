@@ -898,3 +898,32 @@ def verify_saved_otp(username, otp):
     return True, row["otp_expiry"]
 
 
+# ==========================================
+# CLEAR OTP
+# ==========================================
+
+def clear_otp(username):
+
+    conn = get_connection()
+
+    cur = conn.cursor()
+
+    cur.execute(
+        """
+        UPDATE users
+        SET
+            otp=NULL,
+            otp_expiry=NULL,
+            otp_attempts=0
+        WHERE username=?
+        """,
+        (
+            username,
+        )
+    )
+
+    conn.commit()
+
+    conn.close()
+
+
