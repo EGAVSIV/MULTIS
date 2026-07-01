@@ -68,7 +68,7 @@ SESSION_TIMEOUT_MINUTES = 60
 # CONTACT INFORMATION
 # ------------------------------------------
 
-OWNER_NAME = "Gaurav Singh Yaadav"
+OWNER_NAME = "Team NSE Scanner"
 
 OWNER_PHONE = "+91 80039 94518"
 
