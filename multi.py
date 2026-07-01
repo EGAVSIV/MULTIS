@@ -1614,20 +1614,23 @@ def exhaustion_bar(df):
 def shakeout_trap(df, lookback=20):
     if len(df) < lookback + 2:
         return None
-    
+
+    # Previous trading range
     high = df["high"].iloc[-lookback:-1].max()
     low = df["low"].iloc[-lookback:-1].min()
-    
+
     prev = df.iloc[-2]
     last = df.iloc[-1]
-    
-if prev["low"] < low and last["close"] > low:
-      return "Bullish Shakeout"
-    
-if prev["high"] > high and last["close"] < high:
-    return "Bearish Shakeout"
-    
-return None
+
+    # Bullish Shakeout
+    if prev["low"] < low and last["close"] > low:
+        return "Bullish Shakeout"
+
+    # Bearish Shakeout
+    if prev["high"] > high and last["close"] < high:
+        return "Bearish Shakeout"
+
+    return None
     
     
     
