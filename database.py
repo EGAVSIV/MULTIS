@@ -783,26 +783,39 @@ def save_otp(username, otp, expiry):
 
     cur = conn.cursor()
 
-    cur.execute(
-        """
-        UPDATE users
-        SET
-            otp=?,
-            otp_expiry=?,
-            otp_attempts=0
-        WHERE username=?
-        """,
-        (
-            otp,
-            expiry,
-            username
+    try:
+
+        cur.execute(
+            """
+            UPDATE users
+            SET
+                otp=?,
+                otp_expiry=?,
+                otp_attempts=0
+            WHERE username=?
+            """,
+            (
+                otp,
+                expiry,
+                username
+            )
         )
-    )
 
-    conn.commit()
+        conn.commit()
 
-    conn.close()
+    except Exception as e:
 
+        import traceback
+
+        print(e)
+
+        print(traceback.format_exc())
+
+        raise
+
+    finally:
+
+        conn.close()
 
 def update_password(username, hashed_password):
 
