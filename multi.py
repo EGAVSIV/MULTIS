@@ -1541,122 +1541,122 @@ def island_reversal(df):
     return None
     
     
-    def wyckoff_spring_upthrust(df, lookback=30):
-        if len(df) < lookback + 2:
-            return None
-    
-        range_high = df["high"].iloc[-lookback:-1].max()
-        range_low = df["low"].iloc[-lookback:-1].min()
-    
-        last = df.iloc[-1]
-    
-        if last["low"] < range_low and last["close"] > range_low:
-            return "Wyckoff Spring (Bullish)"
-    
-        if last["high"] > range_high and last["close"] < range_high:
-            return "Wyckoff Upthrust (Bearish)"
-    
+def wyckoff_spring_upthrust(df, lookback=30):
+    if len(df) < lookback + 2:
         return None
     
+    range_high = df["high"].iloc[-lookback:-1].max()
+    range_low = df["low"].iloc[-lookback:-1].min()
     
-    def smart_money_trap(df):
-        if len(df) < 3:
-            return None
+    last = df.iloc[-1]
     
-        prev = df.iloc[-2]
-        last = df.iloc[-1]
+    if last["low"] < range_low and last["close"] > range_low:
+        return "Wyckoff Spring (Bullish)"
     
-        # Bull trap
-        if prev["close"] > prev["high"] * 0.99 and last["close"] < prev["low"]:
-            return "Bull Trap Reversal"
+    if last["high"] > range_high and last["close"] < range_high:
+        return "Wyckoff Upthrust (Bearish)"
+    
+    return None
+    
+    
+def smart_money_trap(df):
+    if len(df) < 3:
+        return None
+    
+    prev = df.iloc[-2]
+    last = df.iloc[-1]
+    
+    # Bull trap
+    if prev["close"] > prev["high"] * 0.99 and last["close"] < prev["low"]:
+        return "Bull Trap Reversal"
     
         # Bear trap
-        if prev["close"] < prev["low"] * 1.01 and last["close"] > prev["high"]:
-            return "Bear Trap Reversal"
+    if prev["close"] < prev["low"] * 1.01 and last["close"] > prev["high"]:
+        return "Bear Trap Reversal"
     
+    return None
+    
+    
+def bump_and_run_reversal(df):
+    if len(df) < 40:
         return None
     
+    slope1 = (df["close"].iloc[-30] - df["close"].iloc[-40]) / 10
+    slope2 = (df["close"].iloc[-1] - df["close"].iloc[-10]) / 10
     
-    def bump_and_run_reversal(df):
-        if len(df) < 40:
-            return None
+    if slope2 > slope1 * 2 and df["close"].iloc[-1] < df["close"].iloc[-5]:
+        return "BARR Top Reversal"
     
-        slope1 = (df["close"].iloc[-30] - df["close"].iloc[-40]) / 10
-        slope2 = (df["close"].iloc[-1] - df["close"].iloc[-10]) / 10
+    if slope2 < slope1 * 2 and df["close"].iloc[-1] > df["close"].iloc[-5]:
+        return "BARR Bottom Reversal"
     
-        if slope2 > slope1 * 2 and df["close"].iloc[-1] < df["close"].iloc[-5]:
-            return "BARR Top Reversal"
+    return None
     
-        if slope2 < slope1 * 2 and df["close"].iloc[-1] > df["close"].iloc[-5]:
-            return "BARR Bottom Reversal"
     
+def exhaustion_bar(df):
+    if len(df) < 20:
         return None
     
+    avg_range = (df["high"] - df["low"]).rolling(10).mean().iloc[-2]
+    last = df.iloc[-1]
     
-    def exhaustion_bar(df):
-        if len(df) < 20:
-            return None
+    big_bar = (last["high"] - last["low"]) > 2 * avg_range
     
-        avg_range = (df["high"] - df["low"]).rolling(10).mean().iloc[-2]
-        last = df.iloc[-1]
+    if big_bar:
+        if last["close"] < last["open"]:
+            return "Bearish Exhaustion"
+        if last["close"] > last["open"]:
+            return "Bullish Exhaustion"
     
-        big_bar = (last["high"] - last["low"]) > 2 * avg_range
+    return None
     
-        if big_bar:
-            if last["close"] < last["open"]:
-                return "Bearish Exhaustion"
-            if last["close"] > last["open"]:
-                return "Bullish Exhaustion"
     
+def shakeout_trap(df, lookback=20):
+    if len(df) < lookback + 2:
         return None
     
+    high = df["high"].iloc[-lookback:-1].max()
+    low = df["low"].iloc[-lookback:-1].min()
     
-    def shakeout_trap(df, lookback=20):
-        if len(df) < lookback + 2:
-            return None
+    prev = df.iloc[-2]
+    last = df.iloc[-1]
     
-        high = df["high"].iloc[-lookback:-1].max()
-        low = df["low"].iloc[-lookback:-1].min()
+if prev["low"] < low and last["close"] > low:
+        return "Bullish Shakeout"
     
-        prev = df.iloc[-2]
-        last = df.iloc[-1]
+    if prev["high"] > high and last["close"] < high:
+        return "Bearish Shakeout"
     
-        if prev["low"] < low and last["close"] > low:
-            return "Bullish Shakeout"
+    return None
     
-        if prev["high"] > high and last["close"] < high:
-            return "Bearish Shakeout"
     
+    
+def hidden_pivot_reversal(df, lookback=25):
+    if len(df) < lookback:
         return None
     
+    highs = df["high"].iloc[-lookback:]
+    lows = df["low"].iloc[-lookback:]
     
+    if highs.iloc[-1] > highs.iloc[:-1].max() and df["close"].iloc[-1] < highs.iloc[:-1].max():
+        return "Hidden Pivot Bearish Reversal"
     
-    def hidden_pivot_reversal(df, lookback=25):
-        if len(df) < lookback:
-            return None
+    if lows.iloc[-1] < lows.iloc[:-1].min() and df["close"].iloc[-1] > lows.iloc[:-1].min():
+        return "Hidden Pivot Bullish Reversal"
     
-        highs = df["high"].iloc[-lookback:]
-        lows = df["low"].iloc[-lookback:]
+    return None
     
-        if highs.iloc[-1] > highs.iloc[:-1].max() and df["close"].iloc[-1] < highs.iloc[:-1].max():
-            return "Hidden Pivot Bearish Reversal"
-    
-        if lows.iloc[-1] < lows.iloc[:-1].min() and df["close"].iloc[-1] > lows.iloc[:-1].min():
-            return "Hidden Pivot Bullish Reversal"
-    
+def springer_reversal(df, lookback=25):
+    if len(df) < lookback + 5:
         return None
     
-    def springer_reversal(df, lookback=25):
-        if len(df) < lookback + 5:
-            return None
+    support = df["low"].iloc[-lookback:-5].min()
+    recent = df.iloc[-1]
     
-        support = df["low"].iloc[-lookback:-5].min()
-        recent = df.iloc[-1]
+    if recent["low"] < support and recent["close"] > support:
+        return "Springer Reversal (Bullish)"
     
-        if recent["low"] < support and recent["close"] > support:
-            return "Springer Reversal (Bullish)"
-    
-        return None
+    return None
     
     
     
@@ -1666,117 +1666,117 @@ def island_reversal(df):
     # ==============================
     # SCANNER TILE CONFIG
     # ==============================
-    SCANNERS = [
-        {"name": "RSI Market Pulse", "color": "#1abc9c"},
-        {"name": "Volume Shocker", "color": "#1abc9c"},
-        {"name": "NRB-7 Breakout", "color": "#1abc9c"},
-        {"name": "Counter Attack", "color": "#1abc9c"},
-        {"name": "Breakaway Gaps", "color": "#e67e22"},
-        {"name": "RSI + ADX", "color": "#e67e22"},
-        {"name": "RSI WM 60–40", "color": "#e67e22"},
-        {"name": "MACD Market Pulse", "color": "#e67e22"},
-        {"name": "MACD Normal Divergence", "color": "#f1c40f"},
-        {"name": "MACD RD (4th Wave)", "color": "#f1c40f"},
-        {"name": "Probable 3rd Wave", "color": "#f1c40f"},
-        {"name": "Probable C Wave", "color": "#f1c40f"},
-        {"name": "MACD Bearish Peak Divergence", "color": "#3498db"},
-        {"name": "MACD Bullish Base Divergence", "color": "#3498db"},
-        {"name": "Trend Alignment (EMA)", "color": "#3498db"},
-        {"name": "Pullback to EMA", "color": "#3498db"},
-        {"name": "High Probability Confluence", "color": "#e84393"},
-        {"name": "MACD Hook Up", "color": "#e84393"},
-        {"name": "MACD Hook Down", "color": "#e84393"},
-        {"name": "MACD Histogram Divergence", "color": "#e84393"},
-        {"name": "EMA50 + Stoch Oversold", "color": "#f1c40f"},
-        {"name": "Dark Cloud Cover", "color": "#f1c40f"},
-        {"name": "Morning Star (Bottom)", "color": "#f1c40f"},
-        {"name": "Evening Star (Top)", "color": "#f1c40f"},
-        {"name": "Bullish GSAS", "color": "#27ae60"},
-        {"name": "Bearish GSAS", "color": "#27ae60"},
-        {"name": "50 EMA Fake Breakdown", "color": "#27ae60"},
-        {"name": "50 EMA Fake Breakout", "color": "#27ae60"},
-        {"name": "KDJ BUY (Oversold)", "color": "#f39c12"},
-        {"name": "KDJ SELL (Overbought)", "color": "#f39c12"},
-        {"name": "Probable Momentum (Consecutive Close)", "color": "#f39c12"},
-        {"name": "Camarilla Breakout / Breakdown", "color": "#f39c12"},
-        {"name": "CPR Breakout / Breakdown", "color": "#e67e22"},
-        {"name": "Inside Bar Breakout", "color": "#e67e22"},
-        {"name": "ADX Expansion (Trend Ignition)", "color": "#e67e22"},
-        {"name": "Range Expansion Day", "color": "#e67e22"},
-        {"name": "Failed Breakout / Breakdown", "color": "#34495e"},
-        {"name": "EMA Compression → Expansion", "color": "#34495e"},
-        {"name": "Top 10 by ATR %", "color": "#34495e"},
-        {"name": "Liquidity Sweep Reversal", "color": "#34495e"},
-        {"name": "Island Reversal", "color": "#ff6b81"},
-        {"name": "Wyckoff Spring / Upthrust", "color": "#ff6b81"},
-        {"name": "Smart Money Trap", "color": "#ff6b81"},
-        {"name": "Bump & Run Reversal", "color": "#ff6b81"},
-        {"name": "Exhaustion Bar", "color": "#3498db"},
-        {"name": "Shakeout / Trap", "color": "#3498db"},
-        {"name": "Hidden Pivot Reversal", "color": "#3498db"},
-        {"name": "Springer Reversal", "color": "#3498db"},
-        {"name": "RSI + MACD Cross Swing", "color": "#9b59b6"},
-        {"name": "RSI Swing", "color": "#8e44ad"},
-    ]
+SCANNERS = [
+    {"name": "RSI Market Pulse", "color": "#1abc9c"},
+    {"name": "Volume Shocker", "color": "#1abc9c"},
+    {"name": "NRB-7 Breakout", "color": "#1abc9c"},
+    {"name": "Counter Attack", "color": "#1abc9c"},
+    {"name": "Breakaway Gaps", "color": "#e67e22"},
+    {"name": "RSI + ADX", "color": "#e67e22"},
+    {"name": "RSI WM 60–40", "color": "#e67e22"},
+    {"name": "MACD Market Pulse", "color": "#e67e22"},
+    {"name": "MACD Normal Divergence", "color": "#f1c40f"},
+    {"name": "MACD RD (4th Wave)", "color": "#f1c40f"},
+    {"name": "Probable 3rd Wave", "color": "#f1c40f"},
+    {"name": "Probable C Wave", "color": "#f1c40f"},
+    {"name": "MACD Bearish Peak Divergence", "color": "#3498db"},
+    {"name": "MACD Bullish Base Divergence", "color": "#3498db"},
+    {"name": "Trend Alignment (EMA)", "color": "#3498db"},
+    {"name": "Pullback to EMA", "color": "#3498db"},
+    {"name": "High Probability Confluence", "color": "#e84393"},
+    {"name": "MACD Hook Up", "color": "#e84393"},
+    {"name": "MACD Hook Down", "color": "#e84393"},
+    {"name": "MACD Histogram Divergence", "color": "#e84393"},
+    {"name": "EMA50 + Stoch Oversold", "color": "#f1c40f"},
+    {"name": "Dark Cloud Cover", "color": "#f1c40f"},
+    {"name": "Morning Star (Bottom)", "color": "#f1c40f"},
+    {"name": "Evening Star (Top)", "color": "#f1c40f"},
+    {"name": "Bullish GSAS", "color": "#27ae60"},
+    {"name": "Bearish GSAS", "color": "#27ae60"},
+    {"name": "50 EMA Fake Breakdown", "color": "#27ae60"},
+    {"name": "50 EMA Fake Breakout", "color": "#27ae60"},
+    {"name": "KDJ BUY (Oversold)", "color": "#f39c12"},
+    {"name": "KDJ SELL (Overbought)", "color": "#f39c12"},
+    {"name": "Probable Momentum (Consecutive Close)", "color": "#f39c12"},
+    {"name": "Camarilla Breakout / Breakdown", "color": "#f39c12"},
+    {"name": "CPR Breakout / Breakdown", "color": "#e67e22"},
+    {"name": "Inside Bar Breakout", "color": "#e67e22"},
+    {"name": "ADX Expansion (Trend Ignition)", "color": "#e67e22"},
+    {"name": "Range Expansion Day", "color": "#e67e22"},
+    {"name": "Failed Breakout / Breakdown", "color": "#34495e"},
+    {"name": "EMA Compression → Expansion", "color": "#34495e"},
+    {"name": "Top 10 by ATR %", "color": "#34495e"},
+    {"name": "Liquidity Sweep Reversal", "color": "#34495e"},
+    {"name": "Island Reversal", "color": "#ff6b81"},
+    {"name": "Wyckoff Spring / Upthrust", "color": "#ff6b81"},
+    {"name": "Smart Money Trap", "color": "#ff6b81"},
+    {"name": "Bump & Run Reversal", "color": "#ff6b81"},
+    {"name": "Exhaustion Bar", "color": "#3498db"},
+    {"name": "Shakeout / Trap", "color": "#3498db"},
+    {"name": "Hidden Pivot Reversal", "color": "#3498db"},
+    {"name": "Springer Reversal", "color": "#3498db"},
+    {"name": "RSI + MACD Cross Swing", "color": "#9b59b6"},
+    {"name": "RSI Swing", "color": "#8e44ad"},
+]
     
-    if "scanner" not in st.session_state:
-        st.session_state["scanner"] = SCANNERS[0]["name"]
+if "scanner" not in st.session_state:
+    st.session_state["scanner"] = SCANNERS[0]["name"]
     
-    st.markdown("### 🎯 Select Scanner")
+st.markdown("### 🎯 Select Scanner")
     
-    cols_per_row = 4
-    clicked_scanner = None
-    
-    
+cols_per_row = 4
+clicked_scanner = None
     
     
     
-    for i in range(0, len(SCANNERS), cols_per_row):
-        row = SCANNERS[i : i + cols_per_row]
-        cols = st.columns(len(row))
-        for col, sc in zip(cols, row):
-            with col:
-                is_active = st.session_state["scanner"] == sc["name"]
-                bg = sc["color"]
-                border = "#ffffff" if not is_active else "#000000"
-                opacity = "1.0" if is_active else "0.85"
     
-                st.markdown(
-                    f"""
-                    <div style="
-                        border-radius: 12px;
-                        padding: 14px 10px;
-                        text-align: center;
-                        background: {bg};
-                        border: 3px solid {border};
-                        box-shadow: 0 3px 8px rgba(0,0,0,0.35);
-                        opacity: {opacity};
-                        margin-bottom: 6px;
+    
+for i in range(0, len(SCANNERS), cols_per_row):
+    row = SCANNERS[i : i + cols_per_row]
+    cols = st.columns(len(row))
+    for col, sc in zip(cols, row):
+        with col:
+            is_active = st.session_state["scanner"] == sc["name"]
+            bg = sc["color"]
+            border = "#ffffff" if not is_active else "#000000"
+            opacity = "1.0" if is_active else "0.85"
+    
+            st.markdown(
+                f"""
+                <div style="
+                    border-radius: 12px;
+                    padding: 14px 10px;
+                    text-align: center;
+                    background: {bg};
+                    border: 3px solid {border};
+                    box-shadow: 0 3px 8px rgba(0,0,0,0.35);
+                    opacity: {opacity};
+                    margin-bottom: 6px;
+                ">
+                    <span style="
+                        font-weight: 700;
+                        font-size: 14px;
+                        color: white;
                     ">
-                        <span style="
-                            font-weight: 700;
-                            font-size: 14px;
-                            color: white;
-                        ">
-                            {sc["name"]}
-                        </span>
-                    </div>
-                    """,
-                    unsafe_allow_html=True,
-                )
-                if st.button(f"Scan: {sc['name']}", key=f"btn_{sc['name']}"):
-                    clicked_scanner = sc["name"]
+                        {sc["name"]}
+                    </span>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+            if st.button(f"Scan: {sc['name']}", key=f"btn_{sc['name']}"):
+                clicked_scanner = sc["name"]
     
-    if clicked_scanner is not None:
-        st.session_state["scanner"] = clicked_scanner
+if clicked_scanner is not None:
+    st.session_state["scanner"] = clicked_scanner
     
-    scanner = st.session_state["scanner"]
+scanner = st.session_state["scanner"]
     
-    st.markdown(f"**Active Scanner:** `{scanner}`  |  **Timeframe:** `{tf}`")
+st.markdown(f"**Active Scanner:** `{scanner}`  |  **Timeframe:** `{tf}`")
     
-    run = clicked_scanner is not None
+run = clicked_scanner is not None
     
-    df_res = empty_result_df()
+df_res = empty_result_df()
     
     
     
@@ -1794,360 +1794,360 @@ def island_reversal(df):
     # ==============================
     # MAIN EXECUTION
     # ==============================
-    if run:
-        data = load_data(TIMEFRAMES[tf])
-        if not data:
-            st.warning("No data found.")
+if run:
+    data = load_data(TIMEFRAMES[tf])
+    if not data:
+        st.warning("No data found.")
+        st.stop()
+    
+    results = []
+    atr_list = []
+    
+    if scanner in ["Bullish GSAS", "Bearish GSAS", "MACD RD (4th Wave)"]:
+        htf_map = {
+            "15 Min": "1 Hour",
+            "1 Hour": "Daily",
+            "Daily": "Weekly",
+            "Weekly": "Monthly",
+        }
+    
+        if tf not in htf_map:
+            st.warning("GSAS not supported for this timeframe")
             st.stop()
     
-        results = []
-        atr_list = []
+        data_htf = load_data(TIMEFRAMES[htf_map[tf]])
+    else:
+        data_htf = None
     
-        if scanner in ["Bullish GSAS", "Bearish GSAS", "MACD RD (4th Wave)"]:
-            htf_map = {
-                "15 Min": "1 Hour",
-                "1 Hour": "Daily",
-                "Daily": "Weekly",
-                "Weekly": "Monthly",
-            }
+    if scanner == "RSI WM 60–40":
+        data_w = load_data(TIMEFRAMES["Weekly"])
+        data_m = load_data(TIMEFRAMES["Monthly"])
     
-            if tf not in htf_map:
-                st.warning("GSAS not supported for this timeframe")
-                st.stop()
+    for sym, df in data.items():
+        df = trim_df_to_date(df, analysis_date)
+        if df is None:
+            continue
     
-            data_htf = load_data(TIMEFRAMES[htf_map[tf]])
-        else:
-            data_htf = None
-    
-        if scanner == "RSI WM 60–40":
-            data_w = load_data(TIMEFRAMES["Weekly"])
-            data_m = load_data(TIMEFRAMES["Monthly"])
-    
-        for sym, df in data.items():
-            df = trim_df_to_date(df, analysis_date)
-            if df is None:
-                continue
-    
-            base_row = {
-                "Symbol": sym,
-                "Signal": "",
-                "Trend": "",
-                "State": "",
-                "Setup": "",
-                "Divergence": "",
-                "RSI": "",
-                "Zone": "",
-                "Confluence": 0,
-                "Bias": "",
-                "Probability": "",
-                "TV_Link": "",
-            }
+        base_row = {
+            "Symbol": sym,
+            "Signal": "",
+            "Trend": "",
+            "State": "",
+            "Setup": "",
+            "Divergence": "",
+            "RSI": "",
+            "Zone": "",
+            "Confluence": 0,
+            "Bias": "",
+            "Probability": "",
+            "TV_Link": "",
+        }
     
             # --- Top 10 ATR % special handling ---
-            if scanner == "Top 10 by ATR %":
-                v = atr_percent(df)
-                if v is not None:
-                    row = base_row.copy()
-                    row["Signal"] = "High ATR %"
-                    row["State"] = f"{v:.2f}%"
-                    atr_list.append((sym, v, row))
-                continue
+        if scanner == "Top 10 by ATR %":
+            v = atr_percent(df)
+            if v is not None:
+                row = base_row.copy()
+                row["Signal"] = "High ATR %"
+                row["State"] = f"{v:.2f}%"
+                atr_list.append((sym, v, row))
+            continue
     
             # ---- Regular scanners ----
-            if scanner == "RSI Market Pulse":
-                r = rsi_market_pulse(df)
-                if r:
-                    row = base_row.copy()
-                    row["RSI"] = r[0]
-                    row["Zone"] = r[1]
-                    results.append(row)
-    
-            elif scanner == "Volume Shocker" and volume_shocker(df):
+        if scanner == "RSI Market Pulse":
+            r = rsi_market_pulse(df)
+            if r:
                 row = base_row.copy()
-                row["Signal"] = "Volume Shocker"
+                row["RSI"] = r[0]
+                row["Zone"] = r[1]
                 results.append(row)
     
-            elif scanner == "NRB-7 Breakout":
-                sig = nrb_7(df)
+        elif scanner == "Volume Shocker" and volume_shocker(df):
+            row = base_row.copy()
+            row["Signal"] = "Volume Shocker"
+            results.append(row)
+    
+        elif scanner == "NRB-7 Breakout":
+            sig = nrb_7(df)
+            if sig:
+                row = base_row.copy()
+                row["Signal"] = sig
+                results.append(row)
+    
+        elif scanner == "Counter Attack":
+            sig = counter_attack(df)
+            if sig:
+                row = base_row.copy()
+                row["Signal"] = sig
+                results.append(row)
+    
+        elif scanner == "Breakaway Gaps":
+            sig = breakaway_gap(df)
+            if sig:
+                row = base_row.copy()
+                row["Signal"] = sig
+                results.append(row)
+    
+        elif scanner == "RSI + ADX":
+            sig = rsi_adx(df)
+            if sig:
+                row = base_row.copy()
+                row["Signal"] = sig
+                results.append(row)
+    
+        elif scanner == "RSI WM 60–40":
+            if sym in data_w and sym in data_m:
+                df_wt = trim_df_to_date(data_w[sym], analysis_date)
+                df_mt = trim_df_to_date(data_m[sym], analysis_date)
+                if df_wt is None or df_mt is None:
+                    continue
+                sig = rsi_wm(df, df_wt, df_mt)
                 if sig:
                     row = base_row.copy()
                     row["Signal"] = sig
                     results.append(row)
     
-            elif scanner == "Counter Attack":
-                sig = counter_attack(df)
+        elif scanner == "MACD Market Pulse":
+            sig = macd_market_pulse(df)
+            if sig:
+                row = base_row.copy()
+                row["State"] = sig
+                results.append(row)
+    
+        elif scanner == "MACD Normal Divergence":
+            sig = macd_normal_divergence(df)
+            if sig:
+                row = base_row.copy()
+                row["Divergence"] = sig
+                results.append(row)
+    
+        elif scanner == "MACD RD (4th Wave)":
+            if data_htf is not None and sym in data_htf:
+                df_htf = trim_df_to_date(data_htf[sym], analysis_date)
+                if df_htf is None:
+                    continue
+                sig = macd_rd(df, df_htf)
                 if sig:
                     row = base_row.copy()
                     row["Signal"] = sig
                     results.append(row)
     
-            elif scanner == "Breakaway Gaps":
-                sig = breakaway_gap(df)
+        elif scanner == "Probable 3rd Wave":
+            if third_wave_finder(df):
+                row = base_row.copy()
+                row["Signal"] = "Probable 3rd Wave"
+                results.append(row)
+    
+        elif scanner == "Probable C Wave":
+            if c_wave_finder(df):
+                row = base_row.copy()
+                row["Signal"] = "Probable C Wave"
+                results.append(row)
+    
+        elif scanner == "MACD Bearish Peak Divergence":
+            sig = macd_peak_bearish_divergence(df)
+            if sig:
+                row = base_row.copy()
+                row["Signal"] = sig
+                row["Divergence"] = sig
+                results.append(row)
+    
+        elif scanner == "MACD Bullish Base Divergence":
+            sig = macd_base_bullish_divergence(df)
+            if sig:
+                row = base_row.copy()
+                row["Signal"] = sig
+                row["Divergence"] = sig
+                results.append(row)
+    
+        elif scanner == "Trend Alignment (EMA)":
+            sig = trend_alignment(df)
+            if sig:
+                row = base_row.copy()
+                row["Trend"] = sig
+                results.append(row)
+    
+        elif scanner == "Pullback to EMA":
+            sig = pullback_to_ema(df)
+            if sig:
+                row = base_row.copy()
+                row["Setup"] = sig
+                results.append(row)
+    
+        elif scanner == "High Probability Confluence":
+            sig = confluence_setup(df)
+            if sig:
+                row = base_row.copy()
+                row["Setup"] = sig
+                results.append(row)
+    
+        elif scanner == "MACD Hook Up":
+            sig = macd_hook_up(df)
+            if sig:
+                row = base_row.copy()
+                row["Signal"] = sig
+                results.append(row)
+    
+        elif scanner == "MACD Hook Down":
+            sig = macd_hook_down(df)
+            if sig:
+                row = base_row.copy()
+                row["Signal"] = sig
+                results.append(row)
+    
+        elif scanner == "MACD Histogram Divergence":
+            sig = macd_histogram_divergence(df)
+            if sig:
+                row = base_row.copy()
+                row["Divergence"] = sig
+                results.append(row)
+    
+        elif scanner == "EMA50 + Stoch Oversold":
+            sig = ema50_stoch_oversold(df)
+            if sig:
+                row = base_row.copy()
+                row["Signal"] = sig
+                results.append(row)
+    
+        elif scanner == "Dark Cloud Cover":
+            sig = dark_cloud_cover(df)
+            if sig:
+                row = base_row.copy()
+                row["Signal"] = sig
+                results.append(row)
+    
+        elif scanner == "Morning Star (Bottom)":
+            sig = morning_star_bottom(df)
+            if sig:
+                row = base_row.copy()
+                row["Signal"] = sig
+                results.append(row)
+    
+        elif scanner == "Evening Star (Top)":
+            sig = evening_star_top(df)
+            if sig:
+                row = base_row.copy()
+                row["Signal"] = sig
+                results.append(row)
+    
+        elif scanner == "Bullish GSAS":
+            if data_htf is not None and sym in data_htf:
+                df_htf = trim_df_to_date(data_htf[sym], analysis_date)
+                if df_htf is None:
+                    continue
+                sig = bullish_gsas(df, df_htf)
                 if sig:
                     row = base_row.copy()
                     row["Signal"] = sig
                     results.append(row)
     
-            elif scanner == "RSI + ADX":
-                sig = rsi_adx(df)
+        elif scanner == "Bearish GSAS":
+            if data_htf is not None and sym in data_htf:
+                df_htf = trim_df_to_date(data_htf[sym], analysis_date)
+                if df_htf is None:
+                    continue
+                sig = bearish_gsas(df, df_htf)
                 if sig:
                     row = base_row.copy()
                     row["Signal"] = sig
                     results.append(row)
     
-            elif scanner == "RSI WM 60–40":
-                if sym in data_w and sym in data_m:
-                    df_wt = trim_df_to_date(data_w[sym], analysis_date)
-                    df_mt = trim_df_to_date(data_m[sym], analysis_date)
-                    if df_wt is None or df_mt is None:
-                        continue
-                    sig = rsi_wm(df, df_wt, df_mt)
-                    if sig:
-                        row = base_row.copy()
-                        row["Signal"] = sig
-                        results.append(row)
+        elif scanner == "50 EMA Fake Breakdown":
+            sig = ema50_fake_breakdown(df)
+            if sig:
+                row = base_row.copy()
+                row["Signal"] = sig
+                results.append(row)
     
-            elif scanner == "MACD Market Pulse":
-                sig = macd_market_pulse(df)
-                if sig:
-                    row = base_row.copy()
-                    row["State"] = sig
-                    results.append(row)
+        elif scanner == "50 EMA Fake Breakout":
+            sig = ema50_fake_breakout(df)
+            if sig:
+                row = base_row.copy()
+                row["Signal"] = sig
+                results.append(row)
     
-            elif scanner == "MACD Normal Divergence":
-                sig = macd_normal_divergence(df)
-                if sig:
-                    row = base_row.copy()
-                    row["Divergence"] = sig
-                    results.append(row)
+        elif scanner == "KDJ BUY (Oversold)":
+            sig = kdj_buy(df)
+            if sig:
+                row = base_row.copy()
+                row["Signal"] = sig
+                results.append(row)
     
-            elif scanner == "MACD RD (4th Wave)":
-                if data_htf is not None and sym in data_htf:
-                    df_htf = trim_df_to_date(data_htf[sym], analysis_date)
-                    if df_htf is None:
-                        continue
-                    sig = macd_rd(df, df_htf)
-                    if sig:
-                        row = base_row.copy()
-                        row["Signal"] = sig
-                        results.append(row)
+        elif scanner == "KDJ SELL (Overbought)":
+            sig = kdj_sell(df)
+            if sig:
+                row = base_row.copy()
+                row["Signal"] = sig
+                results.append(row)
     
-            elif scanner == "Probable 3rd Wave":
-                if third_wave_finder(df):
-                    row = base_row.copy()
-                    row["Signal"] = "Probable 3rd Wave"
-                    results.append(row)
+        elif scanner == "Probable Momentum (Consecutive Close)":
+            res = consecutive_close_momentum(df, min_count=3)
+            if res:
+                direction, days = res
+                row = base_row.copy()
+                row["Signal"] = f"{direction} Momentum"
+                row["State"] = f"{days} Consecutive Days"
+                results.append(row)
     
-            elif scanner == "Probable C Wave":
-                if c_wave_finder(df):
-                    row = base_row.copy()
-                    row["Signal"] = "Probable C Wave"
-                    results.append(row)
+        elif scanner == "Camarilla Breakout / Breakdown":
+            sig = camarilla_breakout(df)
+            if sig:
+                row = base_row.copy()
+                row["Signal"] = sig
+                results.append(row)
     
-            elif scanner == "MACD Bearish Peak Divergence":
-                sig = macd_peak_bearish_divergence(df)
-                if sig:
-                    row = base_row.copy()
-                    row["Signal"] = sig
-                    row["Divergence"] = sig
-                    results.append(row)
+        elif scanner == "CPR Breakout / Breakdown":
+            sig = cpr_breakout(df)
+            if sig:
+                row = base_row.copy()
+                row["Signal"] = sig
+                results.append(row)
     
-            elif scanner == "MACD Bullish Base Divergence":
-                sig = macd_base_bullish_divergence(df)
-                if sig:
-                    row = base_row.copy()
-                    row["Signal"] = sig
-                    row["Divergence"] = sig
-                    results.append(row)
+        elif scanner == "Inside Bar Breakout":
+            sig = inside_bar_breakout(df)
+            if sig:
+                row = base_row.copy()
+                row["Signal"] = sig
+                results.append(row)
     
-            elif scanner == "Trend Alignment (EMA)":
-                sig = trend_alignment(df)
-                if sig:
-                    row = base_row.copy()
-                    row["Trend"] = sig
-                    results.append(row)
+        elif scanner == "ADX Expansion (Trend Ignition)":
+            sig = adx_expansion(df)
+            if sig:
+                row = base_row.copy()
+                row["Signal"] = sig
+                results.append(row)
     
-            elif scanner == "Pullback to EMA":
-                sig = pullback_to_ema(df)
-                if sig:
-                    row = base_row.copy()
-                    row["Setup"] = sig
-                    results.append(row)
+        elif scanner == "Range Expansion Day":
+            sig = range_expansion_day(df)
+            if sig:
+                row = base_row.copy()
+                row["Signal"] = sig
+                results.append(row)
     
-            elif scanner == "High Probability Confluence":
-                sig = confluence_setup(df)
-                if sig:
-                    row = base_row.copy()
-                    row["Setup"] = sig
-                    results.append(row)
-    
-            elif scanner == "MACD Hook Up":
-                sig = macd_hook_up(df)
-                if sig:
-                    row = base_row.copy()
-                    row["Signal"] = sig
-                    results.append(row)
-    
-            elif scanner == "MACD Hook Down":
-                sig = macd_hook_down(df)
-                if sig:
-                    row = base_row.copy()
-                    row["Signal"] = sig
-                    results.append(row)
-    
-            elif scanner == "MACD Histogram Divergence":
-                sig = macd_histogram_divergence(df)
-                if sig:
-                    row = base_row.copy()
-                    row["Divergence"] = sig
-                    results.append(row)
-    
-            elif scanner == "EMA50 + Stoch Oversold":
-                sig = ema50_stoch_oversold(df)
-                if sig:
-                    row = base_row.copy()
-                    row["Signal"] = sig
-                    results.append(row)
-    
-            elif scanner == "Dark Cloud Cover":
-                sig = dark_cloud_cover(df)
-                if sig:
-                    row = base_row.copy()
-                    row["Signal"] = sig
-                    results.append(row)
-    
-            elif scanner == "Morning Star (Bottom)":
-                sig = morning_star_bottom(df)
-                if sig:
-                    row = base_row.copy()
-                    row["Signal"] = sig
-                    results.append(row)
-    
-            elif scanner == "Evening Star (Top)":
-                sig = evening_star_top(df)
-                if sig:
-                    row = base_row.copy()
-                    row["Signal"] = sig
-                    results.append(row)
-    
-            elif scanner == "Bullish GSAS":
-                if data_htf is not None and sym in data_htf:
-                    df_htf = trim_df_to_date(data_htf[sym], analysis_date)
-                    if df_htf is None:
-                        continue
-                    sig = bullish_gsas(df, df_htf)
-                    if sig:
-                        row = base_row.copy()
-                        row["Signal"] = sig
-                        results.append(row)
-    
-            elif scanner == "Bearish GSAS":
-                if data_htf is not None and sym in data_htf:
-                    df_htf = trim_df_to_date(data_htf[sym], analysis_date)
-                    if df_htf is None:
-                        continue
-                    sig = bearish_gsas(df, df_htf)
-                    if sig:
-                        row = base_row.copy()
-                        row["Signal"] = sig
-                        results.append(row)
-    
-            elif scanner == "50 EMA Fake Breakdown":
-                sig = ema50_fake_breakdown(df)
-                if sig:
-                    row = base_row.copy()
-                    row["Signal"] = sig
-                    results.append(row)
-    
-            elif scanner == "50 EMA Fake Breakout":
-                sig = ema50_fake_breakout(df)
-                if sig:
-                    row = base_row.copy()
-                    row["Signal"] = sig
-                    results.append(row)
-    
-            elif scanner == "KDJ BUY (Oversold)":
-                sig = kdj_buy(df)
-                if sig:
-                    row = base_row.copy()
-                    row["Signal"] = sig
-                    results.append(row)
-    
-            elif scanner == "KDJ SELL (Overbought)":
-                sig = kdj_sell(df)
-                if sig:
-                    row = base_row.copy()
-                    row["Signal"] = sig
-                    results.append(row)
-    
-            elif scanner == "Probable Momentum (Consecutive Close)":
-                res = consecutive_close_momentum(df, min_count=3)
-                if res:
-                    direction, days = res
-                    row = base_row.copy()
-                    row["Signal"] = f"{direction} Momentum"
-                    row["State"] = f"{days} Consecutive Days"
-                    results.append(row)
-    
-            elif scanner == "Camarilla Breakout / Breakdown":
-                sig = camarilla_breakout(df)
-                if sig:
-                    row = base_row.copy()
-                    row["Signal"] = sig
-                    results.append(row)
-    
-            elif scanner == "CPR Breakout / Breakdown":
-                sig = cpr_breakout(df)
-                if sig:
-                    row = base_row.copy()
-                    row["Signal"] = sig
-                    results.append(row)
-    
-            elif scanner == "Inside Bar Breakout":
-                sig = inside_bar_breakout(df)
-                if sig:
-                    row = base_row.copy()
-                    row["Signal"] = sig
-                    results.append(row)
-    
-            elif scanner == "ADX Expansion (Trend Ignition)":
-                sig = adx_expansion(df)
-                if sig:
-                    row = base_row.copy()
-                    row["Signal"] = sig
-                    results.append(row)
-    
-            elif scanner == "Range Expansion Day":
-                sig = range_expansion_day(df)
-                if sig:
-                    row = base_row.copy()
-                    row["Signal"] = sig
-                    results.append(row)
-    
-            elif scanner == "Failed Breakout / Breakdown":
-                sig = failed_breakout_breakdown(df)
-                if sig:
-                    row = base_row.copy()
-                    row["Signal"] = sig
-                    results.append(row)
+        elif scanner == "Failed Breakout / Breakdown":
+            sig = failed_breakout_breakdown(df)
+            if sig:
+                row = base_row.copy()
+                row["Signal"] = sig
+                results.append(row)
     
                     # ==============================
             # ADVANCED REVERSAL SCANNERS
             # ==============================
     
-            elif scanner == "Liquidity Sweep Reversal":
-                sig = liquidity_sweep_reversal(df)
-                if sig:
-                    row = base_row.copy()
-                    row["Signal"] = sig
-                    results.append(row)
+        elif scanner == "Liquidity Sweep Reversal":
+            sig = liquidity_sweep_reversal(df)
+            if sig:
+                row = base_row.copy()
+                row["Signal"] = sig
+                results.append(row)
     
-            elif scanner == "Island Reversal":
-                sig = island_reversal(df)
-                if sig:
-                    row = base_row.copy()
-                    row["Signal"] = sig
-                    results.append(row)
+        elif scanner == "Island Reversal":
+            sig = island_reversal(df)
+            if sig:
+                row = base_row.copy()
+                row["Signal"] = sig
+                results.append(row)
     
             elif scanner == "Wyckoff Spring / Upthrust":
                 sig = wyckoff_spring_upthrust(df)
