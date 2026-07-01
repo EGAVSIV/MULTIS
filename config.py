@@ -5,6 +5,7 @@
 # ==========================================
 
 import os
+import streamlit as st
 
 # ------------------------------------------
 # APP INFORMATION
@@ -142,10 +143,10 @@ APP_URL = "https://multis.streamlit.app/"
 # EMAIL CONFIGURATION
 # ----------------------------
 
-import streamlit as st
 
-EMAIL_ADDRESS = st.secrets.get("EMAIL_ADDRESS", "")
-EMAIL_PASSWORD = st.secrets.get("EMAIL_PASSWORD", "")
+
+EMAIL_ADDRESS = st.secrets["EMAIL_ADDRESS"]
+EMAIL_PASSWORD = st.secrets["EMAIL_PASSWORD"]
 
 SMTP_SERVER = "smtp.gmail.com"
 SMTP_PORT = 587
