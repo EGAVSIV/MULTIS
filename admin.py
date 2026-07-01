@@ -586,3 +586,26 @@ def admin_panel():
     st.caption(
         "NSE Scanner Authentication System v1.0"
     )
+
+
+from email_service import send_email
+
+st.subheader("📧 Email Test")
+
+test_email = st.text_input(
+    "Send Test Email To",
+    value="yourgmail@gmail.com"
+)
+
+if st.button("📨 Send Test Email"):
+
+    ok = send_email(
+        test_email,
+        "Email Test",
+        "Congratulations! Your Gmail SMTP configuration is working successfully."
+    )
+
+    if ok:
+        st.success("✅ Test email sent successfully.")
+    else:
+        st.error("❌ Failed to send email. Check the app logs.")
