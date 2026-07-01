@@ -100,9 +100,7 @@ def create_database():
 
         otp_expiry TEXT,
 
-        otp_attempts INTEGER DEFAULT 0,
-
-        created_on TEXT
+        otp_attempts INTEGER DEFAULT 0
 
     )
 
@@ -801,7 +799,7 @@ def save_otp(username, otp, expiry):
     conn.close()
 
 
-def get_user_by_username_email(username, email):
+def update_password()_email(username, email):
 
     conn = get_connection()
 
@@ -827,53 +825,7 @@ def get_user_by_username_email(username, email):
     return row
 
 
-def get_user_by_username_email(username, email):
 
-    conn = get_connection()
-
-    cur = conn.cursor()
-
-    cur.execute(
-        """
-        SELECT *
-        FROM users
-        WHERE username=?
-        AND email=?
-        """,
-        (
-            username,
-            email
-        )
-    )
-
-    row = cur.fetchone()
-
-    conn.close()
-
-    return row
-
-
-def update_password(username, hashed_password):
-
-    conn = get_connection()
-
-    cur = conn.cursor()
-
-    cur.execute(
-        """
-        UPDATE users
-        SET password=?
-        WHERE username=?
-        """,
-        (
-            hashed_password,
-            username
-        )
-    )
-
-    conn.commit()
-
-    conn.close()
 
 def verify_saved_otp(username, otp):
 
