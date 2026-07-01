@@ -21,6 +21,11 @@ st.set_page_config(
     page_icon="🧮"
 )
 
+from config import EMAIL_ADDRESS, EMAIL_PASSWORD
+
+st.write("Config Email:", repr(EMAIL_ADDRESS))
+st.write("Config Password Length:", len(EMAIL_PASSWORD))
+
 # Create database automatically
 create_database()
 
