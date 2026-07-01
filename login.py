@@ -16,6 +16,21 @@ from config import LOGIN_TITLE, LOGIN_MESSAGE
 
 
 def login_page():
+    # ----------------------------------------
+# Forgot Password Session
+# ----------------------------------------
+
+    if "forgot_password" not in st.session_state:
+
+        st.session_state.forgot_password = False
+
+    if st.session_state.forgot_password:
+
+        from forgot_password import forgot_password_page
+
+        forgot_password_page()
+
+        return
 
     # -----------------------------
     # Register Page
@@ -53,6 +68,14 @@ def login_page():
             "🔑 Forgot Password",
             use_container_width=True
         )
+
+     if forgot_btn:
+
+        st.session_state.forgot_password = True
+
+        st.rerun()
+
+        
     # -----------------------------
     # Open Register Page
     # -----------------------------
