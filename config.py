@@ -121,7 +121,21 @@ STATUS_LIST = [
     STATUS_DISABLED
 ]
 
+# ----------------------------
+# EMAIL SUBJECTS
+# ----------------------------
 
+EMAIL_SUBJECT_WELCOME = "Welcome to NSE Stock Market Scanner"
+
+EMAIL_SUBJECT_OTP = "Password Reset OTP"
+
+EMAIL_SUBJECT_RESET = "Password Changed Successfully"
+
+# ----------------------------
+# APPLICATION URL
+# ----------------------------
+
+APP_URL = "https://multis.streamlit.app/"
 
 
 # ----------------------------
