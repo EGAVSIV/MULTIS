@@ -120,3 +120,25 @@ STATUS_LIST = [
     STATUS_REJECTED,
     STATUS_DISABLED
 ]
+
+
+import streamlit as st
+
+# ----------------------------
+# EMAIL CONFIGURATION
+# ----------------------------
+
+EMAIL_ADDRESS = st.secrets["EMAIL_ADDRESS"]
+EMAIL_PASSWORD = st.secrets["EMAIL_PASSWORD"]
+
+SMTP_SERVER = "smtp.gmail.com"
+SMTP_PORT = 587
+
+# ----------------------------
+# OTP SETTINGS
+# ----------------------------
+
+OTP_LENGTH = 6
+OTP_VALIDITY_MINUTES = 10
+OTP_MAX_ATTEMPTS = 5
+
