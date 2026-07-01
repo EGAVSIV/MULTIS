@@ -2149,195 +2149,195 @@ if run:
                 row["Signal"] = sig
                 results.append(row)
     
-            elif scanner == "Wyckoff Spring / Upthrust":
-                sig = wyckoff_spring_upthrust(df)
-                if sig:
-                    row = base_row.copy()
-                    row["Signal"] = sig
-                    results.append(row)
+        elif scanner == "Wyckoff Spring / Upthrust":
+            sig = wyckoff_spring_upthrust(df)
+            if sig:
+                row = base_row.copy()
+                row["Signal"] = sig
+                results.append(row)
     
-            elif scanner == "Smart Money Trap":
-                sig = smart_money_trap(df)
-                if sig:
-                    row = base_row.copy()
-                    row["Signal"] = sig
-                    results.append(row)
+        elif scanner == "Smart Money Trap":
+            sig = smart_money_trap(df)
+            if sig:
+                row = base_row.copy()
+                row["Signal"] = sig
+                results.append(row)
     
-            elif scanner == "Bump & Run Reversal":
-                sig = bump_and_run_reversal(df)
-                if sig:
-                    row = base_row.copy()
-                    row["Signal"] = sig
-                    results.append(row)
+        elif scanner == "Bump & Run Reversal":
+            sig = bump_and_run_reversal(df)
+            if sig:
+                row = base_row.copy()
+                row["Signal"] = sig
+                results.append(row)
     
-            elif scanner == "Exhaustion Bar":
-                sig = exhaustion_bar(df)
-                if sig:
-                    row = base_row.copy()
-                    row["Signal"] = sig
-                    results.append(row)
+        elif scanner == "Exhaustion Bar":
+            sig = exhaustion_bar(df)
+            if sig:
+                row = base_row.copy()
+                row["Signal"] = sig
+                results.append(row)
     
-            elif scanner == "Shakeout / Trap":
-                sig = shakeout_trap(df)
-                if sig:
-                    row = base_row.copy()
-                    row["Signal"] = sig
-                    results.append(row)
+        elif scanner == "Shakeout / Trap":
+            sig = shakeout_trap(df)
+            if sig:
+                row = base_row.copy()
+                row["Signal"] = sig
+                results.append(row)
     
-            elif scanner == "RSI + MACD Cross Swing":
-                sig = rsi_macd_cross_swing(df)
-                if sig:
-                    row = base_row.copy()
-                    row["Signal"] = sig
-                    results.append(row)
+        elif scanner == "RSI + MACD Cross Swing":
+            sig = rsi_macd_cross_swing(df)
+            if sig:
+                row = base_row.copy()
+                row["Signal"] = sig
+                results.append(row)
     
-            elif scanner == "Hidden Pivot Reversal":
-                sig = hidden_pivot_reversal(df)
-                if sig:
-                    row = base_row.copy()
-                    row["Signal"] = sig
-                    results.append(row)
+        elif scanner == "Hidden Pivot Reversal":
+            sig = hidden_pivot_reversal(df)
+            if sig:
+                row = base_row.copy()
+                row["Signal"] = sig
+                results.append(row)
     
-            elif scanner == "Springer Reversal":
-                sig = springer_reversal(df)
-                if sig:
-                    row = base_row.copy()
-                    row["Signal"] = sig
-                    results.append(row)
+        elif scanner == "Springer Reversal":
+            sig = springer_reversal(df)
+            if sig:
+                row = base_row.copy()
+                row["Signal"] = sig
+                results.append(row)
     
     
-            elif scanner == "EMA Compression → Expansion":
-                sig = ema_compression_expansion(df)
-                if sig:
-                    row = base_row.copy()
-                    row["Signal"] = sig
-                    results.append(row)
+        elif scanner == "EMA Compression → Expansion":
+            sig = ema_compression_expansion(df)
+            if sig:
+                row = base_row.copy()
+                row["Signal"] = sig
+                results.append(row)
             
-            elif scanner == "RSI Swing":
-                sig = rsi_swing(df)
-                if sig:
-                    row = base_row.copy()
-                    row["Signal"] = sig
-                    results.append(row)
+        elif scanner == "RSI Swing":
+            sig = rsi_swing(df)
+            if sig:
+                row = base_row.copy()
+                row["Signal"] = sig
+                results.append(row)
     
         # --- Top 10 ATR %: convert atr_list to results ---
-        if scanner == "Top 10 by ATR %":
-            if not atr_list:
-                st.info("No symbols with valid ATR %.")
-                df_res = empty_result_df()
-            else:
-                atr_list.sort(key=lambda x: x[1], reverse=True)
-                rows = [r[2] for r in atr_list[:10]]
-                results = rows
-    
-        # --- RESULT POST-PROCESSING ---
-        if not results:
-            st.info("No stocks matched.")
+    if scanner == "Top 10 by ATR %":
+        if not atr_list:
+            st.info("No symbols with valid ATR %.")
             df_res = empty_result_df()
         else:
-            df_res = pd.DataFrame(results)
+            atr_list.sort(key=lambda x: x[1], reverse=True)
+            rows = [r[2] for r in atr_list[:10]]
+            results = rows
     
-            for c in SAFE_COLS:
-                if c not in df_res.columns:
-                    df_res[c] = "" if c != "Confluence" else 0
+        # --- RESULT POST-PROCESSING ---
+    if not results:
+        st.info("No stocks matched.")
+        df_res = empty_result_df()
+    else:
+        df_res = pd.DataFrame(results)
     
-            for i, row in df_res.iterrows():
-                score, bias, prob = calculate_confluence(row)
-                df_res.at[i, "Confluence"] = score
-                df_res.at[i, "Bias"] = bias
-                df_res.at[i, "Probability"] = prob
-            df_res["TV_Link"] = df_res["Symbol"].apply(
-                lambda s: f"[TV]({make_tradingview_link(s)})" if s else ""
-            )
+        for c in SAFE_COLS:
+            if c not in df_res.columns:
+                df_res[c] = "" if c != "Confluence" else 0
+    
+        for i, row in df_res.iterrows():
+            score, bias, prob = calculate_confluence(row)
+            df_res.at[i, "Confluence"] = score
+            df_res.at[i, "Bias"] = bias
+            df_res.at[i, "Probability"] = prob
+        df_res["TV_Link"] = df_res["Symbol"].apply(
+            lambda s: f"[TV]({make_tradingview_link(s)})" if s else ""
+        )
     
         
     
-            bias_rank = {"Bullish": 0, "Neutral": 1, "Bearish": 2}
-            df_res["_bias_rank"] = df_res["Bias"].map(bias_rank)
+        bias_rank = {"Bullish": 0, "Neutral": 1, "Bearish": 2}
+        df_res["_bias_rank"] = df_res["Bias"].map(bias_rank)
     
-            df_res = df_res.sort_values(
-                by=["Confluence", "_bias_rank"], ascending=[False, True]
-            ).drop(columns="_bias_rank")
+        df_res = df_res.sort_values(
+            by=["Confluence", "_bias_rank"], ascending=[False, True]
+        ).drop(columns="_bias_rank")
     
-            df_res = df_res[SAFE_COLS]
-            df_res = df_res.replace([np.inf, -np.inf], "").fillna("")
+        df_res = df_res[SAFE_COLS]
+        df_res = df_res.replace([np.inf, -np.inf], "").fillna("")
     
-            df_display = df_res.astype(str)
+        df_display = df_res.astype(str)
     
             #st.dataframe(df_display, use_container_width=True, hide_index=True)
-            st.dataframe(df_res, use_container_width=True, hide_index=True)
+        st.dataframe(df_res, use_container_width=True, hide_index=True)
     
     
            # RSI Market Pulse Donut Chart
-            if scanner == "RSI Market Pulse" and not df_res.empty:
+        if scanner == "RSI Market Pulse" and not df_res.empty:
                 # Step 1: Clean and isolate valid data rows
-                df_res['Zone'] = df_res['Zone'].astype(str).str.strip()
-                df_filtered = df_res[df_res['Zone'].isin(["RSI > 60", "RSI 40–60", "RSI < 40"])]
+            df_res['Zone'] = df_res['Zone'].astype(str).str.strip()
+            df_filtered = df_res[df_res['Zone'].isin(["RSI > 60", "RSI 40–60", "RSI < 40"])]
                 
-                if not df_filtered.empty:
+            if not df_filtered.empty:
                     # Step 2: Calculate explicit counts
-                    zone_counts = df_filtered['Zone'].value_counts().reset_index()
-                    zone_counts.columns = ['Zone', 'Count']
+                zone_counts = df_filtered['Zone'].value_counts().reset_index()
+                zone_counts.columns = ['Zone', 'Count']
     
                     # Step 3: Draw the Pie Chart with forced layout updates
-                    fig = px.pie(
-                        zone_counts,
-                        names='Zone',
-                        values='Count',
-                        title="🎯 RSI Market Pulse Distribution",
-                        hole=0.5,
-                        color="Zone",
-                        color_discrete_map={
-                            "RSI > 60": "#2ecc71",   # Green
-                            "RSI 40–60": "#f1c40f",  # Yellow
-                            "RSI < 40": "#e74c3c",   # Red
-                        },
-                    )
+                fig = px.pie(
+                    zone_counts,
+                    names='Zone',
+                    values='Count',
+                    title="🎯 RSI Market Pulse Distribution",
+                    hole=0.5,
+                    color="Zone",
+                    color_discrete_map={
+                        "RSI > 60": "#2ecc71",   # Green
+                        "RSI 40–60": "#f1c40f",  # Yellow
+                        "RSI < 40": "#e74c3c",   # Red
+                    },
+                )
                     
                     # Step 4: Force display of the real counted value inside the pie slice
-                    fig.update_traces(
-                        textinfo="percent+value", 
-                        textfont_size=13,
-                        marker=dict(line=dict(color='#FFFFFF', width=2))
-                    )
-                    
-                    fig.update_layout(
-                        showlegend=True,
-                        paper_bgcolor="rgba(0,0,0,0)",
-                        plot_bgcolor="rgba(0,0,0,0)",
-                    )
-                    st.plotly_chart(fig, use_container_width=True)
-                else:
-                    st.info("No matching RSI zones found to display in the chart.")
-    
-    
-    st.markdown("---")
-    st.markdown("### 🧾 Scanner Matrix for Selected Stock")
-    
-    if selected_symbol != "NA":
-        data_single_tf = load_data(TIMEFRAMES[tf])
-        if selected_symbol in data_single_tf:
-            df_sym = trim_df_to_date(data_single_tf[selected_symbol], analysis_date)
-            if df_sym is not None:
-                # सभी जरूरी TF data एक dict में
-                data_all_tfs = {
-                    tf: data_single_tf,                               # current TF
-                    "1 Hour": load_data(TIMEFRAMES["1 Hour"]),
-                    "Daily": load_data(TIMEFRAMES["Daily"]),
-                    "Weekly": load_data(TIMEFRAMES["Weekly"]),
-                    "Monthly": load_data(TIMEFRAMES["Monthly"]),
-                }
-    
-                results_dict = run_all_scanners_for_symbol(
-                    selected_symbol,
-                    df_sym,
-                    tf,
-                    analysis_date,
-                    data_all_tfs,
+                fig.update_traces(
+                    textinfo="percent+value", 
+                    textfont_size=13,
+                    marker=dict(line=dict(color='#FFFFFF', width=2))
                 )
+                    
+                fig.update_layout(
+                    showlegend=True,
+                    paper_bgcolor="rgba(0,0,0,0)",
+                    plot_bgcolor="rgba(0,0,0,0)",
+                )
+                st.plotly_chart(fig, use_container_width=True)
+            else:
+                st.info("No matching RSI zones found to display in the chart.")
     
-                mat_df = pd.DataFrame(
-                    {
+    
+st.markdown("---")
+st.markdown("### 🧾 Scanner Matrix for Selected Stock")
+    
+if selected_symbol != "NA":
+    data_single_tf = load_data(TIMEFRAMES[tf])
+    if selected_symbol in data_single_tf:
+        df_sym = trim_df_to_date(data_single_tf[selected_symbol], analysis_date)
+        if df_sym is not None:
+                # सभी जरूरी TF data एक dict में
+            data_all_tfs = {
+                tf: data_single_tf,                               # current TF
+                "1 Hour": load_data(TIMEFRAMES["1 Hour"]),
+                "Daily": load_data(TIMEFRAMES["Daily"]),
+                "Weekly": load_data(TIMEFRAMES["Weekly"]),
+                "Monthly": load_data(TIMEFRAMES["Monthly"]),
+            }
+    
+            results_dict = run_all_scanners_for_symbol(
+                selected_symbol,
+                df_sym,
+                tf,
+                analysis_date,
+                data_all_tfs,
+            )
+    
+            mat_df = pd.DataFrame(
+                {
                         "Scanner": list(results_dict.keys()),
                         "Result": ["Yes" if v else "No" for v in results_dict.values()],
                     }
