@@ -6,6 +6,7 @@
 import bcrypt
 import streamlit as st
 from datetime import datetime
+from zoneinfo import ZoneInfo
 from config import STATUS_APPROVED
 
 
@@ -155,19 +156,28 @@ def days_left(expiry_date):
 # GREETING
 # ==========================================
 
+
+
+
 def greeting():
 
-    hour = datetime.now().hour
+    ist_time = datetime.now(
+        ZoneInfo("Asia/Kolkata")
+    )
+
+    hour = ist_time.hour
 
     if hour < 12:
+
         return "🌅 Good Morning"
 
     elif hour < 17:
+
         return "☀️ Good Afternoon"
 
     else:
-        return "🌙 Good Evening"
 
+        return "🌙 Good Evening"
 
 # ==========================================
 # USER INFO BOX
