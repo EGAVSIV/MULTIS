@@ -17,6 +17,12 @@ from database import (
     extend_subscription,
 )
 
+from config import EMAIL_ADDRESS, EMAIL_PASSWORD
+
+st.write("Sender Email:", EMAIL_ADDRESS)
+st.write("Password Length:", len(EMAIL_PASSWORD))
+st.write("Password Starts With:", EMAIL_PASSWORD[:2] + "********")
+
 from utils import logout
 
 
