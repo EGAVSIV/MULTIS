@@ -1624,7 +1624,7 @@ def shakeout_trap(df, lookback=20):
 if prev["low"] < low and last["close"] > low:
         return "Bullish Shakeout"
     
-    if prev["high"] > high and last["close"] < high:
+if prev["high"] > high and last["close"] < high:
         return "Bearish Shakeout"
     
     return None
