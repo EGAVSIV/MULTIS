@@ -61,7 +61,11 @@ def send_email(recipient, subject, body):
 
     except Exception as e:
 
-        print(e)
+        import traceback
+
+        st.error(f"Email Error: {e}")
+
+        st.code(traceback.format_exc())
 
         return False
 
