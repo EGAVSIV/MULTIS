@@ -577,6 +577,41 @@ def admin_panel():
                     "Please logout and login again using your new password."
                 )
 
+        st.divider()
+
+    # ==========================================
+    # EMAIL TEST
+    # ==========================================
+
+    st.subheader("📧 Email Test")
+
+    from email_service import send_email
+
+    test_email = st.text_input(
+        "Recipient Email",
+        value=st.session_state.get("username", "")
+    )
+
+    if st.button("📨 Send Test Email"):
+
+        ok = send_email(
+            test_email,
+            "NSE Scanner Email Test",
+            "Congratulations!\n\nYour Gmail SMTP configuration is working successfully.\n\nRegards,\nGaurav Singh Yaadav"
+        )
+
+        if ok:
+            st.success("✅ Test Email Sent Successfully.")
+        else:
+            st.error("❌ Email Sending Failed.")
+
+    st.divider()
+
+    st.caption(
+        "NSE Scanner Authentication System v1.0"
+    )
+    
+
     st.divider()
 
     # =====================================================
@@ -587,25 +622,3 @@ def admin_panel():
         "NSE Scanner Authentication System v1.0"
     )
 
-
-from email_service import send_email
-
-st.subheader("📧 Email Test")
-
-test_email = st.text_input(
-    "Send Test Email To",
-    value="yourgmail@gmail.com"
-)
-
-if st.button("📨 Send Test Email"):
-
-    ok = send_email(
-        test_email,
-        "Email Test",
-        "Congratulations! Your Gmail SMTP configuration is working successfully."
-    )
-
-    if ok:
-        st.success("✅ Test email sent successfully.")
-    else:
-        st.error("❌ Failed to send email. Check the app logs.")
