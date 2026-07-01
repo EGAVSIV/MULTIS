@@ -780,7 +780,6 @@ def create_user(username, password, fullname, mobile, email, days=30):
 def save_otp(username, otp, expiry):
 
     conn = get_connection()
-
     cur = conn.cursor()
 
     try:
@@ -805,11 +804,9 @@ def save_otp(username, otp, expiry):
 
     except Exception as e:
 
-        import traceback
+        import streamlit as st
 
-        print(e)
-
-        print(traceback.format_exc())
+        st.exception(e)
 
         raise
 
