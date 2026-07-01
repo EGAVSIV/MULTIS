@@ -40,14 +40,19 @@ def send_email(recipient, subject, body):
 
         server = smtplib.SMTP(
             SMTP_SERVER,
-            SMTP_PORT
+            SMTP_PORT,
+            timeout=30
         )
+
+        server.ehlo()
 
         server.starttls()
 
+        server.ehlo()
+
         server.login(
-            EMAIL_ADDRESS,
-            EMAIL_PASSWORD
+            EMAIL_ADDRESS.strip(),
+            EMAIL_PASSWORD.strip()
         )
 
         server.sendmail(
