@@ -19,11 +19,6 @@ from database import (
 )
 
 from config import EMAIL_ADDRESS, EMAIL_PASSWORD
-
-st.write("Sender Email:", EMAIL_ADDRESS)
-st.write("Password Length:", len(EMAIL_PASSWORD))
-st.write("Password Starts With:", EMAIL_PASSWORD[:2] + "********")
-
 from utils import logout
 
 
@@ -43,6 +38,11 @@ def admin_panel():
         logout()
 
     st.title("👨‍💼 NSE Scanner Admin Dashboard")
+
+    # Debugging configuration visibility (Moved inside panel function context securely)
+    st.write("Sender Email:", EMAIL_ADDRESS)
+    st.write("Password Length:", len(EMAIL_PASSWORD))
+    st.write("Password Starts With:", EMAIL_PASSWORD[:2] + "********")
 
     users = get_all_users()
 
@@ -109,7 +109,7 @@ def admin_panel():
         if st.button("✅ Create User"):
 
             # -------------------------
-            # Validation (Fixed Indentation Here)
+            # Validation
             # -------------------------
 
             if fullname.strip() == "":
@@ -195,7 +195,6 @@ def admin_panel():
                             key=f"approve_{user['id']}"
                         ):
                             approve_user(user["id"])
-                            # Email will be added in Part-3
                             st.success("User Approved")
                             st.rerun()
 
@@ -467,14 +466,14 @@ def admin_panel():
 
     st.subheader("📧 Email Test")
 
-    from email_service import send_email
-
     test_email = st.text_input(
         "Recipient Email",
         value="yadav.gauravsingh@gmail.com"
     )
+    
+    # Fixed closing bracket here
     st.write("Sender Email:", repr(EMAIL_ADDRESS))
-    st.write("Password Length:", len(EMAIL_PASSWORD)
+    st.write("Password Length:", len(EMAIL_PASSWORD))
 
     if st.button("📨 Send Test Email"):
 
