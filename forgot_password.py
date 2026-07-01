@@ -135,11 +135,21 @@ def forgot_password_page():
     # VERIFY OTP
     # ==========================================
 
-    from database import (
-        verify_saved_otp,
-        clear_otp,
-        update_password
-    )
+    try:
+
+        from database import (
+            verify_saved_otp,
+            clear_otp,
+            update_password
+        )
+
+    except Exception as e:
+
+        import streamlit as st
+
+        st.exception(e)
+
+        st.stop()
 
     from otp_utils import (
         is_otp_valid
