@@ -15,6 +15,14 @@ from admin import admin_panel
 from database import create_database, upgrade_database
 from streamlit_autorefresh import st_autorefresh
 
+
+    
+st.set_page_config(
+    page_title="FNO_STOCK_SCAN",
+    layout="wide",
+    page_icon="🧮"
+)
+
 st_autorefresh(
     interval=600000,
     key="auto_refresh"
@@ -22,12 +30,6 @@ st_autorefresh(
 
 st.cache_data.clear()
     
-    
-st.set_page_config(
-    page_title="FNO_STOCK_SCAN",
-    layout="wide",
-    page_icon="🧮"
-)
     
 from config import EMAIL_ADDRESS, EMAIL_PASSWORD
     
