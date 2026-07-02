@@ -13,7 +13,14 @@ from utils import logout, greeting
 from streamlit.runtime.caching import cache_data
 from admin import admin_panel
 from database import create_database, upgrade_database
-#RAO    
+from streamlit_autorefresh import st_autorefresh
+
+st_autorefresh(
+    interval=600000,
+    key="auto_refresh"
+)
+
+st.cache_data.clear()
     
     
 st.set_page_config(
