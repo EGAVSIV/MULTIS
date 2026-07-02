@@ -2,16 +2,15 @@ name: Sync Stock Data Folders
 
 on:
   schedule:
-    # 09:30 & 09:45 IST
-    - cron: "0,15 4 * * 1-5"
+    # 09:30, 09:40, 09:50 IST
+    - cron: "0,10,20 4 * * 1-5"
 
-    # 10:00 AM to 03:45 PM IST (Every 15 Minutes)
-    - cron: "30-59/15 4-9 * * 1-5"
-    - cron: "0-45/15 5-10 * * 1-5"
+    # 10:00 AM to 03:50 PM IST (Every 10 Minutes)
+    - cron: "30-59/10 4-9 * * 1-5"
+    - cron: "0-50/10 5-10 * * 1-5"
 
-    # 04:00, 04:15 & 04:30 PM IST
-    - cron: "30 10 * * 1-5"
-    - cron: "45 10 * * 1-5"
+    # 04:00, 04:10, 04:20, 04:30 IST
+    - cron: "30,40,50 10 * * 1-5"
     - cron: "0 11 * * 1-5"
 
   workflow_dispatch:
@@ -29,7 +28,7 @@ jobs:
 
     steps:
       - name: Checkout Current Repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
@@ -45,8 +44,7 @@ jobs:
           pip install requests
 
       - name: Run Sync Script
-        run: |
-          python Datacopier.py
+        run: python Datacopier.py
 
       - name: Commit & Push Changes
         run: |
