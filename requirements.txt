@@ -10,9 +10,9 @@ python-dateutil==2.9.0.post0
 pytz==2025.2
 tabulate
 streamlit-autorefresh==1.0.1
-#TA-Lib
-#tradingview-datafeed
-#scipy
-#matplotlib
-#pyarrow
-#altair
+TA-Lib
+tradingview-datafeed
+scipy
+matplotlib
+pyarrow
+altair
