@@ -46,7 +46,7 @@ jobs:
       # Step 5: Run your scanner script
       - name: Run NSE Scanner Script
         run: |
-          scanner.py
+          python scanner.py
 
       # Step 6: Commit and Save the Generated Excel files back to GitHub (Optional Backup)
       - name: Commit and push generated Excel reports
