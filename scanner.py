@@ -404,12 +404,12 @@ def process_timeframe(folder_name, output_name, date_str):
     folder_path = os.path.join(BASE_PATH, folder_name)
     if not os.path.exists(folder_path):
         logger.warning(f"Skipping {folder_name}: Directory not found.")
-        return None
+        return None, []
 
     files = [f for f in os.listdir(folder_path) if f.endswith(".parquet")]
     if not files:
         logger.warning(f"Skipping {folder_name}: No parquet files found.")
-        return None
+        return None, []
 
     logger.info(f"Scanning {len(files)} symbols in {folder_name}...")
     
@@ -461,7 +461,9 @@ def process_timeframe(folder_name, output_name, date_str):
             df_out.to_excel(writer, sheet_name=scanner_name[:30], index=False)
 
     logger.info(f"Successfully generated: {excel_filepath}")
-    return excel_filepath
+    
+    # Return both the generated file path AND the MACD Normal Divergence results for this timeframe
+    return excel_filepath, sheets_data.get("MACD Normal Divergence", [])
 
 # ==============================================================================
 # 5. COMMUNICATIONS (EMAIL & TELEGRAM MODULES)
@@ -551,16 +553,37 @@ def main():
     logger.info(f"=== Starting NSE Batch Scanner Pipeline ({date_str}) ===")
 
     generated_files = []
+    macd_divergences_by_tf = {}  # Structure to accumulate MACD divergence results per timeframe
+
     for tf_key, (folder_name, output_name) in TIMEFRAME_FOLDERS.items():
-        filepath = process_timeframe(folder_name, output_name, date_str)
+        filepath, macd_rows = process_timeframe(folder_name, output_name, date_str)
         if filepath:
             generated_files.append(filepath)
+            # Store the extracted MACD divergence data for the current timeframe key
+            macd_divergences_by_tf[tf_key] = macd_rows
+
+    # Generate the combined "MACD Normal Divergences" file with sheets for each timeframe
+    if macd_divergences_by_tf:
+        combined_macd_filename = f"MACD Normal Divergences_{date_str}.xlsx"
+        combined_macd_filepath = os.path.join(OUTPUT_DIR, combined_macd_filename)
+        
+        with pd.ExcelWriter(combined_macd_filepath, engine="openpyxl") as writer:
+            for tf_key, rows in macd_divergences_by_tf.items():
+                df_out = pd.DataFrame(rows) if rows else pd.DataFrame(columns=SAFE_COLS)
+                if df_out.empty:
+                    df_out = pd.DataFrame([["No scanner alerts detected for this interval", ""] + [""] * 10], columns=SAFE_COLS)
+                
+                # Each sheet represents a timeframe (e.g. '15 Min', 'Hourly')
+                df_out.to_excel(writer, sheet_name=tf_key, index=False)
+                
+        logger.info(f"Successfully generated combined MACD report: {combined_macd_filepath}")
+        generated_files.append(combined_macd_filepath)
 
     if not generated_files:
         logger.error("No reports were generated. Aborting email and Telegram alerts.")
         return
 
-    # Dispatch Mail with Attachments
+    # Dispatch Mail with All Attachments (including the combined MACD file)
     mail_success = send_email_with_attachments(generated_files, date_str)
     
     # Send Telegram Alerts
