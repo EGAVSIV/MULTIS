@@ -334,6 +334,19 @@ def run_kdj_sell(df):
         return "KDJ SELL (J↓D overbought)"
     return None
 
+def run_macd_nd_filtered(df):
+    """
+    Wrapper function that returns a scanner dictionary ONLY if 
+    a Bullish ND or Bearish ND divergence is actively present.
+    """
+    nd = run_macd_normal_divergence(df)
+    if nd:
+        return {
+            "Signal": "Divergence Alert",
+            "Divergence": nd
+        }
+    return None
+
 # Dictionary linking Worksheet Name to Scanner Execution Method
 SCANNERS = {
     "RSI Market Pulse": lambda df: {
@@ -364,10 +377,8 @@ SCANNERS = {
         "Signal": "Monitor",
         "Trend": run_macd_market_pulse(df)
     },
-    "MACD Normal Divergence": lambda df: {
-        "Signal": "Divergence Alert",
-        "Divergence": run_macd_normal_divergence(df)
-    },
+    # UPDATED: Changed lambda execution to return results ONLY when divergence exists
+    "MACD Normal Divergence": lambda df: run_macd_nd_filtered(df),
     "Trend Alignment": lambda df: {
         "Signal": "Uptrend/Downtrend",
         "Trend": run_trend_alignment(df)
