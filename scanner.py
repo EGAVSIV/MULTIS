@@ -60,8 +60,6 @@ def make_tradingview_link(sym: str) -> str:
 # ==============================================================================
 # 3. TECHNICAL SCANNING DEFINITIONS (Core Mathematical Logic)
 # ==============================================================================
-# Below are pure python scanning functions optimized for array-based in-memory processing.
-
 def run_rsi_market_pulse(df):
     if len(df) < 14:
         return None, None
@@ -335,10 +333,6 @@ def run_kdj_sell(df):
     return None
 
 def run_macd_nd_filtered(df):
-    """
-    Wrapper function that returns a scanner dictionary ONLY if 
-    a Bullish ND or Bearish ND divergence is actively present.
-    """
     nd = run_macd_normal_divergence(df)
     if nd:
         return {
@@ -377,7 +371,6 @@ SCANNERS = {
         "Signal": "Monitor",
         "Trend": run_macd_market_pulse(df)
     },
-    # UPDATED: Changed lambda execution to return results ONLY when divergence exists
     "MACD Normal Divergence": lambda df: run_macd_nd_filtered(df),
     "Trend Alignment": lambda df: {
         "Signal": "Uptrend/Downtrend",
@@ -408,6 +401,33 @@ SCANNERS = {
     }
 }
 
+# Helper method to map single-value primary scanner outputs for the Summary Grid Layout Matrix
+def extract_grid_cell_value(scanner_name, res):
+    if not res:
+        return ""
+    
+    # Custom display logic per column based on your attachment sample layouts
+    if scanner_name == "Volume Shocker":
+        return "High Vol Expansion" if res.get("Signal") == "BUY" else ""
+    elif scanner_name == "NRB-7 breakout":
+        return res.get("Setup") or ""
+    elif scanner_name == "Counter Attack Pattern":
+        sig = res.get("Signal")
+        return sig if sig != "Neutral" else ""
+    elif scanner_name in ["Breakaway Gap", "RSI + ADX Extremes", "Pullback to EMA", "Confluence"]:
+        return res.get("Setup") or ""
+    elif scanner_name in ["MACD Market Pulse", "Trend Alignment"]:
+        return res.get("Trend") or ""
+    elif scanner_name == "MACD Normal Divergence":
+        return res.get("Divergence") or ""
+    elif scanner_name in ["MACD Hook Up", "MACD Hook Down", "EMA50 + Stochastic", "KDJ Cross Buy", "KDJ Cross Sell"]:
+        sig = res.get("Signal")
+        return sig if sig != "Neutral" else ""
+    elif scanner_name == "RSI Market Pulse":
+        return res.get("Zone") or ""
+    
+    return str(res.get("Signal", ""))
+
 # ==============================================================================
 # 4. BATCH PROCESSING ENGINE
 # ==============================================================================
@@ -415,17 +435,19 @@ def process_timeframe(folder_name, output_name, date_str):
     folder_path = os.path.join(BASE_PATH, folder_name)
     if not os.path.exists(folder_path):
         logger.warning(f"Skipping {folder_name}: Directory not found.")
-        return None, []
+        return None, [], pd.DataFrame()
 
     files = [f for f in os.listdir(folder_path) if f.endswith(".parquet")]
     if not files:
         logger.warning(f"Skipping {folder_name}: No parquet files found.")
-        return None, []
+        return None, [], pd.DataFrame()
 
     logger.info(f"Scanning {len(files)} symbols in {folder_name}...")
     
-    # Initialize sheet containers
     sheets_data = {scanner_name: [] for scanner_name in SCANNERS.keys()}
+    
+    # Container for building the requested single comprehensive spreadsheet mapping matrix grid
+    grid_rows = []
 
     for f in files:
         sym = f.replace(".parquet", "")
@@ -434,30 +456,36 @@ def process_timeframe(folder_name, output_name, date_str):
             if df.empty or len(df) < 50:
                 continue
 
+            # Base grid structure for this stock
+            grid_stock_row = {"Symbol": sym}
+
             for scanner_name, scanner_fn in SCANNERS.items():
                 try:
                     res = scanner_fn(df)
+                    
+                    # Store cell mapping value for the single summary matrix sheet view
+                    grid_stock_row[scanner_name] = extract_grid_cell_value(scanner_name, res)
+                    
                     if res:
-                        # Build standard result row conforming to SAFE_COLS
                         row = {col: "" for col in SAFE_COLS}
                         row["Symbol"] = sym
                         row["TV_Link"] = make_tradingview_link(sym)
                         
-                        # Populate computed elements
                         for k, v in res.items():
                             if k in row and v is not None:
                                 row[k] = v
-                        
-                        # Only append if we found an actionable signal or active metric
+                                
                         if any(row[col] not in ["", "Neutral", None] for col in ["Signal", "Setup", "Divergence", "Trend"]):
                             sheets_data[scanner_name].append(row)
                 except Exception as e:
                     logger.debug(f"Failed to scan {sym} with {scanner_name}: {e}")
                     
+            grid_rows.append(grid_stock_row)
+                        
         except Exception as e:
             logger.error(f"Error loading file {f}: {e}")
 
-    # Generate multi-sheet workbook for this timeframe
+    # Create detailed separate workbook for individual scanners inside this timeframe
     excel_filename = f"{output_name}_{date_str}.xlsx"
     excel_filepath = os.path.join(OUTPUT_DIR, excel_filename)
     
@@ -465,16 +493,15 @@ def process_timeframe(folder_name, output_name, date_str):
         for scanner_name, rows in sheets_data.items():
             df_out = pd.DataFrame(rows) if rows else pd.DataFrame(columns=SAFE_COLS)
             if df_out.empty:
-                # Always write at least an empty template structural sheet
                 df_out = pd.DataFrame([["No scanner alerts detected for this interval", ""] + [""] * 10], columns=SAFE_COLS)
-            
-            # Truncate sheet names to 30 characters maximum due to Excel constraints
             df_out.to_excel(writer, sheet_name=scanner_name[:30], index=False)
 
     logger.info(f"Successfully generated: {excel_filepath}")
     
-    # Return both the generated file path AND the MACD Normal Divergence results for this timeframe
-    return excel_filepath, sheets_data.get("MACD Normal Divergence", [])
+    # Formulate the compiled dataframe representation for the timeline grid
+    df_grid_tf = pd.DataFrame(grid_rows) if grid_rows else pd.DataFrame(columns=["Symbol"] + list(SCANNERS.keys()))
+    
+    return excel_filepath, sheets_data.get("MACD Normal Divergence", []), df_grid_tf
 
 # ==============================================================================
 # 5. COMMUNICATIONS (EMAIL & TELEGRAM MODULES)
@@ -497,6 +524,7 @@ def send_email_with_attachments(file_paths, date_str):
     for path in file_paths:
         if not os.path.exists(path):
             continue
+            
         ctype, encoding = mimetypes.guess_type(path)
         if ctype is None or encoding is not None:
             ctype = "application/octet-stream"
@@ -534,7 +562,8 @@ def send_telegram_notification(date_str, report_count, total_scanners):
         f"✔ Hourly\n"
         f"✔ Daily\n"
         f"✔ Weekly\n"
-        f"✔ Monthly\n\n"
+        f"✔ Monthly\n"
+        f"✔ Comprehensive Summary Matrix Grid\n\n"
         f"📈 *Total Scanners :* {total_scanners}\n\n"
         f"✉ *Status :* {report_count} Reports mailed successfully."
     )
@@ -564,14 +593,33 @@ def main():
     logger.info(f"=== Starting NSE Batch Scanner Pipeline ({date_str}) ===")
 
     generated_files = []
-    macd_divergences_by_tf = {}  # Structure to accumulate MACD divergence results per timeframe
+    macd_divergences_by_tf = {}  
+    grid_dataframes_by_tf = {} # Dictionary containing time-frame grid sheets
 
     for tf_key, (folder_name, output_name) in TIMEFRAME_FOLDERS.items():
-        filepath, macd_rows = process_timeframe(folder_name, output_name, date_str)
+        filepath, macd_rows, df_grid_tf = process_timeframe(folder_name, output_name, date_str)
         if filepath:
             generated_files.append(filepath)
-            # Store the extracted MACD divergence data for the current timeframe key
             macd_divergences_by_tf[tf_key] = macd_rows
+            if not df_grid_tf.empty:
+                grid_dataframes_by_tf[tf_key] = df_grid_tf
+
+    # NEW FILE GENERATION: Consolidated comprehensive matrix mapping grid sheet timeframe-wise
+    if grid_dataframes_by_tf:
+        summary_matrix_filename = f"Scanner Summary Matrix_{date_str}.xlsx"
+        summary_matrix_filepath = os.path.join(OUTPUT_DIR, summary_matrix_filename)
+        
+        with pd.ExcelWriter(summary_matrix_filepath, engine="openpyxl") as writer:
+            for tf_key, df_matrix in grid_dataframes_by_tf.items():
+                # Order columns logically: Symbol followed by all scanner outputs
+                cols_order = ["Symbol"] + [c for c in df_matrix.columns if c != "Symbol"]
+                df_matrix = df_matrix[cols_order]
+                
+                # Each timeframe sheet contains all 214 stocks mapped across all scanner signals
+                df_matrix.to_excel(writer, sheet_name=tf_key, index=False)
+                
+        logger.info(f"Successfully generated full mapping Summary Matrix: {summary_matrix_filepath}")
+        generated_files.append(summary_matrix_filepath)
 
     # Generate the combined "MACD Normal Divergences" file with sheets for each timeframe
     if macd_divergences_by_tf:
@@ -583,8 +631,6 @@ def main():
                 df_out = pd.DataFrame(rows) if rows else pd.DataFrame(columns=SAFE_COLS)
                 if df_out.empty:
                     df_out = pd.DataFrame([["No scanner alerts detected for this interval", ""] + [""] * 10], columns=SAFE_COLS)
-                
-                # Each sheet represents a timeframe (e.g. '15 Min', 'Hourly')
                 df_out.to_excel(writer, sheet_name=tf_key, index=False)
                 
         logger.info(f"Successfully generated combined MACD report: {combined_macd_filepath}")
@@ -594,7 +640,7 @@ def main():
         logger.error("No reports were generated. Aborting email and Telegram alerts.")
         return
 
-    # Dispatch Mail with All Attachments (including the combined MACD file)
+    # Dispatch Mail with All Attachments (including the combined MACD file & Summary Matrix)
     mail_success = send_email_with_attachments(generated_files, date_str)
     
     # Send Telegram Alerts
