@@ -614,7 +614,7 @@ def build_html_dashboard(grid_dfs, date_str):
     <html>
     <head>
         <meta charset="utf-8">
-        <title>NSE Executive Market Dashboard</title>
+        <title>FNO Executive Market Dashboard</title>
     </head>
     <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f4f6f9; margin: 0; padding: 20px; color: #334155;">
         <div style="max-width: 700px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
