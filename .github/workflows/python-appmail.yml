@@ -43,6 +43,12 @@ jobs:
           python -m pip install --upgrade pip
           pip install numpy pandas openpyxl TA-Lib pyarrow fastparquet
 
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
       # Step 5: Run your scanner script
       - name: Run NSE Scanner Script
         run: |
