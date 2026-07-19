@@ -11,9 +11,6 @@ from email.message import EmailMessage
 import numpy as np
 import pandas as pd
 import talib
-import matplotlib
-matplotlib.use('Agg')  # Headless mode for server execution
-import matplotlib.pyplot as plt
 
 # ==============================================================================
 # 1. LOGGING & MASTER SETUP
@@ -199,7 +196,6 @@ def run_kdj_sell(df):
     if pd.isna(pD.iloc[-1]) or pd.isna(pJ.iloc[-1]): return None
     return "KDJ SELL (J↓D overbought)" if (pJ.iloc[-2] > pD.iloc[-2] and pJ.iloc[-1] < pD.iloc[-1] and pD.iloc[-1] > 70) else None
 
-# --- NEW SCANNER METHODS REQUESTED ---
 def consecutive_close_momentum(df, min_count=3):
     if len(df) < min_count + 1: return None
     closes = df["close"].values
@@ -246,7 +242,6 @@ def failed_breakout_breakdown(df, lookback=20):
     if prev["low"] < recent_low and curr["close"] > recent_low: return "Failed Breakdown (Bullish)"
     return None
 
-# Combined Master Mapping Execution Set
 SCANNERS = {
     "RSI Market Pulse": lambda df: {"Signal": "Monitor", "RSI": run_rsi_market_pulse(df)[0], "Zone": run_rsi_market_pulse(df)[1]},
     "Volume Shocker": lambda df: {"Signal": "BUY" if run_volume_shocker(df) else "Neutral", "Setup": "High Vol Expansion" if run_volume_shocker(df) else None},
@@ -268,7 +263,7 @@ SCANNERS = {
     "Inside Bar Breakout": lambda df: {"Signal": "Breakout", "Setup": inside_bar_breakout(df)},
     "ADX Expansion": lambda df: {"Signal": "Expansion", "Setup": adx_expansion(df)},
     "Range Expansion Day": lambda df: {"Signal": "Range Expansion", "Setup": range_expansion_day(df)},
-    "Failed Breakout/Breakdown": lambda df: {"Signal": "Failed Breakout", "Setup": failed_breakout_breakdown(df)}
+    "Failed Breakout or Breakdown": lambda df: {"Signal": "Failed Breakout", "Setup": failed_breakout_breakdown(df)}
 }
 
 def extract_grid_cell_value(scanner_name, res):
@@ -276,7 +271,7 @@ def extract_grid_cell_value(scanner_name, res):
     if scanner_name == "Volume Shocker": return "High Vol Expansion" if res.get("Signal") == "BUY" else ""
     if scanner_name in ["Counter Attack Pattern", "MACD Hook Up", "MACD Hook Down", "EMA50 + Stochastic", "KDJ Cross Buy", "KDJ Cross Sell"]: 
         return res.get("Signal") if res.get("Signal") != "Neutral" else ""
-    if scanner_name in ["Breakaway Gap", "RSI + ADX Extremes", "Pullback to EMA", "Confluence", "Consecutive Momentum", "Inside Bar Breakout", "ADX Expansion", "Range Expansion Day", "Failed Breakout/Breakdown"]: 
+    if scanner_name in ["Breakaway Gap", "RSI + ADX Extremes", "Pullback to EMA", "Confluence", "Consecutive Momentum", "Inside Bar Breakout", "ADX Expansion", "Range Expansion Day", "Failed Breakout or Breakdown"]: 
         return res.get("Setup") or ""
     if scanner_name in ["MACD Market Pulse", "Trend Alignment"]: return res.get("Trend") or ""
     if scanner_name == "MACD Normal Divergence": return res.get("Divergence") or ""
@@ -284,23 +279,25 @@ def extract_grid_cell_value(scanner_name, res):
     return str(res.get("Signal", ""))
 
 # ==============================================================================
-# 4. HISTORICAL MACD CHART MAKER
+# 4. HISTORICAL MACD TEXT TABLE SUMMARY GENERATOR
 # ==============================================================================
-def generate_historical_macd_chart(all_dfs):
-    logger.info("Generating historical 15-day MACD distribution chart...")
-    if not all_dfs: return None
+def calculate_historical_macd_summary(all_dfs):
+    logger.info("Calculating historical 15-day MACD metrics...")
+    if not all_dfs: return ""
 
-    # Sync base dates from tracking arrays
     sample_df = all_dfs[0]
-    if len(sample_df) < 45: return None
+    if len(sample_df) < 45: return ""
     
-    dates = sample_df.index[-15:]
-    above_pct, below_pct, date_labels = [], [], []
+    html_table = """
+    <h3>📊 15-Day MACD Trend Distribution Overview</h3>
+    <table border='1' cellpadding='6' style='border-collapse: collapse; text-align: center; width: 100%; max-width: 500px;'>
+        <tr style='background-color: #f2f2f2;'><th>Date</th><th>% Stocks &gt; 0 (Bullish)</th><th>% Stocks &lt; 0 (Bearish)</th></tr>
+    """
 
     for idx in range(-15, 0):
         pos_count, neg_count, total = 0, 0, 0
         current_date = sample_df.index[idx]
-        date_labels.append(pd.to_datetime(current_date).strftime('%Y-%m-%d'))
+        date_label = pd.to_datetime(current_date).strftime('%Y-%m-%d')
         
         for df in all_dfs:
             if len(df) >= 35:
@@ -311,26 +308,12 @@ def generate_historical_macd_chart(all_dfs):
                     if val > 0: pos_count += 1
                     else: neg_count += 1
         
-        above_pct.append((pos_count / total * 100) if total > 0 else 0)
-        below_pct.append((neg_count / total * 100) if total > 0 else 0)
-
-    plt.figure(figsize=(10, 4.5))
-    plt.plot(date_labels, above_pct, marker='o', color='green', label='% Stocks > 0 (Bullish)')
-    plt.plot(date_labels, below_pct, marker='o', color='red', label='% Stocks < 0 (Bearish)')
-    
-    plt.title("MACD > 0 vs < 0 (Last_15_Trading_Days_FNO_STOCKS)")
-    plt.ylabel("Percentage of Stocks")
-    plt.xlabel("Date")
-    plt.xticks(rotation=45, ha='right')
-    plt.ylim(-5, 105)
-    plt.grid(axis='y', linestyle='--', alpha=0.5)
-    plt.legend(loc='upper right')
-    plt.tight_layout()
-
-    chart_path = os.path.join(OUTPUT_DIR, "macd_trend_15d.png")
-    plt.savefig(chart_path, dpi=150)
-    plt.close()
-    return chart_path
+        above_p = (pos_count / total * 100) if total > 0 else 0
+        below_p = (neg_count / total * 100) if total > 0 else 0
+        html_table += f"<tr><td>{date_label}</td><td style='color:green;'><b>{above_p:.1f}%</b></td><td style='color:red;'><b>{below_p:.1f}%</b></td></tr>"
+        
+    html_table += "</table>"
+    return html_table
 
 # ==============================================================================
 # 5. CORE ENGINE PROCESSING
@@ -369,7 +352,6 @@ def process_timeframe(folder_name, output_name, date_str, rare_alerts_list):
                         if any(row[col] not in ["", "Neutral", None] for col in ["Signal", "Setup", "Divergence", "Trend"]):
                             sheets_data[scanner_name].append(row)
                             
-                            # Intercept rare events for live dashboard
                             cell_val = grid_stock_row[scanner_name]
                             if scanner_name in ["Volume Shocker", "Breakaway Gap", "KDJ Cross Buy", "KDJ Cross Sell", "MACD Hook Up", "MACD Hook Down"] and cell_val not in ["", "Neutral"]:
                                 rare_alerts_list.append([sym, folder_name.replace("stock_data_", ""), scanner_name, cell_val])
@@ -387,7 +369,10 @@ def process_timeframe(folder_name, output_name, date_str, rare_alerts_list):
             df_out = pd.DataFrame(rows) if rows else pd.DataFrame(columns=SAFE_COLS)
             if df_out.empty:
                 df_out = pd.DataFrame([["No scanner alerts detected for this interval", ""] + [""] * 10], columns=SAFE_COLS)
-            df_out.to_excel(writer, sheet_name=scanner_name[:30], index=False)
+            
+            # Sanitization Step: Replace / with space to ensure openpyxl does not crash
+            clean_sheet_name = scanner_name.replace("/", " ").replace("\\", " ")[:30]
+            df_out.to_excel(writer, sheet_name=clean_sheet_name, index=False)
 
     df_grid_tf = pd.DataFrame(grid_rows) if grid_rows else pd.DataFrame(columns=["Symbol"] + list(SCANNERS.keys()))
     return excel_filepath, sheets_data.get("MACD Normal Divergence", []), df_grid_tf, timeframe_dfs
@@ -395,7 +380,7 @@ def process_timeframe(folder_name, output_name, date_str, rare_alerts_list):
 # ==============================================================================
 # 6. MAIL TRANSMISSION
 # ==============================================================================
-def send_email_with_attachments(file_paths, chart_path, rare_alerts, date_str):
+def send_email_with_attachments(file_paths, macd_html_table, rare_alerts, date_str):
     if not SENDER_EMAIL or not SENDER_PASSWORD: return False
 
     msg = EmailMessage()
@@ -405,7 +390,6 @@ def send_email_with_attachments(file_paths, chart_path, rare_alerts, date_str):
     if "BCC_RECIPIENTS" in globals() and BCC_RECIPIENTS:
         msg["Bcc"] = ", ".join(BCC_RECIPIENTS)
 
-    # --- Construct Summary Dashboard Body ---
     dashboard_html = "<h2>=== FNO AUTOMATED SCANNER DASHBOARD ===</h2>"
     
     if rare_alerts:
@@ -423,17 +407,11 @@ def send_email_with_attachments(file_paths, chart_path, rare_alerts, date_str):
 
     dashboard_html += "<p>Please find attached your daily multi-timeframe analytical suite including specific sheets, normal deviations, and the summary grid data matching your custom specifications.</p>"
     
-    if chart_path:
-        dashboard_html += "<br><h3>📈 15-Day MACD Market Distribution:</h3><img src='cid:macd_chart' width='700'><br>"
+    if macd_html_table:
+        dashboard_html += f"<br>{macd_html_table}<br>"
         
     msg.set_content(dashboard_html, subtype='html')
 
-    # Embed Chart Image Inline
-    if chart_path and os.path.exists(chart_path):
-        with open(chart_path, 'rb') as img:
-            msg.get_payload()[0].add_related(img.read(), maintype='image', subtype='png', cid='macd_chart')
-
-    # Attach Excel Workbooks
     for path in file_paths:
         if not os.path.exists(path): continue
         ctype, encoding = mimetypes.guess_type(path)
@@ -477,8 +455,7 @@ def main():
             if not df_grid_tf.empty:
                 grid_dataframes_by_tf[tf_key] = df_grid_tf
 
-    # Generate 15-day distribution image using Daily data
-    chart_path = generate_historical_macd_chart(master_dfs_list)
+    macd_html_table = calculate_historical_macd_summary(master_dfs_list)
 
     if grid_dataframes_by_tf:
         summary_matrix_filename = f"Scanner Summary Matrix_{date_str}.xlsx"
@@ -486,7 +463,10 @@ def main():
         with pd.ExcelWriter(summary_matrix_filepath, engine="openpyxl") as writer:
             for tf_key, df_matrix in grid_dataframes_by_tf.items():
                 cols_order = ["Symbol"] + [c for c in df_matrix.columns if c != "Symbol"]
-                df_matrix[cols_order].to_excel(writer, sheet_name=tf_key, index=False)
+                
+                # Clean up / inside multi-tab grid sheets too
+                clean_tf_sheet = tf_key.replace("/", " ")
+                df_matrix[cols_order].to_excel(writer, sheet_name=clean_tf_sheet, index=False)
         generated_files.append(summary_matrix_filepath)
 
     if macd_divergences_by_tf:
@@ -495,13 +475,14 @@ def main():
         with pd.ExcelWriter(combined_macd_filepath, engine="openpyxl") as writer:
             for tf_key, rows in macd_divergences_by_tf.items():
                 df_out = pd.DataFrame(rows) if rows else pd.DataFrame([["No scanner alerts detected for this interval", ""] + [""] * 10], columns=SAFE_COLS)
-                df_out.to_excel(writer, sheet_name=tf_key, index=False)
+                
+                clean_tf_sheet = tf_key.replace("/", " ")
+                df_out.to_excel(writer, sheet_name=clean_tf_sheet, index=False)
         generated_files.append(combined_macd_filepath)
 
     if not generated_files: return
     
-    # Send Compiled Attachments, Inline Distribution Chart, and Dashboard Alerts
-    send_email_with_attachments(generated_files, chart_path, rare_alerts, date_str)
+    send_email_with_attachments(generated_files, macd_html_table, rare_alerts, date_str)
     logger.info(f"=== Pipeline completed successfully in {(datetime.now() - start_time).total_seconds():.2f} seconds ===")
 
 if __name__ == "__main__":
