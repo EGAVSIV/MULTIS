@@ -33,7 +33,7 @@ SENDER_EMAIL = "nse.scanner.app@gmail.com"
 SENDER_PASSWORD = "wmkdozoyfprduqgx"
 RECIPIENTS = ["yadav.gauravsingh@gmail.com"]
 # Move hidden recipients to a separate BCC list
-BCC_RECIPIENTS = ["dipti.gorwadia@gmail.com,yadav.gauravsingh34@gmail.com"]
+BCC_RECIPIENTS = ["dipti.gorwadia@gmail.com,yadav.gauravsingh34@gmail.com,akshay.tiwari@gmail.com"]
 
 TELEGRAM_BOT_TOKEN = "8344354642:AAG_S7mavtiLP_yXPh4YM4u31QD5BBWJmuM"
 TELEGRAM_CHAT_IDS = ["5332984891", "-1002622207173"]
