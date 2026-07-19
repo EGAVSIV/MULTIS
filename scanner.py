@@ -621,7 +621,7 @@ def build_html_dashboard(grid_dfs, date_str):
             
             <!-- Dashboard Banner Header -->
             <div style="background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); padding: 25px; color: #ffffff; text-align: center;">
-                <h1 style="margin: 0; font-size: 24px; font-weight: 700; letter-spacing: -0.5px;">📊 NSE Automated Scanner Dashboard</h1>
+                <h1 style="margin: 0; font-size: 24px; font-weight: 700; letter-spacing: -0.5px;">📊 FNO Automated Scanner Dashboard</h1>
                 <p style="margin: 6px 0 0 0; opacity: 0.9; font-size: 14px;">Market Analytics Summary &bull; {date_str}</p>
             </div>
             
@@ -679,7 +679,7 @@ def send_email_with_dashboard(file_paths, date_str, html_dashboard_content):
         return False
 
     msg = EmailMessage()
-    msg["Subject"] = f"NSE Executive Stock Scanner Report - {date_str}"
+    msg["Subject"] = f"FNO Executive Stock Scanner Report - {date_str}"
     msg["From"] = SENDER_EMAIL
     msg["To"] = ", ".join(RECIPIENTS)
     
@@ -727,7 +727,7 @@ def send_telegram_notification(date_str, report_count, total_scanners):
         return
 
     text = (
-        f"✅ *NSE Scanner Completed*\n\n"
+        f"✅ *FNO Scanner Completed*\n\n"
         f"📅 *Date :* {date_str}\n\n"
         f"*Generated Reports:*\n"
         f"✔ 15 Min\n"
