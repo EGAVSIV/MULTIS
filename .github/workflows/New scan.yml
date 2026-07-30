@@ -39,9 +39,9 @@ jobs:
           cd ..
           rm -rf ta-lib ta-lib-0.4.0-src.tar.gz
 
-          # Install required Python packages
+          # Upgrade pip and install Python packages (TA-Lib instead of talib-binary)
           python -m pip install --upgrade pip
-          pip install numpy pandas talib-binary pyarrow openpyxl matplotlib
+          pip install numpy pandas TA-Lib pyarrow openpyxl matplotlib
 
       # Step 4: Execute the Divergence Scanner script
       - name: Run Divergence Scanner Script
