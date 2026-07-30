@@ -275,7 +275,7 @@ def send_email_report(filepath, date_str, html_dashboard_content):
         return False
 
     msg = EmailMessage()
-    msg["Subject"] = f"NSE MACD Divergence Analysis Report - {date_str}"
+    msg["Subject"] = f"FNO MACD Divergence Analysis Report - {date_str}"
     msg["From"] = SENDER_EMAIL
     msg["To"] = ", ".join(RECIPIENTS)
     
