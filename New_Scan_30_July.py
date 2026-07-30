@@ -154,12 +154,12 @@ def process_timeframe(folder_name):
     return divergence_results, sample_df_dict
 
 # ==============================================================================
-# 5. MULTI-TIMEFRAME BUCKET ANALYTICS ENGINE
+# 5. MULTI-TIMEFRAME BUCKET ANALYTICS ENGINE (BUY/SELL RECOMMENDATIONS)
 # ==============================================================================
 def generate_analytics_data(tf_divergences):
     """
-    Evaluates alignment between Higher Time Frame (HTF) and Lower Time Frame (LTF)
-    across the 4 specified strategic buckets.
+    Evaluates alignment between HTF and LTF to generate Buy/Sell Recommendations
+    matching the HTPL Dashboard layout.
     """
     analytics_rows = []
 
@@ -174,91 +174,110 @@ def generate_analytics_data(tf_divergences):
             htf_div = htf_data[sym]["Divergence"]
             ltf_div = ltf_data[sym]["Divergence"]
 
-            bucket = None
+            recommendation = None
             remark = ""
 
-            # Bucket 1: HTF Bullish ND & LTF Bullish ND
+            # Bucket 1: HTF Bullish ND + LTF Bullish ND -> STRONG BUY
             if htf_div == "Bullish ND" and ltf_div == "Bullish ND":
-                bucket = "Bullish ND + Bullish ND"
+                recommendation = "STRONG BUY"
                 remark = f"{sym}: HTF {htf} Bullish ND and LTF {ltf} Bullish ND (Strong Reversal Confluence)"
 
-            # Bucket 2: HTF Bullish RD & LTF Bullish ND
+            # Bucket 2: HTF Bullish RD + LTF Bullish ND -> BUY
             elif htf_div == "Bullish RD" and ltf_div == "Bullish ND":
-                bucket = "Bullish RD + Bullish ND"
+                recommendation = "BUY"
                 remark = f"{sym}: HTF {htf} Bullish RD and LTF {ltf} Bullish ND (Trend Continuation with Entry Signal)"
 
-            # Bucket 3: HTF Bearish ND & LTF Bearish ND
+            # Bucket 3: HTF Bearish ND + LTF Bearish ND -> STRONG SELL
             elif htf_div == "Bearish ND" and ltf_div == "Bearish ND":
-                bucket = "Bearish ND + Bearish ND"
+                recommendation = "STRONG SELL"
                 remark = f"{sym}: HTF {htf} Bearish ND and LTF {ltf} Bearish ND (Strong Distribution Signal)"
 
-            # Bucket 4: HTF Bearish RD & LTF Bearish ND
+            # Bucket 4: HTF Bearish RD + LTF Bearish ND -> SELL
             elif htf_div == "Bearish RD" and ltf_div == "Bearish ND":
-                bucket = "Bearish RD + Bearish ND"
+                recommendation = "SELL"
                 remark = f"{sym}: HTF {htf} Bearish RD and LTF {ltf} Bearish ND (Downtrend Continuation Signal)"
 
-            if bucket:
+            if recommendation:
+                pairing_signals = f"{htf} ({htf_div}) / {ltf} ({ltf_div})"
                 analytics_rows.append({
-                    "Symbol": sym,
-                    "HTF": htf,
-                    "HTF Divergence": htf_div,
-                    "LTF": ltf,
-                    "LTF Divergence": ltf_div,
-                    "Combination Category": bucket,
+                    "Stock": sym,
+                    "Pairing & Signals": pairing_signals,
+                    "Recommendation": recommendation,
                     "Remarks": remark,
-                    "TV_Link": make_tradingview_link(sym)
+                    "Chart": make_tradingview_link(sym)
                 })
 
     return pd.DataFrame(analytics_rows)
 
 # ==============================================================================
-# 6. HTML EMAIL DASHBOARD GENERATOR
+# 6. HTML EMAIL DASHBOARD GENERATOR (MATCHING DASHBOARD DESIGN)
 # ==============================================================================
 def build_html_dashboard(analytics_df, date_str):
-    total_confluences = len(analytics_df) if not analytics_df.empty else 0
     table_rows = ""
 
     if not analytics_df.empty:
         for _, row in analytics_df.iterrows():
+            rec = row['Recommendation']
+            
+            # Text Color & Styling based on Buy/Sell
+            if rec == "STRONG BUY":
+                rec_style = "color: #059669; font-weight: bold;"
+            elif rec == "BUY":
+                rec_style = "color: #10b981; font-weight: bold;"
+            elif rec == "STRONG SELL":
+                rec_style = "color: #dc2626; font-weight: bold;"
+            elif rec == "SELL":
+                rec_style = "color: #ef4444; font-weight: bold;"
+            else:
+                rec_style = "color: #475569;"
+
             table_rows += f"""
             <tr style="border-bottom: 1px solid #e2e8f0;">
-                <td style="padding: 10px; font-weight: bold; color: #1e3a8a;">{row['Symbol']}</td>
-                <td style="padding: 10px;"><span style="background-color: #dbeafe; color: #1e40af; padding: 2px 6px; border-radius: 4px; font-size: 11px;">{row['HTF']} / {row['LTF']}</span></td>
-                <td style="padding: 10px; color: #0f766e; font-weight: 600;">{row['Combination Category']}</td>
-                <td style="padding: 10px; color: #475569; font-size: 12px;">{row['Remarks']}</td>
-                <td style="padding: 10px;"><a href="{row['TV_Link']}" style="color: #3b82f6; text-decoration: none; font-weight: bold;" target="_blank">Chart ↗</a></td>
+                <td style="padding: 12px; font-weight: bold; color: #0f172a; font-size: 13px;">{row['Stock']}</td>
+                <td style="padding: 12px; color: #334155; font-size: 12px;">{row['Pairing & Signals']}</td>
+                <td style="padding: 12px; {rec_style} font-size: 12px;">{row['Recommendation']}</td>
+                <td style="padding: 12px; color: #475569; font-size: 12px;">{row['Remarks']}</td>
+                <td style="padding: 12px;"><a href="{row['Chart']}" style="color: #7e22ce; text-decoration: none; font-weight: bold; font-size: 12px;" target="_blank">Chart ↗</a></td>
             </tr>
             """
     else:
-        table_rows = """<tr><td colspan="5" style="padding: 15px; text-align: center; color: #94a3b8;">No multi-timeframe divergence confluences detected today. Check individual sheets.</td></tr>"""
+        table_rows = """<tr><td colspan="5" style="padding: 20px; text-align: center; color: #94a3b8; font-size: 13px;">No buy/sell recommendations generated today. Check individual timeframe sheets.</td></tr>"""
 
     html_body = f"""
     <!DOCTYPE html>
     <html>
     <head><meta charset="utf-8"></head>
-    <body style="font-family: Arial, sans-serif; background-color: #f4f6f9; margin: 0; padding: 20px; color: #334155;">
-        <div style="max-width: 750px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
-            <div style="background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); padding: 25px; color: #ffffff; text-align: center;">
-                <h1 style="margin: 0; font-size: 22px;">📊 MACD Divergence Multi-Timeframe Analytics</h1>
-                <p style="margin: 6px 0 0 0; opacity: 0.9; font-size: 13px;">Market Analytics Summary &bull; {date_str}</p>
+    <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; margin: 0; padding: 20px; color: #1e293b;">
+        <div style="max-width: 900px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0;">
+            
+            <!-- Dashboard Title Header -->
+            <div style="background-color: #f1f5f9; padding: 16px 20px; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center;">
+                <h2 style="margin: 0; font-size: 16px; color: #1e3a8a; font-weight: 700; text-transform: uppercase;">
+                    🎯 HTPL DASHBOARD (BUY / SELL RECOMMENDATIONS)
+                </h2>
             </div>
             
-            <div style="padding: 20px;">
-                <h2 style="font-size: 15px; color: #1e3a8a; text-transform: uppercase; margin-top: 0;">🎯 HTF & LTF Divergence Confluences ({total_confluences})</h2>
-                <table style="width: 100%; border-collapse: collapse; text-align: left; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px;">
+            <!-- Dashboard Table -->
+            <div style="padding: 0;">
+                <table style="width: 100%; border-collapse: collapse; text-align: left; background-color: #ffffff;">
                     <thead>
-                        <tr style="background-color: #f1f5f9; color: #475569; font-size: 12px;">
-                            <th style="padding: 10px;">Stock</th>
-                            <th style="padding: 10px;">Timeframes</th>
-                            <th style="padding: 10px;">Combination</th>
-                            <th style="padding: 10px;">Remarks</th>
-                            <th style="padding: 10px;">Action</th>
+                        <tr style="background-color: #f8fafc; color: #64748b; font-size: 11px; text-transform: uppercase; border-bottom: 1px solid #e2e8f0;">
+                            <th style="padding: 12px; width: 15%;">Stock</th>
+                            <th style="padding: 12px; width: 28%;">Pairing & Signals</th>
+                            <th style="padding: 12px; width: 17%;">Recommendation</th>
+                            <th style="padding: 12px; width: 30%;">Remarks</th>
+                            <th style="padding: 12px; width: 10%;">Chart</th>
                         </tr>
                     </thead>
-                    <tbody style="font-size: 12px;">
+                    <tbody>
                         {table_rows}
                     </tbody>
                 </table>
+            </div>
+            
+            <!-- Footer -->
+            <div style="padding: 12px 20px; background-color: #f8fafc; border-top: 1px solid #e2e8f0; text-align: right; color: #94a3b8; font-size: 11px;">
+                Generated on {date_str} &bull; MACD Divergence Scanner Engine
             </div>
         </div>
     </body>
@@ -275,14 +294,14 @@ def send_email_report(filepath, date_str, html_dashboard_content):
         return False
 
     msg = EmailMessage()
-    msg["Subject"] = f"FNO MACD Divergence Analysis Report - {date_str}"
+    msg["Subject"] = f"HTPL Buy/Sell Recommendations Dashboard - {date_str}"
     msg["From"] = SENDER_EMAIL
     msg["To"] = ", ".join(RECIPIENTS)
     
     if "BCC_RECIPIENTS" in globals() and BCC_RECIPIENTS:
         msg["Bcc"] = ", ".join(BCC_RECIPIENTS)
 
-    msg.set_content(f"Please view this email via an HTML-compatible client to view the report.")
+    msg.set_content("Please view this email via an HTML-compatible email client.")
     msg.add_alternative(html_dashboard_content, subtype="html")
 
     if filepath and os.path.exists(filepath):
@@ -319,7 +338,7 @@ def send_telegram_notification(date_str, report_generated):
         f"📅 *Date:* {date_str}\n"
         f"📊 *Timeframes Analyzed:* 15m, 1H, Daily, Weekly, Monthly\n"
         f"🎯 *Report Generated:* {'Yes' if report_generated else 'No'}\n\n"
-        f"✉ *Status:* Excel report and Analytics sent via email."
+        f"✉ *Status:* HTPL Dashboard Recommendations sent via email."
     )
 
     for chat_id in TELEGRAM_CHAT_IDS:
@@ -353,7 +372,7 @@ def main():
         div_results, _ = process_timeframe(folder_name)
         tf_divergences[tf_key] = div_results
 
-    # 2. Build Analytics Combinations Sheet
+    # 2. Build Analytics Combinations Sheet with Buy/Sell Recommendations
     analytics_df = generate_analytics_data(tf_divergences)
 
     # 3. Create Excel Workbook containing 5 Timeframe Sheets + 1 Analytics Sheet
@@ -361,12 +380,12 @@ def main():
     output_filepath = os.path.join(OUTPUT_DIR, output_filename)
 
     with pd.ExcelWriter(output_filepath, engine="openpyxl") as writer:
-        # Write Multi-Timeframe Analytics Summary Sheet first
+        # Write Dashboard Summary Sheet first
         if not analytics_df.empty:
-            analytics_df.to_excel(writer, sheet_name="Analytics Summary", index=False)
+            analytics_df.to_excel(writer, sheet_name="HTPL Dashboard", index=False)
         else:
-            empty_analytics = pd.DataFrame(columns=["Symbol", "HTF", "HTF Divergence", "LTF", "LTF Divergence", "Combination Category", "Remarks", "TV_Link"])
-            empty_analytics.to_excel(writer, sheet_name="Analytics Summary", index=False)
+            empty_analytics = pd.DataFrame(columns=["Stock", "Pairing & Signals", "Recommendation", "Remarks", "Chart"])
+            empty_analytics.to_excel(writer, sheet_name="HTPL Dashboard", index=False)
 
         # Write 5 Timeframe Sheets
         for tf_key in TIMEFRAME_FOLDERS.keys():
