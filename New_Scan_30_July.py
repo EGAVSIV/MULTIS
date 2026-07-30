@@ -294,7 +294,7 @@ def send_email_report(filepath, date_str, html_dashboard_content):
         return False
 
     msg = EmailMessage()
-    msg["Subject"] = f"HTPL Buy/Sell Recommendations Dashboard - {date_str}"
+    msg["Subject"] = f"FNO:-HTPL Buy/Sell Recommendations Dashboard - {date_str}"
     msg["From"] = SENDER_EMAIL
     msg["To"] = ", ".join(RECIPIENTS)
     
