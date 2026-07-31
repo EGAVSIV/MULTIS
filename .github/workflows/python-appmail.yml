@@ -1,4 +1,4 @@
-name: NSE Daily Automated Stock Scanner
+name: FNO Daily Automated Stock Scanner
 
 on:
   # 1. Scheduled Run: Daily at 5:00 PM IST (which is 11:30 AM UTC)
