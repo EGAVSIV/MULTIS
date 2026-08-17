@@ -28,21 +28,20 @@ st_autorefresh(
     key="auto_refresh"
 )
 
-# Python 3.13 image module fallback
+# Python 3.13+ image module fallback
 if sys.version_info >= (3, 13):
     import types
     imghdr = types.ModuleType("imghdr")
     imghdr.what = lambda *args, **kwargs: None
     sys.modules["imghdr"] = imghdr
 
+# Safe secret loading with environment variables fallback
 try:
     EMAIL_ADDRESS = st.secrets.get("EMAIL_ADDRESS", os.getenv("EMAIL_ADDRESS", "default_email@example.com"))
     EMAIL_PASSWORD = st.secrets.get("EMAIL_PASSWORD", os.getenv("EMAIL_PASSWORD", ""))
 except Exception:
     EMAIL_ADDRESS = os.getenv("EMAIL_ADDRESS", "default_email@example.com")
     EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD", "")
-
-
 
 BASE_PATH = os.path.dirname(os.path.abspath(__file__))
 
