@@ -35,9 +35,14 @@ if sys.version_info >= (3, 13):
     imghdr.what = lambda *args, **kwargs: None
     sys.modules["imghdr"] = imghdr
 
-# Safe environment configuration for Render deployment
-EMAIL_ADDRESS = os.getenv("EMAIL_ADDRESS", "default_email@example.com")
-EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD", "")
+try:
+    EMAIL_ADDRESS = st.secrets.get("EMAIL_ADDRESS", os.getenv("EMAIL_ADDRESS", "default_email@example.com"))
+    EMAIL_PASSWORD = st.secrets.get("EMAIL_PASSWORD", os.getenv("EMAIL_PASSWORD", ""))
+except Exception:
+    EMAIL_ADDRESS = os.getenv("EMAIL_ADDRESS", "default_email@example.com")
+    EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD", "")
+
+
 
 BASE_PATH = os.path.dirname(os.path.abspath(__file__))
 
