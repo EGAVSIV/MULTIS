@@ -1,68 +1,55 @@
-import os
-import shutil
+"""Incrementally mirror selected JSON folders from EGAVSIV/Data-Collector into COPIEDDATA.
+Run inside EGAVSIV/MULTIS GitHub Actions. No schedule is used; workflow is triggered by source updates.
+"""
+from __future__ import annotations
+import hashlib, json, os
+from pathlib import Path
 import requests
-import zipfile
-import io
 
-# ==========================================
-# CONFIG
-# ==========================================
+OWNER = "EGAVSIV"
+SOURCE_REPO = "Data-Collector"
+SOURCE_BRANCH = "main"
+FOLDERS = ["stock_data_15", "stock_data_1H", "stock_data_D", "stock_data_W", "stock_data_M"]
+ROOT = Path(__file__).resolve().parent
+DEST = ROOT / "COPIEDDATA"
+MANIFEST = DEST / ".copy_manifest.json"
+API = f"https://api.github.com/repos/{OWNER}/{SOURCE_REPO}/git/trees/{SOURCE_BRANCH}"
 
-SOURCE_REPO_ZIP = "https://github.com/EGAVSIV/Stock_Scanner_With_ASTA_Parameters/archive/refs/heads/main.zip"
-
-BASE_SOURCE_PATH = "Stock_Scanner_With_ASTA_Parameters-main"
-
-FOLDERS_TO_SYNC = [
-    "stock_data_15",
-    "stock_data_1H",
-    "stock_data_D",
-    "stock_data_M",
-    "stock_data_W"
-]
-
-DESTINATION_BASE = "."
+session = requests.Session()
+session.headers.update({"Accept": "application/vnd.github+json", "User-Agent": "EGAVSIV-MULTIS-Datacopier"})
 
 
-# ==========================================
-# SYNC FUNCTION
-# ==========================================
+def load_manifest():
+    if MANIFEST.exists():
+        try: return json.loads(MANIFEST.read_text(encoding="utf-8"))
+        except Exception: pass
+    return {}
 
-def sync_folders():
 
-    print("📥 Downloading repository...")
-
-    response = requests.get(SOURCE_REPO_ZIP)
-    response.raise_for_status()
-
-    print("📦 Extracting repository...")
-    zip_file = zipfile.ZipFile(io.BytesIO(response.content))
-    zip_file.extractall("temp_repo")
-
-    for folder in FOLDERS_TO_SYNC:
-
-        source_path = os.path.join(
-            "temp_repo",
-            BASE_SOURCE_PATH,
-            folder
-        )
-
-        destination_path = os.path.join(DESTINATION_BASE, folder)
-
-        if not os.path.exists(source_path):
-            print(f"❌ {folder} not found in repo!")
+def main():
+    r = session.get(API, params={"recursive": "1"}, timeout=60)
+    r.raise_for_status()
+    tree = r.json().get("tree", [])
+    files = [x for x in tree if x.get("type") == "blob" and x.get("path", "").endswith(".json") and any(x["path"].startswith(f + "/") for f in FOLDERS)]
+    old = load_manifest(); new = {}; changed = 0
+    for item in files:
+        rel = item["path"]; sha = item["sha"]; new[rel] = sha
+        target = DEST / rel
+        if old.get(rel) == sha and target.exists():
             continue
+        raw = f"https://raw.githubusercontent.com/{OWNER}/{SOURCE_REPO}/{SOURCE_BRANCH}/{rel}"
+        resp = session.get(raw, timeout=90); resp.raise_for_status()
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes(resp.content)
+        changed += 1
+        print("Copied:", rel)
+    for rel in old:
+        if rel not in new:
+            target = DEST / rel
+            if target.exists():
+                target.unlink(); print("Deleted:", rel)
+    DEST.mkdir(parents=True, exist_ok=True)
+    MANIFEST.write_text(json.dumps(new, indent=2, sort_keys=True), encoding="utf-8")
+    print(f"Source files: {len(files)} | changed/copied: {changed}")
 
-        if os.path.exists(destination_path):
-            print(f"🗑 Removing old {folder}...")
-            shutil.rmtree(destination_path)
-
-        print(f"📁 Copying {folder}...")
-        shutil.copytree(source_path, destination_path)
-
-    shutil.rmtree("temp_repo")
-
-    print("✅ All folders synced successfully!")
-
-
-if __name__ == "__main__":
-    sync_folders()
+if __name__ == "__main__": main()
