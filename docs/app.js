@@ -1,12 +1,251 @@
-const API=localStorage.getItem('SCANNER_API')||'http://127.0.0.1:8000';let lastResults=[],chart;
-const $=id=>document.getElementById(id);const api=async(p,opt={})=>{const r=await fetch(API+p,opt);if(!r.ok)throw new Error(await r.text());return r.json()};
-async function init(){try{const [tfs,scs]=await Promise.all([api('/api/timeframes'),api('/api/scanners')]);$('timeframe').innerHTML=tfs.map(x=>`<option ${x==='Daily'?'selected':''}>${x}</option>`).join('');$('scanner').innerHTML=scs.map(x=>`<option>${x.name}</option>`).join('');window.SCANNERS=scs;renderTiles();await Promise.all([loadSymbols(),loadCandles()]);$('analysisDate').value=new Date().toISOString().slice(0,10);$('status').textContent='🟢 Ready. Select scanner and run.'}catch(e){$('status').textContent='🔴 API connection error: '+e.message}}
-function renderTiles(){const s=$('scanner').value;$('scannerTiles').innerHTML=SCANNERS.map(x=>`<div class="tile ${x.name===s?'active':''}" style="background:${x.color}" data-s="${x.name}">${x.name}</div>`).join('');document.querySelectorAll('.tile').forEach(e=>e.onclick=()=>{$('scanner').value=e.dataset.s;renderTiles()})}
-async function loadSymbols(){const a=await api('/api/symbols?timeframe='+encodeURIComponent($('timeframe').value));$('symbol').innerHTML=a.map(x=>`<option>${x}</option>`).join('')}
-async function loadCandles(){const d=await api('/api/last-candles');$('candleCards').innerHTML=Object.entries(d).map(([k,v])=>`<div class="card"><b>${k}</b><span>${v?new Date(v).toLocaleString('en-IN',{timeZone:'Asia/Kolkata'}):'No data'}</span></div>`).join('')}
-function bodyFor(r){return JSON.stringify({scanner:$('scanner').value,timeframe:$('timeframe').value,analysis_date:$('analysisDate').value})}
-async function run(){try{$('status').textContent='⏳ Scanner calculation running…';const d=await api('/api/scan',{method:'POST',headers:{'Content-Type':'application/json'},body:bodyFor()});lastResults=d.results;$('resultTitle').textContent=`${d.scanner} — ${d.total_matches} Matches`;renderTable(lastResults);renderChart(d.zones);$('status').textContent=`🟢 Completed for ${d.analysis_date} • ${d.total_matches} matches`}catch(e){$('status').textContent='🔴 Scan failed: '+e.message}}
-function renderTable(rows){const cols=['Symbol','Signal','Trend','State','Setup','Divergence','RSI','Zone','Confluence','Bias','Probability','TV_Link'];$('resultsTable').querySelector('thead').innerHTML='<tr>'+cols.map(c=>`<th>${c}</th>`).join('')+'</tr>';$('resultsTable').querySelector('tbody').innerHTML=rows.map(r=>'<tr>'+cols.map(c=>{let v=r[c]??'';if(c==='TV_Link'&&v)return `<td><a target="_blank" href="${String(v).replace(/^\[TV\]\((.*)\)$/,'$1')}">📈 TV</a></td>`;const cl=c==='Bias'?(String(v)==='Bullish'?'bull':String(v)==='Bearish'?'bear':''):'';return `<td class="${cl}">${v}</td>`}).join('')+'</tr>').join('')}
-function renderChart(z){if(chart)chart.destroy();const labels=Object.keys(z||{}),vals=Object.values(z||{});chart=new Chart($('rsiChart'),{type:'doughnut',data:{labels,datasets:[{data:vals}]},options:{plugins:{title:{display:true,text:'RSI Market Pulse Distribution'}}}})}
-async function matrix(){try{$('matrix').textContent='⏳ Calculating all scanners…';const d=await api('/api/matrix',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({symbol:$('symbol').value,timeframe:$('timeframe').value,analysis_date:$('analysisDate').value})});$('matrix').innerHTML=d.results.map(x=>`<div class="matrix-row"><span>${x.Scanner}</span><span class="${x.Result?'yes':'no'}">${x.Result?'🟢 YES':'🔴 NO'}</span></div>`).join('')}catch(e){$('matrix').textContent='Error: '+e.message}}
-$('timeframe').onchange=async()=>{await loadSymbols();await loadCandles()};$('scanner').onchange=renderTiles;$('runBtn').onclick=run;$('matrixBtn').onclick=matrix;$('refreshBtn').onclick=async()=>{await loadCandles();$('status').textContent='🟢 Latest timestamps refreshed'};$('search').oninput=e=>{const q=e.target.value.toUpperCase();renderTable(lastResults.filter(r=>String(r.Symbol||'').toUpperCase().includes(q)))};$('downloadBtn').onclick=()=>{if(!lastResults.length)return;const cols=Object.keys(lastResults[0]);const csv=[cols.join(','),...lastResults.map(r=>cols.map(c=>JSON.stringify(r[c]??'')).join(','))].join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='scanner_results.csv';a.click()};init();
+// ============================================================
+// IMPORTANT
+// Replace this value with the public URL where backend/api.py runs.
+// GitHub Pages cannot execute Python itself.
+// Example: https://api.raosab.in
+// ============================================================
+const API = localStorage.getItem("SCANNER_API") || "http://127.0.0.1:8000";
+
+const state = { rows: [], scanners: [] };
+
+const $ = id => document.getElementById(id);
+
+function setStatus(message, type="") {
+  const el = $("status");
+  el.className = `status ${type}`;
+  el.textContent = message;
+}
+
+async function request(path, options={}) {
+  const response = await fetch(`${API}${path}`, {
+    headers: { "Content-Type": "application/json", ...(options.headers || {}) },
+    ...options
+  });
+
+  if (!response.ok) {
+    let message = `${response.status} ${response.statusText}`;
+    try {
+      const body = await response.json();
+      message = body.detail || message;
+    } catch (_) {}
+    throw new Error(message);
+  }
+
+  return response.json();
+}
+
+function fillSelect(id, values, selected=null) {
+  const el = $(id);
+  el.innerHTML = "";
+  values.forEach(value => {
+    const opt = document.createElement("option");
+    opt.value = typeof value === "string" ? value : value.name;
+    opt.textContent = typeof value === "string" ? value : value.name;
+    if (opt.value === selected) opt.selected = true;
+    el.appendChild(opt);
+  });
+}
+
+async function loadSymbols() {
+  const tf = $("timeframe").value;
+  $("symbol").innerHTML = `<option>Loading…</option>`;
+  const symbols = await request(`/api/symbols?timeframe=${encodeURIComponent(tf)}`);
+  fillSelect("symbol", symbols);
+}
+
+async function loadLastCandles() {
+  const data = await request("/api/last-candles");
+  $("lastCandles").innerHTML = Object.entries(data)
+    .map(([tf, value]) => `<div class="candle"><b>${tf}</b><br>${value ? new Date(value).toLocaleString() : "NA"}</div>`)
+    .join("");
+}
+
+function renderTiles() {
+  const selected = $("scanner").value;
+  $("scannerTiles").innerHTML = state.scanners.map(item =>
+    `<button class="tile ${item.name === selected ? "active" : ""}"
+      data-scanner="${encodeURIComponent(item.name)}"
+      style="background:${item.color}">
+      ${item.name}
+    </button>`
+  ).join("");
+
+  document.querySelectorAll(".tile").forEach(button => {
+    button.onclick = () => {
+      $("scanner").value = decodeURIComponent(button.dataset.scanner);
+      renderTiles();
+    };
+  });
+}
+
+function renderResults(rows) {
+  state.rows = rows;
+  const table = $("resultsTable");
+  const empty = $("emptyResults");
+
+  if (!rows.length) {
+    table.querySelector("thead").innerHTML = "";
+    table.querySelector("tbody").innerHTML = "";
+    empty.textContent = "No stocks matched this scanner.";
+    empty.style.display = "block";
+    return;
+  }
+
+  empty.style.display = "none";
+  const cols = Object.keys(rows[0]);
+
+  table.querySelector("thead").innerHTML = `<tr>${cols.map(c => `<th>${c}</th>`).join("")}</tr>`;
+  table.querySelector("tbody").innerHTML = rows.map(row =>
+    `<tr>${cols.map(c => {
+      const v = row[c] ?? "";
+      if (c === "TV_Link" && typeof v === "string" && v.includes("http")) {
+        const url = v.match(/\((.*?)\)/)?.[1] || v;
+        return `<td><a href="${url}" target="_blank">TV</a></td>`;
+      }
+      return `<td>${String(v)}</td>`;
+    }).join("")}</tr>`
+  ).join("");
+}
+
+function renderZones(zones) {
+  const entries = Object.entries(zones || {});
+  $("zoneCard").classList.toggle("hidden", !entries.length);
+  $("zones").innerHTML = entries.map(([name, count]) =>
+    `<div class="zone">${name}: ${count}</div>`
+  ).join("");
+}
+
+async function runScanner() {
+  try {
+    setStatus("Running scanner and loading latest data…");
+    $("runBtn").disabled = true;
+
+    const payload = {
+      scanner: $("scanner").value,
+      timeframe: $("timeframe").value,
+      analysis_date: $("analysisDate").value || null
+    };
+
+    const result = await request("/api/scan", {
+      method: "POST",
+      body: JSON.stringify(payload)
+    });
+
+    $("summary").textContent =
+      `${result.total_matches} matches • ${result.timeframe} • ${result.analysis_date}`;
+
+    renderResults(result.results || []);
+    renderZones(result.zones || {});
+    setStatus(`✓ ${result.scanner} completed successfully`, "ok");
+  } catch (error) {
+    setStatus(`🔴 Scanner error: ${error.message}`, "error");
+  } finally {
+    $("runBtn").disabled = false;
+  }
+}
+
+async function runMatrix() {
+  try {
+    setStatus("Running single-stock scanner matrix…");
+    $("matrixBtn").disabled = true;
+
+    const payload = {
+      symbol: $("symbol").value,
+      timeframe: $("timeframe").value,
+      analysis_date: $("analysisDate").value || null
+    };
+
+    const result = await request("/api/matrix", {
+      method: "POST",
+      body: JSON.stringify(payload)
+    });
+
+    const rows = result.results || [];
+    $("matrixSummary").textContent =
+      `${result.symbol} • ${result.timeframe} • ${result.analysis_date}`;
+
+    $("matrixTable").querySelector("thead").innerHTML =
+      `<tr><th>Scanner</th><th>Result</th></tr>`;
+
+    $("matrixTable").querySelector("tbody").innerHTML = rows.map(row =>
+      `<tr><td>${row.Scanner}</td><td class="${row.Result ? "yes" : "no"}">${row.Result ? "🟢 YES" : "🔴 NO"}</td></tr>`
+    ).join("");
+
+    setStatus("✓ Scanner matrix completed", "ok");
+  } catch (error) {
+    setStatus(`🔴 Matrix error: ${error.message}`, "error");
+  } finally {
+    $("matrixBtn").disabled = false;
+  }
+}
+
+function filterTable() {
+  const q = $("search").value.trim().toUpperCase();
+  renderResults(q ? state.rows.filter(row =>
+    String(row.Symbol || "").toUpperCase().includes(q)
+  ) : state.rows);
+}
+
+function downloadCSV() {
+  if (!state.rows.length) return;
+
+  const cols = Object.keys(state.rows[0]);
+  const esc = value => `"${String(value ?? "").replaceAll('"', '""')}"`;
+  const csv = [cols.join(","), ...state.rows.map(row => cols.map(c => esc(row[c])).join(","))].join("\n");
+
+  const blob = new Blob([csv], { type: "text/csv" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${$("scanner").value}_${$("timeframe").value}.csv`.replaceAll(" ", "_");
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+async function refreshData() {
+  try {
+    setStatus("Refreshing data from Data-Collector repository…");
+    $("refreshBtn").disabled = true;
+    const result = await request("/api/refresh-data", { method: "POST" });
+    await loadLastCandles();
+    await loadSymbols();
+    setStatus(`✓ Data refreshed successfully`, "ok");
+  } catch (error) {
+    setStatus(`🔴 Refresh error: ${error.message}`, "error");
+  } finally {
+    $("refreshBtn").disabled = false;
+  }
+}
+
+async function init() {
+  try {
+    const health = await request("/api/health");
+    const [timeframes, scanners] = await Promise.all([
+      request("/api/timeframes"),
+      request("/api/scanners")
+    ]);
+
+    state.scanners = scanners;
+    fillSelect("timeframe", timeframes, "Daily");
+    fillSelect("scanner", scanners);
+    renderTiles();
+
+    await Promise.all([loadSymbols(), loadLastCandles()]);
+    setStatus(`✓ ${health.service} connected`, "ok");
+
+    $("timeframe").onchange = async () => {
+      try { await loadSymbols(); } catch (error) { setStatus(`🔴 ${error.message}`, "error"); }
+    };
+    $("scanner").onchange = renderTiles;
+    $("runBtn").onclick = runScanner;
+    $("matrixBtn").onclick = runMatrix;
+    $("refreshBtn").onclick = refreshData;
+    $("search").oninput = filterTable;
+    $("csvBtn").onclick = downloadCSV;
+
+  } catch (error) {
+    setStatus(`🔴 API connection error: ${error.message}`, "error");
+  }
+}
+
+init();

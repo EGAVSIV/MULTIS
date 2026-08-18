@@ -1,4 +1,94 @@
-<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>NSE Multi-Timeframe Stock Screener</title><link rel="stylesheet" href="style.css"><script src="https://cdn.jsdelivr.net/npm/chart.js"></script></head><body>
-<header><div><h1>📊 Multi-Timeframe Stock Screener</h1><p>Quant Intelligence • NSE Scanner</p></div><button id="refreshBtn">↻ Refresh Data</button></header>
-<main><aside class="panel controls"><h2>Scanner Controls</h2><label>Timeframe<select id="timeframe"></select></label><label>Scanner<select id="scanner"></select></label><label>Analysis Date<input type="date" id="analysisDate"></label><button class="primary" id="runBtn">🚀 RUN SCANNER</button><hr><h3>🔍 Single Stock Scan</h3><label>Stock<select id="symbol"></select></label><button id="matrixBtn">Run Scanner Matrix</button></aside>
-<section class="content"><div id="status" class="status">Loading latest market data…</div><section class="cards" id="candleCards"></section><section class="scanner-grid" id="scannerTiles"></section><div class="result-head"><h2 id="resultTitle">Scanner Results</h2><div><input id="search" placeholder="Search symbol"><button id="downloadBtn">⬇ CSV</button></div></div><div class="table-wrap"><table id="resultsTable"><thead></thead><tbody></tbody></table></div><div class="lower"><div class="chart-box"><canvas id="rsiChart"></canvas></div><div class="matrix-box"><h2>🧾 Scanner Matrix</h2><div id="matrix"></div></div></div></section></main><footer>⚡ NSE Stock Scanner • HTML + JavaScript + Python Calculation Engine</footer><script src="app.js"></script></body></html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Multi-Timeframe Stock Screener</title>
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <h1>📊 Multi-Timeframe Stock Screener</h1>
+      <p>Quant Intelligence • NSE Scanner</p>
+    </div>
+    <button id="refreshBtn" class="secondary">↻ Refresh Data</button>
+  </header>
+
+  <div class="status" id="status">Connecting to scanner backend…</div>
+
+  <main class="layout">
+    <aside class="sidebar">
+      <h2>Scanner Controls</h2>
+
+      <label>Timeframe</label>
+      <select id="timeframe"></select>
+
+      <label>Scanner</label>
+      <select id="scanner"></select>
+
+      <label>Analysis Date</label>
+      <input id="analysisDate" type="date">
+
+      <button id="runBtn" class="primary">🚀 RUN SCANNER</button>
+
+      <hr>
+
+      <h3>🔍 Single Stock Scan</h3>
+      <label>Stock</label>
+      <select id="symbol"></select>
+      <button id="matrixBtn" class="secondary full">Run Scanner Matrix</button>
+    </aside>
+
+    <section class="content">
+      <section class="meta-card">
+        <h2>🕯 Latest Data</h2>
+        <div id="lastCandles" class="candles"></div>
+      </section>
+
+      <section class="scanner-card">
+        <h2>🎯 Scanner Selection</h2>
+        <div id="scannerTiles" class="tiles"></div>
+      </section>
+
+      <section class="results-header">
+        <h2>Scanner Results</h2>
+        <div>
+          <input id="search" type="search" placeholder="Search symbol">
+          <button id="csvBtn" class="secondary">⬇ CSV</button>
+        </div>
+      </section>
+
+      <div id="summary" class="summary"></div>
+
+      <section class="result-card">
+        <div class="table-wrap">
+          <table id="resultsTable">
+            <thead></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div id="emptyResults" class="empty">Select a scanner and click <b>RUN SCANNER</b>.</div>
+      </section>
+
+      <section id="zoneCard" class="result-card hidden">
+        <h2>🎯 RSI Market Pulse Distribution</h2>
+        <div id="zones" class="zones"></div>
+      </section>
+
+      <section class="result-card">
+        <h2>🧾 Scanner Matrix</h2>
+        <div id="matrixSummary" class="summary"></div>
+        <div class="table-wrap">
+          <table id="matrixTable">
+            <thead></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <script src="./app.js"></script>
+</body>
+</html>
