@@ -1,3 +1,4 @@
+from __future__ import annotations
 import os
 import sys
 import base64
@@ -14,6 +15,60 @@ def make_tradingview_link(sym: str) -> str:
 
 def empty_result_df():
     return pd.DataFrame({c: [] for c in SAFE_COLS})
+
+def get_last_candle_by_tf(folder_path: str):
+    last_dt = None
+    if not os.path.isdir(folder_path):
+        return None
+    for f in os.listdir(folder_path):
+        if not f.endswith('.parquet'):
+            continue
+        try:
+            df = pd.read_parquet(os.path.join(folder_path, f))
+            if df.empty:
+                continue
+            if isinstance(df.index, pd.DatetimeIndex):
+                dt = df.index[-1]
+            elif 'datetime' in df.columns:
+                dt = pd.to_datetime(df['datetime']).iloc[-1]
+            else:
+                continue
+            if dt.tzinfo is None:
+                dt = dt.tz_localize('UTC')
+            else:
+                dt = dt.tz_convert('UTC')
+            dt = dt.tz_convert('Asia/Kolkata')
+            if last_dt is None or dt > last_dt:
+                last_dt = dt
+        except Exception:
+            continue
+    return last_dt
+    st.markdown('\n        <h1 style="color: blue; font-weight: 700; margin-bottom: 0.2rem;">\n            📊 Multi-Timeframe Stock Screener\n        </h1>\n        ', unsafe_allow_html=True)
+    bg_path = os.path.join(BASE_PATH, 'Assest', 'BG11.png')
+    if os.path.exists(bg_path):
+        set_bg_image(bg_path)
+
+@st.cache_data(show_spinner=False)
+def load_data(folder: str):
+    data = {}
+    if not os.path.exists(folder):
+        st.warning(f'Folder not found: {folder}')
+        return data
+    for f in os.listdir(folder):
+        if not f.endswith('.parquet'):
+            continue
+        sym = f.replace('.parquet', '')
+        df = pd.read_parquet(os.path.join(folder, f))
+        if isinstance(df.index, pd.MultiIndex):
+            df = df.reset_index()
+        if 'datetime' in df.columns:
+            df['datetime'] = pd.to_datetime(df['datetime'])
+            df = df.sort_values('datetime').set_index('datetime')
+        needed = {'open', 'high', 'low', 'close', 'volume'}
+        if not needed.issubset(df.columns):
+            continue
+        data[sym] = df
+    return data
 
 def make_tradingview_link(sym: str) -> str:
     base = 'https://in.tradingview.com/chart/LqUZraZ9/'
