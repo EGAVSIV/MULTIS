@@ -84,7 +84,7 @@ def main():
 
     for tf in timeframes:
         print(f"Loading data for {tf} ...")
-        data = load_data(tf, force_refresh=True)
+        data = load_data(tf)
         data_cache[tf] = data
         symbols_by_tf[tf] = sorted(data.keys())
         last_candles[tf] = latest_timestamp_for(data)
