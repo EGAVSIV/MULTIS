@@ -1419,9 +1419,9 @@ SCANNERS = [
 ]
 
 def run_scanner(scanner, tf, analysis_date, data_loader):
+    data = data_loader(tf)
     if not data:
-        st.warning("No data found.")
-        st.stop()
+        return empty_result_df()
     
     results = []
     atr_list = []
@@ -1435,8 +1435,7 @@ def run_scanner(scanner, tf, analysis_date, data_loader):
         }
     
         if tf not in htf_map:
-            st.warning("GSAS not supported for this timeframe")
-            st.stop()
+            return empty_result_df()
     
         data_htf = data_loader(htf_map[tf])
     else:
