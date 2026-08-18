@@ -26,12 +26,15 @@ app = FastAPI(
     version="1.0.0",
 )
 
-# Change to a fixed backend origin later if you want stricter CORS.
+# Allowed CORS origins (including local dev servers)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "https://allscans.raosab.in",
         "https://egavsiv.github.io",
+        "http://localhost:3000",
+        "http://localhost:5173",
+        "http://127.0.0.1:8000",
     ],
     allow_credentials=False,
     allow_methods=["GET", "POST", "OPTIONS"],
@@ -92,7 +95,9 @@ def latest_timestamp(timeframe, refresh=False):
     for df in data.values():
         if df is None or df.empty:
             continue
-        value = df.index[-1]
+        
+        # Ensure timestamp is comparable
+        value = pd.to_datetime(df.index[-1])
         if latest is None or value > latest:
             latest = value
 
@@ -241,8 +246,8 @@ def matrix(request: MatrixRequest):
         if symbol_df is None:
             raise HTTPException(400, "Not enough data for selected date")
 
-        # Matrix needs the current TF plus all higher/required TF data.
-        data_all_tfs = {tf: load_data(tf) for tf in TIMEFRAME_FOLDERS}
+        # Load all timeframes using cached load_data calls
+        data_all_tfs = {tf: load_data(tf, force_refresh=False) for tf in TIMEFRAME_FOLDERS}
         data_all_tfs[request.timeframe] = current_data
 
         matrix_result = run_all_scanners_for_symbol(
@@ -275,7 +280,8 @@ if __name__ == "__main__":
     import uvicorn
 
     uvicorn.run(
-        "api:app",
+        "api_2:app",
         host="0.0.0.0",
         port=8000,
-        )
+        reload=True,
+    )
