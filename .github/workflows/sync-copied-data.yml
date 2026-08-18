@@ -1,4 +1,5 @@
 name: Sync Copied Data
+
 on:
   repository_dispatch:
     types: [data_collector_updated]
@@ -7,28 +8,46 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: multis-data-sync-main
+  cancel-in-progress: false
+
 jobs:
   sync:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout MULTIS
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-      - name: Install requests
-        run: pip install requests
-      - name: Copy changed source data
-        run: python Datacopier.py
-      - name: Commit copied data
+          ref: main
+
+      - name: Rebase onto latest main before changing files
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin main
+          git reset --hard origin/main
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install copier dependency
+        run: python -m pip install --upgrade pip requests
+
+      - name: Copy changed source data
+        run: python Datacopier.py
+
+      - name: Commit and push copied data
+        run: |
           git add COPIEDDATA
           if git diff --cached --quiet; then
-            echo "No data changes to commit"
-          else
-            git commit -m "Auto sync copied market data"
-            git push
+            echo "No copied-data changes to commit"
+            exit 0
           fi
+
+          git commit -m "Auto sync copied market data"
+          git pull --rebase origin main
+          git push origin HEAD:main
