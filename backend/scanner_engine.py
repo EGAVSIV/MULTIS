@@ -6,6 +6,20 @@ import numpy as np
 import pandas as pd
 import talib
 
+try:
+    import streamlit as st
+except ImportError:
+    class _NoOpCache:
+        def __call__(self, *args, **kwargs):
+            def decorator(func):
+                return func
+            return decorator
+
+    class _StreamlitShim:
+        cache_data = _NoOpCache()
+
+    st = _StreamlitShim()
+
 SAFE_COLS = ["Symbol","Signal","Trend","State","Setup","Divergence","RSI","Zone","Confluence","Bias","Probability","TV_Link"]
 BULL_KEYWORDS = ["Bullish", "BUY", "Breakout", "Uptrend", "Momentum"]
 BEAR_KEYWORDS = ["Bearish", "SELL", "Breakdown", "Downtrend"]
