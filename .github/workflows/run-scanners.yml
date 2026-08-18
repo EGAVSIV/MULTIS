@@ -1,0 +1,40 @@
+name: Generate Scanner Results
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'COPIEDDATA/**'
+      - 'backend/**'
+
+permissions:
+  contents: write
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r backend/requirements.txt
+
+      - name: Run scanner engine
+        run: python backend/run_scanners.py
+
+      - name: Commit updated scanner results
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add SCANNER_RESULTS
+          git diff --cached --quiet || git commit -m "Update scanner results"
+          git pull --rebase origin main
+          git push origin HEAD:main
