@@ -1,11 +1,9 @@
-name: Generate Scanner Results
+name: Run Scanners
 
 on:
-  workflow_dispatch:
-  push:
-    paths:
-      - 'COPIEDDATA/**'
-      - 'backend/**'
+  schedule:
+    - cron: "30 10 * * 1-5"   # adjust to your market close time (UTC), Mon–Fri
+  workflow_dispatch: {}
 
 permissions:
   contents: write
@@ -15,26 +13,33 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: "3.11"
 
-      - name: Install dependencies
+      - name: Install TA-Lib C library
         run: |
-          python -m pip install --upgrade pip
-          pip install -r backend/requirements.txt
+          sudo apt-get update
+          sudo apt-get install -y build-essential wget
+          wget http://prdownloads.sourceforge.net/ta-lib/ta-lib-0.4.0-src.tar.gz
+          tar -xzf ta-lib-0.4.0-src.tar.gz
+          cd ta-lib
+          ./configure --prefix=/usr
+          make
+          sudo make install
+
+      - name: Install Python dependencies
+        run: pip install -r backend/requirements.txt
 
       - name: Run scanner engine
-        run: python backend/run_scanners.py
+        working-directory: backend
+        run: python generate_static_data.py
 
-      - name: Commit updated scanner results
+      - name: Commit and push results
         run: |
           git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add SCANNER_RESULTS
-          git diff --cached --quiet || git commit -m "Update scanner results"
-          git pull --rebase origin main
-          git push origin HEAD:main
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/data
+          git diff --cached --quiet || git commit -m "chore: update scanner results [skip ci]"
+          git push
