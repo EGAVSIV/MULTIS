@@ -16,20 +16,18 @@ jobs:
   sync:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout MULTIS
+      - name: Checkout latest MULTIS main
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           ref: main
 
-      - name: Rebase onto latest main before changing files
+      - name: Configure Git
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git fetch origin main
-          git reset --hard origin/main
 
-      - name: Set up Python
+      - name: Install Python dependencies
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
@@ -40,14 +38,25 @@ jobs:
       - name: Copy changed source data
         run: python Datacopier.py
 
-      - name: Commit and push copied data
+      - name: Commit copied data locally
         run: |
           git add COPIEDDATA
           if git diff --cached --quiet; then
             echo "No copied-data changes to commit"
             exit 0
           fi
-
           git commit -m "Auto sync copied market data"
-          git pull --rebase origin main
-          git push origin HEAD:main
+
+      - name: Rebase safely onto latest remote main
+        run: |
+          for attempt in 1 2 3 4 5; do
+            echo "Rebase/push attempt ${attempt}"
+            git fetch origin main
+            git rebase origin/main && git push origin HEAD:main && exit 0
+            echo "Push attempt ${attempt} failed; aborting rebase and retrying..."
+            git rebase --abort || true
+            sleep $((attempt * 2))
+          done
+
+          echo "Failed to push after 5 attempts"
+          exit 1
