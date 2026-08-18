@@ -32,8 +32,6 @@ app.add_middleware(
     allow_origins=[
         "https://allscans.raosab.in",
         "https://egavsiv.github.io",
-        "http://localhost:5500",
-        "http://127.0.0.1:5500",
     ],
     allow_credentials=False,
     allow_methods=["GET", "POST", "OPTIONS"],
@@ -111,14 +109,6 @@ def resolve_date(timeframe, requested_date=None, refresh=False):
 
 @app.get("/")
 def root():
-    return {
-        "status": "ok",
-        "service": "EGAVSIV Multis Scanner API",
-    }
-
-
-@app.get("/api/health")
-def health():
     return {
         "status": "ok",
         "service": "EGAVSIV Multis Scanner API",
@@ -288,5 +278,4 @@ if __name__ == "__main__":
         "api:app",
         host="0.0.0.0",
         port=8000,
-        reload=True,
-    )
+        )
