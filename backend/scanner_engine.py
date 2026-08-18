@@ -2,21 +2,36 @@ import numpy as np
 import pandas as pd
 import talib
 
-BASE_TV_URL = "https://in.tradingview.com/chart/LqUZraZ9/"
-
-def make_tradingview_link(sym: str) -> str:
-    return f"{BASE_TV_URL}?symbol=NSE%3A{sym}"
-
-SAFE_COLS = ["Symbol","Signal","Trend","State","Setup","Divergence","RSI","Zone","Confluence","Bias","Probability","TV_Link"]
+SAFE_COLS = [
+    "Symbol",
+    "Signal",
+    "Trend",
+    "State",
+    "Setup",
+    "Divergence",
+    "RSI",
+    "Zone",
+    "Confluence",
+    "Bias",
+    "Probability",
+    "TV_Link",
+    ]
+    
 BULL_KEYWORDS = ["Bullish", "BUY", "Breakout", "Uptrend", "Momentum"]
 BEAR_KEYWORDS = ["Bearish", "SELL", "Breakdown", "Downtrend"]
-
+    
+    
+    
+    
+    
+    
+    
+    
 def empty_result_df():
     return pd.DataFrame({c: [] for c in SAFE_COLS})
-
-def make_tradingview_link(sym: str) -> str:
-    base = "https://in.tradingview.com/chart/LqUZraZ9/"
-    return f"{base}?symbol=NSE%3A{sym}"
+    
+    
+    
 
 def trim_df_to_date(df: pd.DataFrame, anchor_date):
     if df is None or df.empty:
@@ -33,7 +48,16 @@ def trim_df_to_date(df: pd.DataFrame, anchor_date):
         return None
     
     return df
-
+    
+    
+    
+    
+    
+    
+    
+    # ==============================
+    # SCANNERS (PURE FUNCTIONS)
+    # ==============================
 def rsi_market_pulse(df):
     if len(df) < 14:
         return None
@@ -45,7 +69,8 @@ def rsi_market_pulse(df):
     else:
         zone = "RSI 40–60"
     return round(rsi, 2), zone
-
+    
+    
 def volume_shocker(df):
     if len(df) < 20:
         return False
@@ -55,7 +80,8 @@ def volume_shocker(df):
         last["volume"] > 2 * vol_sma.iloc[-1]
         and prev["close"] * 0.95 <= last["close"] <= prev["close"] * 1.05
     )
-
+    
+    
 def nrb_7(df):
     if len(df) < 20:
         return None
@@ -89,7 +115,8 @@ def nrb_7(df):
         return "NRB-7 Bearish Breakdown + Volume"
     
     return None
-
+    
+    
 def counter_attack(df):
     if len(df) < 2:
         return None
@@ -103,7 +130,8 @@ def counter_attack(df):
         if curr["open"] > prev["close"] and curr["close"] <= mid:
             return "Bearish"
     return None
-
+    
+    
 def breakaway_gap(df):
     if len(df) < 50:
         return None
@@ -122,7 +150,8 @@ def breakaway_gap(df):
             return "Bearish Breakaway Gap"
     
     return None
-
+    
+    
 def rsi_adx(df):
     if len(df) < 20:
         return None
@@ -134,7 +163,8 @@ def rsi_adx(df):
     if adx > 50 and rsi > 80:
         return "Probabale Bearish Reversal"
     return None
-
+    
+    
 def rsi_wm(df_tf, df_w, df_m):
     r_tf = talib.RSI(df_tf["close"], 14).iloc[-1]
     r_w = talib.RSI(df_w["close"], 14).iloc[-1]
@@ -145,7 +175,8 @@ def rsi_wm(df_tf, df_w, df_m):
     if r_w < 40 and r_m < 40 and r_tf > 60:
         return "Bearish WM Reversal"
     return None
-
+    
+    
 def macd_market_pulse(df):
     if len(df) < 30:
         return None
@@ -174,7 +205,8 @@ def macd_market_pulse(df):
         return "Strong Bearish"
     
     return None
-
+    
+    
 def macd_normal_divergence(df, lookback=30):
     if len(df) < lookback:
         return None
@@ -198,7 +230,8 @@ def macd_normal_divergence(df, lookback=30):
         return "Bearish ND"
     
     return None
-
+    
+    
 def macd_rd(df, df_htf):
     if len(df) < 60 or len(df_htf) < 30:
         return None
@@ -237,7 +270,8 @@ def macd_rd(df, df_htf):
         return "MACD RD (Compression + Trend Aligned)"
     
     return None
-
+    
+    
 def third_wave_finder(df, lookback_cross=50, tolerance=0.02):
     if len(df) < lookback_cross + 5:
         return False
@@ -280,7 +314,8 @@ def third_wave_finder(df, lookback_cross=50, tolerance=0.02):
         return False
     
     return True
-
+    
+    
 def c_wave_finder(df, lookback_cross=50, tolerance=0.02):
     if len(df) < lookback_cross + 5:
         return False
@@ -323,7 +358,8 @@ def c_wave_finder(df, lookback_cross=50, tolerance=0.02):
         return False
     
     return True
-
+    
+    
 def macd_peak_bearish_divergence(df):
     if len(df) < 80:
         return None
@@ -346,7 +382,8 @@ def macd_peak_bearish_divergence(df):
         return "Bearish MACD Peak Divergence"
     
     return None
-
+    
+    
 def macd_base_bullish_divergence(df):
     if len(df) < 80:
         return None
@@ -363,7 +400,8 @@ def macd_base_bullish_divergence(df):
         return "Bullish MACD Base Divergence"
     
     return None
-
+    
+    
 def trend_alignment(df):
     if len(df) < 100:
         return None
@@ -379,7 +417,8 @@ def trend_alignment(df):
         return "Strong Downtrend"
     
     return None
-
+    
+    
 def pullback_to_ema(df):
     if len(df) < 60:
         return None
@@ -398,7 +437,8 @@ def pullback_to_ema(df):
             return "Bearish EMA Pullback"
     
     return None
-
+    
+    
 def confluence_setup(df):
     if len(df) < 60:
         return None
@@ -415,7 +455,8 @@ def confluence_setup(df):
         return "Bearish Confluence"
     
     return None
-
+    
+    
 def macd_hook_up(df):
     if len(df) < 35:
         return None
@@ -433,7 +474,8 @@ def macd_hook_up(df):
         return "MACD Hook Up"
     
     return None
-
+    
+    
 def macd_hook_down(df):
     if len(df) < 35:
         return None
@@ -451,7 +493,8 @@ def macd_hook_down(df):
         return "MACD Hook Down"
     
     return None
-
+    
+    
 def macd_histogram_divergence(df):
     if len(df) < 50:
         return None
@@ -475,7 +518,8 @@ def macd_histogram_divergence(df):
         return "Bearish Histogram Divergence"
     
     return None
-
+    
+    
 def ema50_stoch_oversold(df):
     if len(df) < 50:
         return None
@@ -500,7 +544,8 @@ def ema50_stoch_oversold(df):
         return "EMA50 + Stoch Oversold Buy"
     
     return None
-
+    
+    
 def dark_cloud_cover(df):
     if len(df) < 15:
         return None
@@ -526,7 +571,8 @@ def dark_cloud_cover(df):
         return None
     
     return "Dark Cloud Cover (Bearish | RSI>60)"
-
+    
+    
 def morning_star_bottom(df):
     if len(df) < 60:
         return None
@@ -544,7 +590,8 @@ def morning_star_bottom(df):
         return "Morning Star (Bottom)"
     
     return None
-
+    
+    
 def evening_star_top(df):
     if len(df) < 60:
         return None
@@ -562,7 +609,8 @@ def evening_star_top(df):
         return "Evening Star (Top)"
     
     return None
-
+    
+    
 def bullish_gsas(df_tf, df_htf):
     rsi = talib.RSI(df_tf["close"], 14)
     adx = talib.ADX(df_tf["high"], df_tf["low"], df_tf["close"], 14)
@@ -582,7 +630,8 @@ def bullish_gsas(df_tf, df_htf):
         return "Bullish GSAS"
     
     return None
-
+    
+    
 def bearish_gsas(df_tf, df_htf):
     rsi = talib.RSI(df_tf["close"], 14)
     adx = talib.ADX(df_tf["high"], df_tf["low"], df_tf["close"], 14)
@@ -602,7 +651,8 @@ def bearish_gsas(df_tf, df_htf):
         return "Bearish GSAS"
     
     return None
-
+    
+    
 def rsi_swing(df):
     if len(df) < 20:
         return None
@@ -621,7 +671,8 @@ def rsi_swing(df):
         return "RSI Bearish Swing"
     
     return None
-
+    
+    
 def ema50_fake_breakdown(df):
     if len(df) < 55:
         return None
@@ -641,7 +692,8 @@ def ema50_fake_breakdown(df):
         return "50 EMA Fake Breakdown"
     
     return None
-
+    
+    
 def ema50_fake_breakout(df):
     if len(df) < 55:
         return None
@@ -661,7 +713,8 @@ def ema50_fake_breakout(df):
         return "50 EMA Fake Breakout"
     
     return None
-
+    
+    
 def kdj(df, period=9, signal=3):
     low_min = df["low"].rolling(period).min()
     high_max = df["high"].rolling(period).max()
@@ -685,7 +738,8 @@ def kdj(df, period=9, signal=3):
     pJ = 3 * pK - 2 * pD
     
     return pK, pD, pJ
-
+    
+    
 def kdj_buy(df):
     if len(df) < 20:
         return None
@@ -707,7 +761,8 @@ def kdj_buy(df):
         return "KDJ BUY (J↑D oversold)"
     
     return None
-
+    
+    
 def kdj_sell(df):
     if len(df) < 20:
         return None
@@ -729,7 +784,8 @@ def kdj_sell(df):
         return "KDJ SELL (J↓D overbought)"
     
     return None
-
+    
+    
 def consecutive_close_momentum(df, min_count=3):
     if len(df) < min_count + 1:
         return None
@@ -761,7 +817,8 @@ def consecutive_close_momentum(df, min_count=3):
         return direction, count
     
     return None
-
+    
+    
 def camarilla_breakout(df):
     if len(df) < 2:
         return None
@@ -785,7 +842,8 @@ def camarilla_breakout(df):
         return "Bearish Camarilla Breakdown"
     
     return None
-
+    
+    
 def cpr_breakout(df):
     if len(df) < 2:
         return None
@@ -811,7 +869,8 @@ def cpr_breakout(df):
         return "Bearish CPR Breakdown"
     
     return None
-
+    
+    
 def inside_bar_breakout(df):
      # Mother -4, inside -3, -2, breakout -1
     if len(df) < 4:
@@ -838,7 +897,8 @@ def inside_bar_breakout(df):
         return "Bearish Inside Bar Breakdown (3-bar coil)"
     
     return None
-
+    
+    
 def adx_expansion(df):
     if len(df) < 30:
         return None
@@ -853,7 +913,8 @@ def adx_expansion(df):
             return "Bearish ADX Expansion"
     
     return None
-
+    
+    
 def range_expansion_day(df, lookback=5):
     if len(df) < lookback + 2:
         return None
@@ -869,7 +930,8 @@ def range_expansion_day(df, lookback=5):
             return "Bearish Range Expansion Day"
     
     return None
-
+    
+    
 def failed_breakout_breakdown(df, lookback=20):
     if len(df) < lookback + 2:
         return None
@@ -887,7 +949,8 @@ def failed_breakout_breakdown(df, lookback=20):
         return "Failed Breakdown (Bullish)"
     
     return None
-
+    
+    
 def ema_compression_expansion(df):
     if len(df) < 60:
         return None
@@ -910,7 +973,8 @@ def ema_compression_expansion(df):
         return "Bearish EMA Compression Break"
     
     return None
-
+    
+    
 def rsi_macd_cross_swing(df):
     if len(df) < 50:
         return None
@@ -943,7 +1007,8 @@ def rsi_macd_cross_swing(df):
         return "Bearish RSI+MACD Cross"
     
     return None
-
+    
+    
 def atr_percent(df, period=14):
     if len(df) < period + 1:
         return None
@@ -953,7 +1018,8 @@ def atr_percent(df, period=14):
     if pd.isna(val) or close <= 0:
         return None
     return (val / close) * 100.0
-
+    
+    
 def calculate_confluence(row):
     score = 0
     text = " ".join(
@@ -993,7 +1059,7 @@ def calculate_confluence(row):
         prob = "Low"
     
     return score, bias, prob
-
+    
 def run_all_scanners_for_symbol(
     sym,
     df,
@@ -1128,7 +1194,9 @@ def run_all_scanners_for_symbol(
     results["Top 10 by ATR %"] = atr_val is not None
     
     return results
-
+    
+    
+    
 def liquidity_sweep_reversal(df, lookback=20):
     if len(df) < lookback + 2:
         return None
@@ -1147,7 +1215,8 @@ def liquidity_sweep_reversal(df, lookback=20):
         return "Bearish Liquidity Sweep"
     
     return None
-
+    
+    
 def island_reversal(df):
     if len(df) < 5:
         return None
@@ -1166,7 +1235,8 @@ def island_reversal(df):
         return "Bearish Island Reversal"
     
     return None
-
+    
+    
 def wyckoff_spring_upthrust(df, lookback=30):
     if len(df) < lookback + 2:
         return None
@@ -1183,7 +1253,8 @@ def wyckoff_spring_upthrust(df, lookback=30):
         return "Wyckoff Upthrust (Bearish)"
     
     return None
-
+    
+    
 def smart_money_trap(df):
     if len(df) < 3:
         return None
@@ -1200,7 +1271,8 @@ def smart_money_trap(df):
         return "Bear Trap Reversal"
     
     return None
-
+    
+    
 def bump_and_run_reversal(df):
     if len(df) < 40:
         return None
@@ -1215,7 +1287,8 @@ def bump_and_run_reversal(df):
         return "BARR Bottom Reversal"
     
     return None
-
+    
+    
 def exhaustion_bar(df):
     if len(df) < 20:
         return None
@@ -1232,7 +1305,8 @@ def exhaustion_bar(df):
             return "Bullish Exhaustion"
     
     return None
-
+    
+    
 def shakeout_trap(df, lookback=20):
     if len(df) < lookback + 2:
         return None
@@ -1253,7 +1327,9 @@ def shakeout_trap(df, lookback=20):
         return "Bearish Shakeout"
 
     return None
-
+    
+    
+    
 def hidden_pivot_reversal(df, lookback=25):
     if len(df) < lookback:
         return None
@@ -1268,7 +1344,7 @@ def hidden_pivot_reversal(df, lookback=25):
         return "Hidden Pivot Bullish Reversal"
     
     return None
-
+    
 def springer_reversal(df, lookback=25):
     if len(df) < lookback + 5:
         return None
@@ -1280,7 +1356,15 @@ def springer_reversal(df, lookback=25):
         return "Springer Reversal (Bullish)"
     
     return None
-
+    
+    
+    
+    
+    
+    
+    # ==============================
+    # SCANNER TILE CONFIG
+    # ==============================
 SCANNERS = [
     {"name": "RSI Market Pulse", "color": "#1abc9c"},
     {"name": "Volume Shocker", "color": "#1abc9c"},
@@ -1334,18 +1418,14 @@ SCANNERS = [
     {"name": "RSI Swing", "color": "#8e44ad"},
 ]
 
-
 def run_scanner(scanner, tf, analysis_date, data_loader):
-    """Run one scanner across all symbols. data_loader(timeframe)->dict."""
-    load_data = data_loader
-    TIMEFRAMES = {"15 Min":"15 Min","1 Hour":"1 Hour","Daily":"Daily","Weekly":"Weekly","Monthly":"Monthly"}
-    data = load_data(TIMEFRAMES[tf])
     if not data:
-        return empty_result_df()
-
+        st.warning("No data found.")
+        st.stop()
+    
     results = []
     atr_list = []
-
+    
     if scanner in ["Bullish GSAS", "Bearish GSAS", "MACD RD (4th Wave)"]:
         htf_map = {
             "15 Min": "1 Hour",
@@ -1353,23 +1433,24 @@ def run_scanner(scanner, tf, analysis_date, data_loader):
             "Daily": "Weekly",
             "Weekly": "Monthly",
         }
-
+    
         if tf not in htf_map:
-            return empty_result_df()
-
-        data_htf = load_data(TIMEFRAMES[htf_map[tf]])
+            st.warning("GSAS not supported for this timeframe")
+            st.stop()
+    
+        data_htf = data_loader(htf_map[tf])
     else:
         data_htf = None
-
+    
     if scanner == "RSI WM 60–40":
-        data_w = load_data(TIMEFRAMES["Weekly"])
-        data_m = load_data(TIMEFRAMES["Monthly"])
-
+        data_w = data_loader("Weekly")
+        data_m = data_loader("Monthly")
+    
     for sym, df in data.items():
         df = trim_df_to_date(df, analysis_date)
         if df is None:
             continue
-
+    
         base_row = {
             "Symbol": sym,
             "Signal": "",
@@ -1384,7 +1465,7 @@ def run_scanner(scanner, tf, analysis_date, data_loader):
             "Probability": "",
             "TV_Link": "",
         }
-
+    
             # --- Top 10 ATR % special handling ---
         if scanner == "Top 10 by ATR %":
             v = atr_percent(df)
@@ -1394,7 +1475,7 @@ def run_scanner(scanner, tf, analysis_date, data_loader):
                 row["State"] = f"{v:.2f}%"
                 atr_list.append((sym, v, row))
             continue
-
+    
             # ---- Regular scanners ----
         if scanner == "RSI Market Pulse":
             r = rsi_market_pulse(df)
@@ -1403,40 +1484,40 @@ def run_scanner(scanner, tf, analysis_date, data_loader):
                 row["RSI"] = r[0]
                 row["Zone"] = r[1]
                 results.append(row)
-
+    
         elif scanner == "Volume Shocker" and volume_shocker(df):
             row = base_row.copy()
             row["Signal"] = "Volume Shocker"
             results.append(row)
-
+    
         elif scanner == "NRB-7 Breakout":
             sig = nrb_7(df)
             if sig:
                 row = base_row.copy()
                 row["Signal"] = sig
                 results.append(row)
-
+    
         elif scanner == "Counter Attack":
             sig = counter_attack(df)
             if sig:
                 row = base_row.copy()
                 row["Signal"] = sig
                 results.append(row)
-
+    
         elif scanner == "Breakaway Gaps":
             sig = breakaway_gap(df)
             if sig:
                 row = base_row.copy()
                 row["Signal"] = sig
                 results.append(row)
-
+    
         elif scanner == "RSI + ADX":
             sig = rsi_adx(df)
             if sig:
                 row = base_row.copy()
                 row["Signal"] = sig
                 results.append(row)
-
+    
         elif scanner == "RSI WM 60–40":
             if sym in data_w and sym in data_m:
                 df_wt = trim_df_to_date(data_w[sym], analysis_date)
@@ -1448,21 +1529,21 @@ def run_scanner(scanner, tf, analysis_date, data_loader):
                     row = base_row.copy()
                     row["Signal"] = sig
                     results.append(row)
-
+    
         elif scanner == "MACD Market Pulse":
             sig = macd_market_pulse(df)
             if sig:
                 row = base_row.copy()
                 row["State"] = sig
                 results.append(row)
-
+    
         elif scanner == "MACD Normal Divergence":
             sig = macd_normal_divergence(df)
             if sig:
                 row = base_row.copy()
                 row["Divergence"] = sig
                 results.append(row)
-
+    
         elif scanner == "MACD RD (4th Wave)":
             if data_htf is not None and sym in data_htf:
                 df_htf = trim_df_to_date(data_htf[sym], analysis_date)
@@ -1473,19 +1554,19 @@ def run_scanner(scanner, tf, analysis_date, data_loader):
                     row = base_row.copy()
                     row["Signal"] = sig
                     results.append(row)
-
+    
         elif scanner == "Probable 3rd Wave":
             if third_wave_finder(df):
                 row = base_row.copy()
                 row["Signal"] = "Probable 3rd Wave"
                 results.append(row)
-
+    
         elif scanner == "Probable C Wave":
             if c_wave_finder(df):
                 row = base_row.copy()
                 row["Signal"] = "Probable C Wave"
                 results.append(row)
-
+    
         elif scanner == "MACD Bearish Peak Divergence":
             sig = macd_peak_bearish_divergence(df)
             if sig:
@@ -1493,7 +1574,7 @@ def run_scanner(scanner, tf, analysis_date, data_loader):
                 row["Signal"] = sig
                 row["Divergence"] = sig
                 results.append(row)
-
+    
         elif scanner == "MACD Bullish Base Divergence":
             sig = macd_base_bullish_divergence(df)
             if sig:
@@ -1501,77 +1582,77 @@ def run_scanner(scanner, tf, analysis_date, data_loader):
                 row["Signal"] = sig
                 row["Divergence"] = sig
                 results.append(row)
-
+    
         elif scanner == "Trend Alignment (EMA)":
             sig = trend_alignment(df)
             if sig:
                 row = base_row.copy()
                 row["Trend"] = sig
                 results.append(row)
-
+    
         elif scanner == "Pullback to EMA":
             sig = pullback_to_ema(df)
             if sig:
                 row = base_row.copy()
                 row["Setup"] = sig
                 results.append(row)
-
+    
         elif scanner == "High Probability Confluence":
             sig = confluence_setup(df)
             if sig:
                 row = base_row.copy()
                 row["Setup"] = sig
                 results.append(row)
-
+    
         elif scanner == "MACD Hook Up":
             sig = macd_hook_up(df)
             if sig:
                 row = base_row.copy()
                 row["Signal"] = sig
                 results.append(row)
-
+    
         elif scanner == "MACD Hook Down":
             sig = macd_hook_down(df)
             if sig:
                 row = base_row.copy()
                 row["Signal"] = sig
                 results.append(row)
-
+    
         elif scanner == "MACD Histogram Divergence":
             sig = macd_histogram_divergence(df)
             if sig:
                 row = base_row.copy()
                 row["Divergence"] = sig
                 results.append(row)
-
+    
         elif scanner == "EMA50 + Stoch Oversold":
             sig = ema50_stoch_oversold(df)
             if sig:
                 row = base_row.copy()
                 row["Signal"] = sig
                 results.append(row)
-
+    
         elif scanner == "Dark Cloud Cover":
             sig = dark_cloud_cover(df)
             if sig:
                 row = base_row.copy()
                 row["Signal"] = sig
                 results.append(row)
-
+    
         elif scanner == "Morning Star (Bottom)":
             sig = morning_star_bottom(df)
             if sig:
                 row = base_row.copy()
                 row["Signal"] = sig
                 results.append(row)
-
+    
         elif scanner == "Evening Star (Top)":
             sig = evening_star_top(df)
             if sig:
                 row = base_row.copy()
                 row["Signal"] = sig
                 results.append(row)
-
+    
         elif scanner == "Bullish GSAS":
             if data_htf is not None and sym in data_htf:
                 df_htf = trim_df_to_date(data_htf[sym], analysis_date)
@@ -1582,7 +1663,7 @@ def run_scanner(scanner, tf, analysis_date, data_loader):
                     row = base_row.copy()
                     row["Signal"] = sig
                     results.append(row)
-
+    
         elif scanner == "Bearish GSAS":
             if data_htf is not None and sym in data_htf:
                 df_htf = trim_df_to_date(data_htf[sym], analysis_date)
@@ -1593,35 +1674,35 @@ def run_scanner(scanner, tf, analysis_date, data_loader):
                     row = base_row.copy()
                     row["Signal"] = sig
                     results.append(row)
-
+    
         elif scanner == "50 EMA Fake Breakdown":
             sig = ema50_fake_breakdown(df)
             if sig:
                 row = base_row.copy()
                 row["Signal"] = sig
                 results.append(row)
-
+    
         elif scanner == "50 EMA Fake Breakout":
             sig = ema50_fake_breakout(df)
             if sig:
                 row = base_row.copy()
                 row["Signal"] = sig
                 results.append(row)
-
+    
         elif scanner == "KDJ BUY (Oversold)":
             sig = kdj_buy(df)
             if sig:
                 row = base_row.copy()
                 row["Signal"] = sig
                 results.append(row)
-
+    
         elif scanner == "KDJ SELL (Overbought)":
             sig = kdj_sell(df)
             if sig:
                 row = base_row.copy()
                 row["Signal"] = sig
                 results.append(row)
-
+    
         elif scanner == "Probable Momentum (Consecutive Close)":
             res = consecutive_close_momentum(df, min_count=3)
             if res:
@@ -1630,157 +1711,157 @@ def run_scanner(scanner, tf, analysis_date, data_loader):
                 row["Signal"] = f"{direction} Momentum"
                 row["State"] = f"{days} Consecutive Days"
                 results.append(row)
-
+    
         elif scanner == "Camarilla Breakout / Breakdown":
             sig = camarilla_breakout(df)
             if sig:
                 row = base_row.copy()
                 row["Signal"] = sig
                 results.append(row)
-
+    
         elif scanner == "CPR Breakout / Breakdown":
             sig = cpr_breakout(df)
             if sig:
                 row = base_row.copy()
                 row["Signal"] = sig
                 results.append(row)
-
+    
         elif scanner == "Inside Bar Breakout":
             sig = inside_bar_breakout(df)
             if sig:
                 row = base_row.copy()
                 row["Signal"] = sig
                 results.append(row)
-
+    
         elif scanner == "ADX Expansion (Trend Ignition)":
             sig = adx_expansion(df)
             if sig:
                 row = base_row.copy()
                 row["Signal"] = sig
                 results.append(row)
-
+    
         elif scanner == "Range Expansion Day":
             sig = range_expansion_day(df)
             if sig:
                 row = base_row.copy()
                 row["Signal"] = sig
                 results.append(row)
-
+    
         elif scanner == "Failed Breakout / Breakdown":
             sig = failed_breakout_breakdown(df)
             if sig:
                 row = base_row.copy()
                 row["Signal"] = sig
                 results.append(row)
-
+    
                     # ==============================
             # ADVANCED REVERSAL SCANNERS
             # ==============================
-
+    
         elif scanner == "Liquidity Sweep Reversal":
             sig = liquidity_sweep_reversal(df)
             if sig:
                 row = base_row.copy()
                 row["Signal"] = sig
                 results.append(row)
-
+    
         elif scanner == "Island Reversal":
             sig = island_reversal(df)
             if sig:
                 row = base_row.copy()
                 row["Signal"] = sig
                 results.append(row)
-
+    
         elif scanner == "Wyckoff Spring / Upthrust":
             sig = wyckoff_spring_upthrust(df)
             if sig:
                 row = base_row.copy()
                 row["Signal"] = sig
                 results.append(row)
-
+    
         elif scanner == "Smart Money Trap":
             sig = smart_money_trap(df)
             if sig:
                 row = base_row.copy()
                 row["Signal"] = sig
                 results.append(row)
-
+    
         elif scanner == "Bump & Run Reversal":
             sig = bump_and_run_reversal(df)
             if sig:
                 row = base_row.copy()
                 row["Signal"] = sig
                 results.append(row)
-
+    
         elif scanner == "Exhaustion Bar":
             sig = exhaustion_bar(df)
             if sig:
                 row = base_row.copy()
                 row["Signal"] = sig
                 results.append(row)
-
+    
         elif scanner == "Shakeout / Trap":
             sig = shakeout_trap(df)
             if sig:
                 row = base_row.copy()
                 row["Signal"] = sig
                 results.append(row)
-
+    
         elif scanner == "RSI + MACD Cross Swing":
             sig = rsi_macd_cross_swing(df)
             if sig:
                 row = base_row.copy()
                 row["Signal"] = sig
                 results.append(row)
-
+    
         elif scanner == "Hidden Pivot Reversal":
             sig = hidden_pivot_reversal(df)
             if sig:
                 row = base_row.copy()
                 row["Signal"] = sig
                 results.append(row)
-
+    
         elif scanner == "Springer Reversal":
             sig = springer_reversal(df)
             if sig:
                 row = base_row.copy()
                 row["Signal"] = sig
                 results.append(row)
-
-
+    
+    
         elif scanner == "EMA Compression → Expansion":
             sig = ema_compression_expansion(df)
             if sig:
                 row = base_row.copy()
                 row["Signal"] = sig
                 results.append(row)
-
+            
         elif scanner == "RSI Swing":
             sig = rsi_swing(df)
             if sig:
                 row = base_row.copy()
                 row["Signal"] = sig
                 results.append(row)
-
+    
         # --- Top 10 ATR %: convert atr_list to results ---
     if scanner == "Top 10 by ATR %":
         if not atr_list:
-            df_res = empty_result_df()
+            return empty_result_df()
         else:
             atr_list.sort(key=lambda x: x[1], reverse=True)
             rows = [r[2] for r in atr_list[:10]]
             results = rows
-
+    
         # --- RESULT POST-PROCESSING ---
     if not results:
-        df_res = empty_result_df()
+        return empty_result_df()
     else:
         df_res = pd.DataFrame(results)
-
+    
         for c in SAFE_COLS:
             if c not in df_res.columns:
                 df_res[c] = "" if c != "Confluence" else 0
-
+    
         for i, row in df_res.iterrows():
             score, bias, prob = calculate_confluence(row)
             df_res.at[i, "Confluence"] = score
@@ -1789,16 +1870,17 @@ def run_scanner(scanner, tf, analysis_date, data_loader):
         df_res["TV_Link"] = df_res["Symbol"].apply(
             lambda s: f"[TV]({make_tradingview_link(s)})" if s else ""
         )
-
-
-
+    
+        
+    
         bias_rank = {"Bullish": 0, "Neutral": 1, "Bearish": 2}
         df_res["_bias_rank"] = df_res["Bias"].map(bias_rank)
-
+    
         df_res = df_res.sort_values(
             by=["Confluence", "_bias_rank"], ascending=[False, True]
         ).drop(columns="_bias_rank")
-
+    
         df_res = df_res[SAFE_COLS]
         df_res = df_res.replace([np.inf, -np.inf], "").fillna("")
-    return df_res
+    
+        return df_res

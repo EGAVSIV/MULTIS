@@ -1,740 +1,292 @@
+from datetime import date
+import math
+import traceback
+
+import pandas as pd
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from datetime import date
-import math
-import pandas as pd
-
-# ============================================================
-# DATA LOADER
-# ============================================================
 
 from data_loader import (
-    load_data,
     TIMEFRAME_FOLDERS,
+    clear_cache,
     get_cache_status,
-    refresh_all_data,
-    clear_cache
+    load_data,
+    refresh_timeframe,
 )
-
-# ============================================================
-# SCANNER ENGINE
-# ============================================================
-
 from scanner_engine import (
     SCANNERS,
+    run_all_scanners_for_symbol,
     run_scanner,
     trim_df_to_date,
-    run_all_scanners_for_symbol
 )
-
-
-# ============================================================
-# FASTAPI APP
-# ============================================================
 
 app = FastAPI(
-    title="NSE Stock Scanner API",
-    description="Multi-Timeframe NSE Stock Scanner",
-    version="1.0.0"
+    title="EGAVSIV Multis Scanner API",
+    version="1.0.0",
 )
 
-
-# ============================================================
-# CORS
-# ============================================================
-
+# Change to a fixed backend origin later if you want stricter CORS.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "https://allscans.raosab.in",
         "https://egavsiv.github.io",
-        "http://localhost",
-        "http://127.0.0.1:5500",
         "http://localhost:5500",
+        "http://127.0.0.1:5500",
     ],
     allow_credentials=False,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["*"],
 )
 
 
-# ============================================================
-# HELPERS
-# ============================================================
+class ScanRequest(BaseModel):
+    scanner: str
+    timeframe: str = "Daily"
+    analysis_date: date | None = None
+    refresh: bool = False
+
+
+class MatrixRequest(BaseModel):
+    symbol: str
+    timeframe: str = "Daily"
+    analysis_date: date | None = None
+    refresh: bool = False
+
 
 def clean_value(value):
-    """
-    Convert Pandas / NumPy values into JSON-safe values.
-    """
-
     if isinstance(value, (pd.Timestamp, date)):
         return value.isoformat()
 
-    if isinstance(value, float):
-
-        if math.isnan(value) or math.isinf(value):
+    try:
+        if pd.isna(value):
             return None
+    except Exception:
+        pass
 
-    if pd.isna(value):
+    if isinstance(value, float) and (math.isnan(value) or math.isinf(value)):
         return None
+
+    if hasattr(value, "item"):
+        try:
+            return value.item()
+        except Exception:
+            pass
 
     return value
 
 
-def dataframe_to_records(df):
-
+def dataframe_records(df):
     if df is None or df.empty:
         return []
 
-    records = []
-
-    for row in df.to_dict(orient="records"):
-
-        clean_row = {
-            key: clean_value(value)
-            for key, value in row.items()
-        }
-
-        records.append(clean_row)
-
-    return records
+    return [
+        {key: clean_value(value) for key, value in row.items()}
+        for row in df.to_dict(orient="records")
+    ]
 
 
-def get_last_candle(timeframe):
+def latest_timestamp(timeframe, refresh=False):
+    data = load_data(timeframe, force_refresh=refresh)
+    latest = None
 
-    """
-    Get the latest candle timestamp
-    from all symbols in a timeframe.
-    """
+    for df in data.values():
+        if df is None or df.empty:
+            continue
+        value = df.index[-1]
+        if latest is None or value > latest:
+            latest = value
 
-    try:
-
-        data = load_data(timeframe)
-
-        if not data:
-            return None
-
-        latest_time = None
-
-        for symbol, df in data.items():
-
-            if df is None or df.empty:
-                continue
-
-            try:
-
-                timestamp = df.index[-1]
-
-                if latest_time is None:
-
-                    latest_time = timestamp
-
-                elif timestamp > latest_time:
-
-                    latest_time = timestamp
-
-            except Exception:
-                continue
-
-        return latest_time
-
-    except Exception as e:
-
-        print(
-            f"❌ Error getting last candle "
-            f"for {timeframe}: {e}"
-        )
-
-        return None
+    return latest
 
 
-# ============================================================
-# REQUEST MODELS
-# ============================================================
+def resolve_date(timeframe, requested_date=None, refresh=False):
+    if requested_date:
+        return requested_date
 
-class ScanRequest(BaseModel):
+    latest = latest_timestamp(timeframe, refresh=refresh)
+    return latest.date() if latest is not None else date.today()
 
-    scanner: str
-    timeframe: str = "Daily"
-    analysis_date: date | None = None
-
-
-class MatrixRequest(BaseModel):
-
-    symbol: str
-    timeframe: str = "Daily"
-    analysis_date: date | None = None
-
-
-# ============================================================
-# ROOT
-# ============================================================
 
 @app.get("/")
 def root():
-
     return {
-        "message": "NSE Stock Scanner API is running",
-        "status": "ok"
+        "status": "ok",
+        "service": "EGAVSIV Multis Scanner API",
     }
 
-
-# ============================================================
-# HEALTH CHECK
-# ============================================================
 
 @app.get("/api/health")
 def health():
-
     return {
         "status": "ok",
-        "service": "NSE Stock Scanner API"
+        "service": "EGAVSIV Multis Scanner API",
     }
 
-
-# ============================================================
-# GET TIMEFRAMES
-# ============================================================
 
 @app.get("/api/timeframes")
 def timeframes():
+    return list(TIMEFRAME_FOLDERS.keys())
 
-    return list(
-        TIMEFRAME_FOLDERS.keys()
-    )
-
-
-# ============================================================
-# GET SCANNERS
-# ============================================================
 
 @app.get("/api/scanners")
 def scanners():
-
     return SCANNERS
 
 
-# ============================================================
-# GET SYMBOLS
-# ============================================================
-
 @app.get("/api/symbols")
-def symbols(
-    timeframe: str = "Daily"
-):
-
+def symbols(timeframe: str = "Daily", refresh: bool = False):
     if timeframe not in TIMEFRAME_FOLDERS:
-
-        raise HTTPException(
-            status_code=400,
-            detail=f"Invalid timeframe: {timeframe}"
-        )
+        raise HTTPException(400, f"Invalid timeframe: {timeframe}")
 
     try:
+        data = load_data(timeframe, force_refresh=refresh)
+        return sorted(data.keys())
+    except Exception as exc:
+        raise HTTPException(500, str(exc))
 
-        data = load_data(timeframe)
-
-        return sorted(
-            data.keys()
-        )
-
-    except Exception as e:
-
-        print(
-            f"❌ Symbols API error: {e}"
-        )
-
-        raise HTTPException(
-            status_code=500,
-            detail=str(e)
-        )
-
-
-# ============================================================
-# GET LAST CANDLE TIMES
-# ============================================================
 
 @app.get("/api/last-candles")
-def last_candles():
-
-    output = {}
-
+def last_candles(refresh: bool = False):
+    result = {}
     for timeframe in TIMEFRAME_FOLDERS:
+        latest = latest_timestamp(timeframe, refresh=refresh)
+        result[timeframe] = latest.isoformat() if latest is not None else None
+    return result
 
-        latest = get_last_candle(
-            timeframe
-        )
-
-        output[timeframe] = (
-
-            latest.isoformat()
-            if latest is not None
-            else None
-
-        )
-
-    return output
-
-
-# ============================================================
-# GET CACHE STATUS
-# ============================================================
 
 @app.get("/api/cache-status")
 def cache_status():
-
     return get_cache_status()
 
 
-# ============================================================
-# REFRESH ALL DATA
-# ============================================================
-
 @app.post("/api/refresh-data")
 def refresh_data():
-
     try:
-
-        results = refresh_all_data()
-
-        summary = {}
-
-        for timeframe, data in results.items():
-
-            summary[timeframe] = {
-                "symbols": len(data)
-            }
-
-        return {
-            "status": "success",
-            "message": "All data refreshed successfully",
-            "data": summary
-        }
-
-    except Exception as e:
-
-        print(
-            f"❌ Refresh error: {e}"
-        )
-
-        raise HTTPException(
-            status_code=500,
-            detail=str(e)
-        )
-
-
-# ============================================================
-# CLEAR CACHE
-# ============================================================
-
-@app.post("/api/clear-cache")
-def clear_data_cache():
-
-    try:
-
         clear_cache()
+        summary = {}
+        for timeframe in TIMEFRAME_FOLDERS:
+            data = refresh_timeframe(timeframe)
+            summary[timeframe] = {"symbols": len(data)}
 
-        return {
-            "status": "success",
-            "message": "Data cache cleared"
-        }
+        return {"status": "success", "data": summary}
+    except Exception as exc:
+        traceback.print_exc()
+        raise HTTPException(500, str(exc))
 
-    except Exception as e:
-
-        raise HTTPException(
-            status_code=500,
-            detail=str(e)
-        )
-
-
-# ============================================================
-# RUN SCANNER
-# ============================================================
 
 @app.post("/api/scan")
-def scan(
-    request: ScanRequest
-):
-
-    # --------------------------------------------------------
-    # VALIDATE TIMEFRAME
-    # --------------------------------------------------------
-
+def scan(request: ScanRequest):
     if request.timeframe not in TIMEFRAME_FOLDERS:
+        raise HTTPException(400, f"Invalid timeframe: {request.timeframe}")
 
-        raise HTTPException(
-            status_code=400,
-            detail=(
-                f"Invalid timeframe: "
-                f"{request.timeframe}"
-            )
-        )
-
-    # --------------------------------------------------------
-    # VALIDATE SCANNER
-    # --------------------------------------------------------
-
-    valid_scanners = {
-        item["name"]
-        for item in SCANNERS
-    }
-
-    if request.scanner not in valid_scanners:
-
-        raise HTTPException(
-            status_code=400,
-            detail=(
-                f"Invalid scanner: "
-                f"{request.scanner}"
-            )
-        )
+    valid = {item["name"] for item in SCANNERS}
+    if request.scanner not in valid:
+        raise HTTPException(400, f"Invalid scanner: {request.scanner}")
 
     try:
+        if request.refresh:
+            refresh_timeframe(request.timeframe)
 
-        # ----------------------------------------------------
-        # GET ANALYSIS DATE
-        # ----------------------------------------------------
-
-        if request.analysis_date:
-
-            anchor_date = request.analysis_date
-
-        else:
-
-            latest = get_last_candle(
-                request.timeframe
-            )
-
-            if latest is not None:
-
-                anchor_date = latest.date()
-
-            else:
-
-                anchor_date = date.today()
-
-        print(
-            f"\n🔍 RUNNING SCANNER"
+        anchor_date = resolve_date(
+            request.timeframe,
+            request.analysis_date,
+            refresh=False,
         )
-
-        print(
-            f"Scanner: {request.scanner}"
-        )
-
-        print(
-            f"Timeframe: {request.timeframe}"
-        )
-
-        print(
-            f"Analysis Date: {anchor_date}"
-        )
-
-        # ----------------------------------------------------
-        # RUN SCANNER ENGINE
-        # ----------------------------------------------------
 
         result_df = run_scanner(
-
             request.scanner,
             request.timeframe,
             anchor_date,
-            load_data
-
+            load_data,
         )
-
-        # ----------------------------------------------------
-        # RSI ZONE DISTRIBUTION
-        # ----------------------------------------------------
 
         zones = {}
-
         if (
-
-            request.scanner
-            == "RSI Market Pulse"
-
+            request.scanner == "RSI Market Pulse"
             and result_df is not None
-
             and not result_df.empty
-
             and "Zone" in result_df.columns
-
         ):
-
-            zones = (
-
-                result_df["Zone"]
-                .astype(str)
-                .value_counts()
-                .to_dict()
-
-            )
-
-        # ----------------------------------------------------
-        # RETURN RESPONSE
-        # ----------------------------------------------------
+            zones = result_df["Zone"].astype(str).value_counts().to_dict()
 
         return {
-
             "status": "success",
-
-            "scanner":
-                request.scanner,
-
-            "timeframe":
-                request.timeframe,
-
-            "analysis_date":
-                str(anchor_date),
-
-            "total_matches":
-
-                len(result_df)
-
-                if result_df is not None
-                else 0,
-
-            "zones":
-                zones,
-
-            "results":
-
-                dataframe_to_records(
-                    result_df
-                )
-
+            "scanner": request.scanner,
+            "timeframe": request.timeframe,
+            "analysis_date": str(anchor_date),
+            "total_matches": len(result_df) if result_df is not None else 0,
+            "zones": zones,
+            "results": dataframe_records(result_df),
         }
 
-    except Exception as e:
-
-        print(
-            f"❌ Scanner API error: {e}"
-        )
-
-        import traceback
-
+    except Exception as exc:
         traceback.print_exc()
+        raise HTTPException(500, str(exc))
 
-        raise HTTPException(
-            status_code=500,
-            detail=str(e)
-        )
-
-
-# ============================================================
-# SINGLE STOCK SCANNER MATRIX
-# ============================================================
 
 @app.post("/api/matrix")
-def matrix(
-    request: MatrixRequest
-):
-
-    # --------------------------------------------------------
-    # VALIDATE TIMEFRAME
-    # --------------------------------------------------------
-
+def matrix(request: MatrixRequest):
     if request.timeframe not in TIMEFRAME_FOLDERS:
-
-        raise HTTPException(
-            status_code=400,
-            detail=(
-                f"Invalid timeframe: "
-                f"{request.timeframe}"
-            )
-        )
+        raise HTTPException(400, f"Invalid timeframe: {request.timeframe}")
 
     try:
+        if request.refresh:
+            refresh_timeframe(request.timeframe)
 
-        # ----------------------------------------------------
-        # LOAD CURRENT TIMEFRAME DATA
-        # ----------------------------------------------------
-
-        data = load_data(
-            request.timeframe
-        )
-
-        if not data:
-
-            raise HTTPException(
-                status_code=404,
-                detail="No data found"
-            )
-
-        # ----------------------------------------------------
-        # CHECK SYMBOL
-        # ----------------------------------------------------
-
-        if request.symbol not in data:
-
-            raise HTTPException(
-                status_code=404,
-                detail=(
-                    f"Symbol not found: "
-                    f"{request.symbol}"
-                )
-            )
-
-        # ----------------------------------------------------
-        # GET ANALYSIS DATE
-        # ----------------------------------------------------
-
-        if request.analysis_date:
-
-            anchor_date = request.analysis_date
-
-        else:
-
-            latest = get_last_candle(
-                request.timeframe
-            )
-
-            if latest is not None:
-
-                anchor_date = latest.date()
-
-            else:
-
-                anchor_date = date.today()
-
-        # ----------------------------------------------------
-        # TRIM SYMBOL DATA
-        # ----------------------------------------------------
-
-        symbol_df = trim_df_to_date(
-
-            data[request.symbol],
-
-            anchor_date
-
-        )
-
-        if symbol_df is None:
-
-            raise HTTPException(
-                status_code=400,
-                detail=(
-                    "Not enough data for "
-                    "selected symbol/date"
-                )
-            )
-
-        # ----------------------------------------------------
-        # LOAD ALL TIMEFRAMES
-        # ----------------------------------------------------
-
-        print(
-            f"\n📊 RUNNING MATRIX"
-        )
-
-        print(
-            f"Symbol: {request.symbol}"
-        )
-
-        print(
-            f"Timeframe: "
-            f"{request.timeframe}"
-        )
-
-        data_all_tfs = {}
-
-        for timeframe in TIMEFRAME_FOLDERS:
-
-            data_all_tfs[timeframe] = (
-                load_data(timeframe)
-            )
-
-        # ----------------------------------------------------
-        # RUN ALL SCANNERS
-        # ----------------------------------------------------
-
-        result = run_all_scanners_for_symbol(
-
-            request.symbol,
-
-            symbol_df,
-
+        anchor_date = resolve_date(
             request.timeframe,
-
-            anchor_date,
-
-            data_all_tfs
-
+            request.analysis_date,
+            refresh=False,
         )
 
-        # ----------------------------------------------------
-        # FORMAT RESULT
-        # ----------------------------------------------------
+        current_data = load_data(request.timeframe)
+        symbol = request.symbol.strip().upper()
 
-        formatted_results = []
+        if symbol not in current_data:
+            raise HTTPException(404, f"Symbol not found: {symbol}")
 
-        for scanner_name, scanner_result in result.items():
+        symbol_df = trim_df_to_date(current_data[symbol], anchor_date)
+        if symbol_df is None:
+            raise HTTPException(400, "Not enough data for selected date")
 
-            formatted_results.append({
+        # Matrix needs the current TF plus all higher/required TF data.
+        data_all_tfs = {tf: load_data(tf) for tf in TIMEFRAME_FOLDERS}
+        data_all_tfs[request.timeframe] = current_data
 
-                "Scanner":
-                    scanner_name,
-
-                "Result":
-                    bool(scanner_result)
-
-            })
+        matrix_result = run_all_scanners_for_symbol(
+            symbol,
+            symbol_df,
+            request.timeframe,
+            anchor_date,
+            data_all_tfs,
+        )
 
         return {
-
             "status": "success",
-
-            "symbol":
-                request.symbol,
-
-            "timeframe":
-                request.timeframe,
-
-            "analysis_date":
-                str(anchor_date),
-
-            "results":
-                formatted_results
-
+            "symbol": symbol,
+            "timeframe": request.timeframe,
+            "analysis_date": str(anchor_date),
+            "results": [
+                {"Scanner": name, "Result": bool(value)}
+                for name, value in matrix_result.items()
+            ],
         }
 
     except HTTPException:
-
         raise
-
-    except Exception as e:
-
-        print(
-            f"❌ Matrix API error: {e}"
-        )
-
-        import traceback
-
+    except Exception as exc:
         traceback.print_exc()
+        raise HTTPException(500, str(exc))
 
-        raise HTTPException(
-            status_code=500,
-            detail=str(e)
-        )
-
-
-# ============================================================
-# SERVER START
-# ============================================================
 
 if __name__ == "__main__":
-
     import uvicorn
 
     uvicorn.run(
-
         "api:app",
-
         host="0.0.0.0",
-
         port=8000,
-
-        reload=True
-
+        reload=True,
     )

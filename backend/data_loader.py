@@ -1,30 +1,14 @@
 import time
+from io import StringIO
 import requests
 import pandas as pd
-
-# ============================================================
-# GITHUB DATA REPOSITORY CONFIGURATION
-# ============================================================
 
 GITHUB_OWNER = "EGAVSIV"
 GITHUB_REPO = "Data-Collector"
 GITHUB_BRANCH = "main"
 
-GITHUB_API_BASE = (
-    f"https://api.github.com/repos/"
-    f"{GITHUB_OWNER}/{GITHUB_REPO}/contents"
-)
-
-RAW_BASE = (
-    f"https://raw.githubusercontent.com/"
-    f"{GITHUB_OWNER}/{GITHUB_REPO}/"
-    f"{GITHUB_BRANCH}"
-)
-
-
-# ============================================================
-# TIMEFRAME → GITHUB FOLDER
-# ============================================================
+GITHUB_API_BASE = f"https://api.github.com/repos/{GITHUB_OWNER}/{GITHUB_REPO}/contents"
+RAW_BASE = f"https://raw.githubusercontent.com/{GITHUB_OWNER}/{GITHUB_REPO}/{GITHUB_BRANCH}"
 
 TIMEFRAME_FOLDERS = {
     "15 Min": "stock_data_15",
@@ -34,549 +18,175 @@ TIMEFRAME_FOLDERS = {
     "Monthly": "stock_data_M",
 }
 
+# Data is checked frequently so a new scanner request can see fresh GitHub data.
+CACHE_TTL_SECONDS = 60
 
-# ============================================================
-# CACHE SETTINGS
-# ============================================================
-
-CACHE_TTL_SECONDS = 30 * 60
-
-_data_cache = {}
+_cache = {}
 _cache_time = {}
 
-
-# ============================================================
-# SESSION
-# ============================================================
-
 session = requests.Session()
-
 session.headers.update({
     "Accept": "application/vnd.github+json",
-    "User-Agent": "NSE-Stock-Scanner"
+    "User-Agent": "EGAVSIV-Multis-Scanner"
 })
 
 
-# ============================================================
-# NORMALIZE DATAFRAME
-# ============================================================
-
-def normalize_dataframe(df: pd.DataFrame):
-
+def _normalise_columns(df: pd.DataFrame) -> pd.DataFrame | None:
     if df is None or df.empty:
         return None
 
     df = df.copy()
+    df.columns = [str(c).strip().lower() for c in df.columns]
 
-    # --------------------------------------------------------
-    # Normalize column names
-    # --------------------------------------------------------
-
-    df.columns = [
-        str(col).strip().lower()
-        for col in df.columns
-    ]
-
-    column_mapping = {
+    aliases = {
         "timestamp": "datetime",
         "date": "datetime",
         "time": "datetime",
-
+        "datetime": "datetime",
         "o": "open",
         "h": "high",
         "l": "low",
         "c": "close",
         "v": "volume",
+        "vol": "volume",
     }
-
-    df = df.rename(columns=column_mapping)
-
-    # --------------------------------------------------------
-    # Handle datetime
-    # --------------------------------------------------------
+    df = df.rename(columns={k: v for k, v in aliases.items() if k in df.columns})
 
     if "datetime" not in df.columns:
-
-        # Sometimes JSON index becomes unnamed
-        possible_datetime_columns = [
-            "index",
-            "unnamed: 0",
-            "unnamed: 0.1"
-        ]
-
-        for col in possible_datetime_columns:
-
-            if col in df.columns:
-                df = df.rename(
-                    columns={col: "datetime"}
-                )
+        for candidate in ("index", "unnamed: 0", "unnamed: 0.1"):
+            if candidate in df.columns:
+                df = df.rename(columns={candidate: "datetime"})
                 break
 
     if "datetime" not in df.columns:
         return None
 
-    # --------------------------------------------------------
-    # Convert datetime
-    # --------------------------------------------------------
+    df["datetime"] = pd.to_datetime(df["datetime"], errors="coerce")
+    df = df.dropna(subset=["datetime"])
 
+    for col in ("open", "high", "low", "close"):
+        if col not in df.columns:
+            return None
+        df[col] = pd.to_numeric(df[col], errors="coerce")
+
+    if "volume" not in df.columns:
+        df["volume"] = 0
+    else:
+        df["volume"] = pd.to_numeric(df["volume"], errors="coerce").fillna(0)
+
+    df = df.dropna(subset=["open", "high", "low", "close"])
+    if df.empty:
+        return None
+
+    # Convert timezone-aware timestamps to IST-naive timestamps.
     try:
-
-        df["datetime"] = pd.to_datetime(
-            df["datetime"],
-            errors="coerce",
-            utc=True
-        )
-
-        # Convert to IST then remove timezone
-        if df["datetime"].notna().any():
-
+        if getattr(df["datetime"].dt, "tz", None) is not None:
             df["datetime"] = (
                 df["datetime"]
                 .dt.tz_convert("Asia/Kolkata")
                 .dt.tz_localize(None)
             )
-
     except Exception:
+        pass
+
+    return (
+        df.sort_values("datetime")
+          .drop_duplicates(subset=["datetime"], keep="last")
+          .set_index("datetime")
+    )
+
+
+def _json_to_dataframe(payload):
+    if isinstance(payload, list):
+        return _normalise_columns(pd.DataFrame(payload))
+
+    if isinstance(payload, dict):
+        for key in ("data", "records", "candles", "results"):
+            value = payload.get(key)
+            if isinstance(value, list):
+                return _normalise_columns(pd.DataFrame(value))
 
         try:
-
-            df["datetime"] = pd.to_datetime(
-                df["datetime"],
-                errors="coerce"
-            )
-
+            return _normalise_columns(pd.DataFrame(payload))
         except Exception:
-
             return None
 
-    # --------------------------------------------------------
-    # Remove invalid datetime
-    # --------------------------------------------------------
+    return None
 
-    df = df.dropna(subset=["datetime"])
 
-    if df.empty:
-        return None
-
-    # --------------------------------------------------------
-    # Required OHLC columns
-    # --------------------------------------------------------
-
-    required_columns = [
-        "open",
-        "high",
-        "low",
-        "close"
-    ]
-
-    for col in required_columns:
-
-        if col not in df.columns:
-            return None
-
-        df[col] = pd.to_numeric(
-            df[col],
-            errors="coerce"
-        )
-
-    # --------------------------------------------------------
-    # Volume
-    # --------------------------------------------------------
-
-    if "volume" not in df.columns:
-
-        df["volume"] = 0
-
-    else:
-
-        df["volume"] = pd.to_numeric(
-            df["volume"],
-            errors="coerce"
-        ).fillna(0)
-
-    # --------------------------------------------------------
-    # Remove invalid OHLC rows
-    # --------------------------------------------------------
-
-    df = df.dropna(
-        subset=[
-            "open",
-            "high",
-            "low",
-            "close"
-        ]
+def _get_file_list(folder: str):
+    response = session.get(
+        f"{GITHUB_API_BASE}/{folder}",
+        params={"ref": GITHUB_BRANCH},
+        timeout=30,
     )
+    response.raise_for_status()
 
-    if df.empty:
-        return None
-
-    # --------------------------------------------------------
-    # Sort and set index
-    # --------------------------------------------------------
-
-    df = (
-        df
-        .sort_values("datetime")
-        .drop_duplicates(
-            subset=["datetime"],
-            keep="last"
-        )
-        .set_index("datetime")
-    )
-
-    return df
-
-
-# ============================================================
-# READ JSON FILE
-# ============================================================
-
-def read_json_from_github(download_url):
-
-    try:
-
-        response = session.get(
-            download_url,
-            timeout=30
-        )
-
-        response.raise_for_status()
-
-        json_data = response.json()
-
-    except Exception as e:
-
-        print(
-            f"❌ JSON download error: {e}"
-        )
-
-        return None
-
-    try:
-
-        # ----------------------------------------------------
-        # CASE 1: Normal list
-        # ----------------------------------------------------
-
-        if isinstance(json_data, list):
-
-            df = pd.DataFrame(json_data)
-
-        # ----------------------------------------------------
-        # CASE 2: Dictionary
-        # ----------------------------------------------------
-
-        elif isinstance(json_data, dict):
-
-            # Common wrapper keys
-            for key in [
-                "data",
-                "records",
-                "candles",
-                "results"
-            ]:
-
-                if key in json_data:
-
-                    value = json_data[key]
-
-                    if isinstance(value, list):
-
-                        df = pd.DataFrame(value)
-
-                        return normalize_dataframe(df)
-
-            # Direct dictionary structure
-            df = pd.DataFrame(json_data)
-
-        else:
-
-            return None
-
-        return normalize_dataframe(df)
-
-    except Exception as e:
-
-        print(
-            f"❌ JSON parsing error: {e}"
-        )
-
-        return None
-
-
-# ============================================================
-# GET FILE LIST FROM GITHUB
-# ============================================================
-
-def get_github_file_list(folder):
-
-    url = f"{GITHUB_API_BASE}/{folder}"
-
-    params = {
-        "ref": GITHUB_BRANCH
-    }
-
-    try:
-
-        response = session.get(
-            url,
-            params=params,
-            timeout=30
-        )
-
-        response.raise_for_status()
-
-        files = response.json()
-
-        if not isinstance(files, list):
-
-            print(
-                f"❌ Unexpected GitHub response "
-                f"for {folder}"
-            )
-
-            return []
-
-        json_files = []
-
-        for item in files:
-
-            if item.get("type") != "file":
-                continue
-
-            name = item.get("name", "")
-
-            if name.lower().endswith(".json"):
-
-                json_files.append({
-                    "name": name,
-                    "download_url":
-                        item.get("download_url")
-                        or (
-                            f"{RAW_BASE}/"
-                            f"{folder}/{name}"
-                        )
-                })
-
-        return json_files
-
-    except Exception as e:
-
-        print(
-            f"❌ GitHub file list error "
-            f"for {folder}: {e}"
-        )
-
+    items = response.json()
+    if not isinstance(items, list):
         return []
 
+    return [
+        item for item in items
+        if item.get("type") == "file"
+        and str(item.get("name", "")).lower().endswith(".json")
+    ]
 
-# ============================================================
-# LOAD ONE TIMEFRAME
-# ============================================================
 
-def load_data(timeframe, force_refresh=False):
+def _download_json(download_url: str):
+    response = session.get(download_url, timeout=30)
+    response.raise_for_status()
+    return _json_to_dataframe(response.json())
 
+
+def load_data(timeframe: str, force_refresh: bool = False):
     if timeframe not in TIMEFRAME_FOLDERS:
-
-        print(
-            f"❌ Unknown timeframe: {timeframe}"
-        )
-
-        return {}
-
-    # --------------------------------------------------------
-    # CACHE CHECK
-    # --------------------------------------------------------
+        raise ValueError(f"Unknown timeframe: {timeframe}")
 
     now = time.time()
-
     if (
         not force_refresh
-        and timeframe in _data_cache
-        and timeframe in _cache_time
+        and timeframe in _cache
+        and now - _cache_time.get(timeframe, 0) < CACHE_TTL_SECONDS
     ):
-
-        age = now - _cache_time[timeframe]
-
-        if age < CACHE_TTL_SECONDS:
-
-            print(
-                f"⚡ Using cached data: "
-                f"{timeframe}"
-            )
-
-            return _data_cache[timeframe]
+        return _cache[timeframe]
 
     folder = TIMEFRAME_FOLDERS[timeframe]
-
-    print(
-        f"\n📥 Loading {timeframe} "
-        f"from GitHub..."
-    )
-
-    # --------------------------------------------------------
-    # GET JSON FILE LIST
-    # --------------------------------------------------------
-
-    files = get_github_file_list(folder)
-
-    if not files:
-
-        print(
-            f"⚠️ No JSON files found "
-            f"in {folder}"
-        )
-
-        return {}
-
-    print(
-        f"📂 Found {len(files)} JSON files"
-    )
+    files = _get_file_list(folder)
 
     data = {}
-
-    success_count = 0
-    failed_count = 0
-
-    # --------------------------------------------------------
-    # DOWNLOAD EACH SYMBOL
-    # --------------------------------------------------------
-
-    for i, item in enumerate(files, start=1):
-
-        filename = item["name"]
-
-        symbol = filename.rsplit(
-            ".",
-            1
-        )[0]
-
+    for item in files:
+        symbol = str(item["name"]).rsplit(".", 1)[0]
+        url = item.get("download_url") or f"{RAW_BASE}/{folder}/{item['name']}"
         try:
-
-            df = read_json_from_github(
-                item["download_url"]
-            )
-
+            df = _download_json(url)
             if df is not None and not df.empty:
-
                 data[symbol] = df
+        except Exception as exc:
+            print(f"Skipping {timeframe}/{symbol}: {exc}")
 
-                success_count += 1
-
-            else:
-
-                failed_count += 1
-
-        except Exception as e:
-
-            failed_count += 1
-
-            print(
-                f"❌ Error loading "
-                f"{symbol}: {e}"
-            )
-
-        # Progress log every 25 files
-        if i % 25 == 0:
-
-            print(
-                f"⏳ {timeframe}: "
-                f"{i}/{len(files)} processed"
-            )
-
-    # --------------------------------------------------------
-    # SAVE CACHE
-    # --------------------------------------------------------
-
-    _data_cache[timeframe] = data
-
+    _cache[timeframe] = data
     _cache_time[timeframe] = time.time()
-
-    print(
-        f"✅ {timeframe} loaded: "
-        f"{success_count} symbols | "
-        f"Failed: {failed_count}"
-    )
-
+    print(f"Loaded {timeframe}: {len(data)} symbols")
     return data
 
 
-# ============================================================
-# FORCE REFRESH ALL DATA
-# ============================================================
+def refresh_timeframe(timeframe: str):
+    return load_data(timeframe, force_refresh=True)
 
-def refresh_all_data():
-
-    print("\n🔄 FORCE REFRESHING ALL DATA")
-
-    _data_cache.clear()
-
-    _cache_time.clear()
-
-    results = {}
-
-    for timeframe in TIMEFRAME_FOLDERS:
-
-        results[timeframe] = load_data(
-            timeframe,
-            force_refresh=True
-        )
-
-    return results
-
-
-# ============================================================
-# GET CACHE STATUS
-# ============================================================
-
-def get_cache_status():
-
-    now = time.time()
-
-    status = {}
-
-    for timeframe in TIMEFRAME_FOLDERS:
-
-        if timeframe in _cache_time:
-
-            age_seconds = (
-                now -
-                _cache_time[timeframe]
-            )
-
-            status[timeframe] = {
-                "cached": True,
-                "age_seconds": round(
-                    age_seconds,
-                    2
-                ),
-                "symbols": len(
-                    _data_cache.get(
-                        timeframe,
-                        {}
-                    )
-                )
-            }
-
-        else:
-
-            status[timeframe] = {
-                "cached": False,
-                "age_seconds": None,
-                "symbols": 0
-            }
-
-    return status
-
-
-# ============================================================
-# CLEAR CACHE
-# ============================================================
 
 def clear_cache():
-
-    _data_cache.clear()
-
+    _cache.clear()
     _cache_time.clear()
 
-    print("🗑️ Data cache cleared")
+
+def get_cache_status():
+    now = time.time()
+    return {
+        tf: {
+            "cached": tf in _cache,
+            "age_seconds": round(now - _cache_time[tf], 1) if tf in _cache_time else None,
+            "symbols": len(_cache.get(tf, {})),
+        }
+        for tf in TIMEFRAME_FOLDERS
+    }
