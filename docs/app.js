@@ -5,7 +5,7 @@
 // Example: https://api.raosab.in
 // ============================================================
 
-const API = "https://api.raosab.in";
+const API = localStorage.getItem("SCANNER_API") || "http://127.0.0.1:8000";
 
 const state = { rows: [], scanners: [] };
 
