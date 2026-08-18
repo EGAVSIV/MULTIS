@@ -7,88 +7,34 @@
   <link rel="stylesheet" href="./style.css">
 </head>
 <body>
-  <header class="topbar">
-    <div>
-      <h1>📊 Multi-Timeframe Stock Screener</h1>
-      <p>Quant Intelligence • NSE Scanner</p>
-    </div>
-    <button id="refreshBtn" class="secondary">↻ Refresh Data</button>
-  </header>
-
-  <div class="status" id="status">Connecting to scanner backend…</div>
-
-  <main class="layout">
-    <aside class="sidebar">
-      <h2>Scanner Controls</h2>
-
-      <label>Timeframe</label>
-      <select id="timeframe"></select>
-
-      <label>Scanner</label>
-      <select id="scanner"></select>
-
-      <label>Analysis Date</label>
-      <input id="analysisDate" type="date">
-
-      <button id="runBtn" class="primary">🚀 RUN SCANNER</button>
-
-      <hr>
-
-      <h3>🔍 Single Stock Scan</h3>
-      <label>Stock</label>
-      <select id="symbol"></select>
-      <button id="matrixBtn" class="secondary full">Run Scanner Matrix</button>
-    </aside>
-
-    <section class="content">
-      <section class="meta-card">
-        <h2>🕯 Latest Data</h2>
-        <div id="lastCandles" class="candles"></div>
-      </section>
-
-      <section class="scanner-card">
-        <h2>🎯 Scanner Selection</h2>
-        <div id="scannerTiles" class="tiles"></div>
-      </section>
-
-      <section class="results-header">
-        <h2>Scanner Results</h2>
-        <div>
-          <input id="search" type="search" placeholder="Search symbol">
-          <button id="csvBtn" class="secondary">⬇ CSV</button>
-        </div>
-      </section>
-
-      <div id="summary" class="summary"></div>
-
-      <section class="result-card">
-        <div class="table-wrap">
-          <table id="resultsTable">
-            <thead></thead>
-            <tbody></tbody>
-          </table>
-        </div>
-        <div id="emptyResults" class="empty">Select a scanner and click <b>RUN SCANNER</b>.</div>
-      </section>
-
-      <section id="zoneCard" class="result-card hidden">
-        <h2>🎯 RSI Market Pulse Distribution</h2>
-        <div id="zones" class="zones"></div>
-      </section>
-
-      <section class="result-card">
-        <h2>🧾 Scanner Matrix</h2>
-        <div id="matrixSummary" class="summary"></div>
-        <div class="table-wrap">
-          <table id="matrixTable">
-            <thead></thead>
-            <tbody></tbody>
-          </table>
-        </div>
-      </section>
+<header class="topbar">
+  <div><h1>📊 Multi-Timeframe Stock Screener</h1><p>Quant Intelligence • NSE Scanner</p></div>
+  <button id="refreshBtn" class="secondary">↻ Reload Copied Data</button>
+</header>
+<div class="status" id="status">Connecting to scanner backend…</div>
+<main class="layout">
+  <aside class="sidebar">
+    <h2>Scanner Controls</h2>
+    <label>Timeframe</label><select id="timeframe"></select>
+    <label>Analysis Date</label><input id="analysisDate" type="date">
+    <div class="selected-scanner"><span>Selected Scanner</span><strong id="selectedScannerName">RSI Market Pulse</strong></div>
+    <button id="runBtn" class="primary">🚀 RUN SELECTED SCANNER</button>
+    <hr>
+    <h3>🔍 Single Stock Scan</h3>
+    <label>Stock</label><select id="symbol"></select>
+    <button id="matrixBtn" class="secondary full">Run Scanner Matrix</button>
+  </aside>
+  <section class="content">
+    <section class="scanner-card scanner-tabs-card">
+      <div class="section-title"><h2>🎯 Select Scanner</h2><span>Click any scanner tab</span></div>
+      <div id="scannerTabs" class="scanner-tabs"></div>
     </section>
-  </main>
-
-  <script src="./app.js"></script>
-</body>
-</html>
+    <section class="meta-card"><h2>🕯 Latest Copied Data</h2><div id="lastCandles" class="candles"></div></section>
+    <section class="results-header"><div><h2>Scanner Results</h2><div id="summary" class="summary"></div></div><div><input id="search" type="search" placeholder="Search symbol"><button id="csvBtn" class="secondary">⬇ CSV</button></div></section>
+    <section class="result-card"><div class="table-wrap"><table id="resultsTable"><thead></thead><tbody></tbody></table></div><div id="emptyResults" class="empty">Select a scanner tab and click <b>RUN SELECTED SCANNER</b>.</div></section>
+    <section id="zoneCard" class="result-card hidden"><h2>🎯 RSI Market Pulse Distribution</h2><div id="zones" class="zones"></div></section>
+    <section class="result-card"><h2>🧾 Scanner Matrix</h2><div id="matrixSummary" class="summary"></div><div class="table-wrap"><table id="matrixTable"><thead></thead><tbody></tbody></table></div></section>
+  </section>
+</main>
+<script src="./app.js"></script>
+</body></html>
