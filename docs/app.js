@@ -4,7 +4,8 @@
 // GitHub Pages cannot execute Python itself.
 // Example: https://api.raosab.in
 // ============================================================
-const API = localStorage.getItem("SCANNER_API") || "http://127.0.0.1:8000";
+
+const API = "https://api.raosab.in";
 
 const state = { rows: [], scanners: [] };
 
