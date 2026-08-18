@@ -1,6 +1,5 @@
-fastapi>=0.115.0
-uvicorn[standard]>=0.30.0
-pandas>=2.2.0
-numpy>=1.26.0
-requests>=2.32.0
-TA-Lib>=0.4.28
+fastapi
+uvicorn[standard]
+pandas
+numpy
+ta-lib
