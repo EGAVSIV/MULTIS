@@ -1,117 +1,213 @@
+const SCANNERS_JSON = "data/scanners.json";
+const TIMEFRAMES_JSON = "data/timeframes.json";
+const LAST_CANDLES_JSON = "data/last-candles.json";
+
+const state = { rawRows: [], scanner: null, scanners: [] };
 const $ = id => document.getElementById(id);
-const ROOT = "../SCANNER_RESULTS";
 
-const SCANNERS = [
-"RSI Market Pulse","Volume Shocker","NRB-7 Breakout","Counter Attack","Breakaway Gaps",
-"RSI + ADX","MACD Market Pulse","MACD Normal Divergence","Trend Alignment (EMA)",
-"Pullback to EMA","High Probability Confluence","MACD Hook Up","MACD Hook Down",
-"MACD Histogram Divergence","EMA50 + Stoch Oversold","Dark Cloud Cover","Morning Star (Bottom)",
-"Evening Star (Top)","Bullish GSAS","Bearish GSAS","50 EMA Fake Breakdown","50 EMA Fake Breakout",
-"KDJ BUY (Oversold)","KDJ SELL (Overbought)","Probable Momentum (Consecutive Close)",
-"Camarilla Breakout / Breakdown","CPR Breakout / Breakdown","Inside Bar Breakout",
-"ADX Expansion (Trend Ignition)","Range Expansion Day","Failed Breakout / Breakdown",
-"EMA Compression → Expansion","Top 10 by ATR %","Liquidity Sweep Reversal","Island Reversal",
-"Wyckoff Spring / Upthrust","Smart Money Trap","Bump & Run Reversal","Exhaustion Bar",
-"Shakeout / Trap","Hidden Pivot Reversal","Springer Reversal","RSI + MACD Cross Swing","RSI Swing"
-];
+function escapeHTML(str) {
+  return String(str ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
 
-let state = {scanner: SCANNERS[0], rows: [], manifest: null};
+function setStatus(message, type = "") {
+  const el = $("status");
+  el.className = `status ${type}`;
+  el.textContent = message;
+}
 
-function slug(s){ return String(s).replace(/[^A-Za-z0-9]+/g,"_").replace(/^_|_$/g,"").toLowerCase(); }
+function setConnection(text) {
+  const el = $("connectionText");
+  if (el) el.textContent = text;
+}
 
-async function getJSON(url){
-  const r = await fetch(url + "?v=" + Date.now(), {cache:"no-store"});
-  if(!r.ok) throw new Error(`Cannot load ${url} (${r.status})`);
+async function fetchJSON(path) {
+  const r = await fetch(path, { cache: "no-store" });
+  if (!r.ok) throw new Error(`Missing data file: ${path}`);
   return r.json();
 }
 
-function renderTabs(){
-  const host = $("scannerTabs");
-  if(!host) return;
-  host.innerHTML = SCANNERS.map(s =>
-    `<button class="scanner-tab ${s===state.scanner?"active":""}" data-scanner="${s}">${s}</button>`
+function safeFilename(name) {
+  return name
+    .replace(/\//g, "-")
+    .replace(/ /g, "_")
+    .replace(/→/g, "to")
+    .replace(/–/g, "-");
+}
+
+function fillSelect(id, values, selected) {
+  const el = $(id);
+  el.innerHTML = "";
+  values.forEach(v => {
+    const o = document.createElement("option");
+    o.value = v;
+    o.textContent = v;
+    o.selected = v === selected;
+    el.appendChild(o);
+  });
+}
+
+function renderTabs() {
+  const box = $("scannerTabs");
+  box.innerHTML = state.scanners.map(s =>
+    `<button class="scanner-tab ${s.name === state.scanner ? "active" : ""}" data-name="${encodeURIComponent(s.name)}" style="--tab-color:${s.color}">${escapeHTML(s.name)}</button>`
   ).join("");
-  host.onclick = e => {
-    const s = e.target.dataset.scanner;
-    if(!s) return;
-    state.scanner=s;
-    if($("selectedScannerName")) $("selectedScannerName").textContent=s;
+  box.querySelectorAll("button").forEach(b => b.onclick = () => {
+    state.scanner = decodeURIComponent(b.dataset.name);
+    $("selectedScannerName").textContent = state.scanner;
     renderTabs();
-    loadSelected().catch(showError);
-  };
-  if($("scannerCount")) $("scannerCount").textContent=SCANNERS.length;
+  });
+  $("scannerCount").textContent = state.scanners.length;
 }
 
-function fillTimeframes(){
-  const sel=$("timeframe");
-  if(!sel) return;
-  const tfs = state.manifest ? Object.keys(state.manifest.timeframes||{}) : ["Daily"];
-  sel.innerHTML=tfs.map(tf=>`<option value="${tf}" ${tf==="Daily"?"selected":""}>${tf}</option>`).join("");
-  sel.onchange=()=>loadSelected().catch(showError);
+async function loadSymbols() {
+  const tf = $("timeframe").value.replace(/ /g, "_");
+  $("symbol").innerHTML = "<option>Loading…</option>";
+  const symbols = await fetchJSON(`data/symbols/${tf}.json`);
+  fillSelect("symbol", symbols);
 }
 
-function renderTable(rows, id="resultsTable"){
-  const table=$(id);
-  if(!table) return;
-  const thead=table.querySelector("thead"), tbody=table.querySelector("tbody");
-  thead.innerHTML=""; tbody.innerHTML="";
-  if(!rows.length){
-    if($("emptyResults")) $("emptyResults").style.display="block";
+async function loadLastCandles() {
+  const data = await fetchJSON(LAST_CANDLES_JSON);
+  $("lastCandles").innerHTML = Object.entries(data).map(([tf, v]) =>
+    `<div class="candle"><b>${escapeHTML(tf)}</b><br>${v ? new Date(v).toLocaleString() : "NA"}</div>`
+  ).join("");
+}
+
+function renderTableData(rows) {
+  const t = $("resultsTable"), e = $("emptyResults");
+  if (!rows || !rows.length) {
+    t.querySelector("thead").innerHTML = "";
+    t.querySelector("tbody").innerHTML = "";
+    e.style.display = "block";
     return;
   }
-  if($("emptyResults")) $("emptyResults").style.display="none";
-  const cols=[...new Set(rows.flatMap(r=>Object.keys(r)))];
-  thead.innerHTML=`<tr>${cols.map(c=>`<th>${c}</th>`).join("")}</tr>`;
-  tbody.innerHTML=rows.map(r=>`<tr>${cols.map(c=>`<td>${r[c] ?? ""}</td>`).join("")}</tr>`).join("");
+  e.style.display = "none";
+  const cols = Object.keys(rows[0]);
+  t.querySelector("thead").innerHTML = `<tr>${cols.map(c => `<th>${escapeHTML(c)}</th>`).join("")}</tr>`;
+  t.querySelector("tbody").innerHTML = rows.map(row =>
+    `<tr>${cols.map(c => {
+      const v = row[c] ?? "";
+      if (c === "TV_Link" && String(v).includes("http")) {
+        const u = String(v).match(/\((.*?)\)/)?.[1] || v;
+        return `<td><a href="${escapeHTML(u)}" target="_blank" rel="noopener">TV</a></td>`;
+      }
+      return `<td>${escapeHTML(v)}</td>`;
+    }).join("")}</tr>`
+  ).join("");
 }
 
-async function loadSelected(){
-  const tf=$("timeframe")?.value || "Daily";
-  const file=`${ROOT}/${slug(state.scanner)}/${slug(tf)}.json`;
-  const data=await getJSON(file);
-  state.rows=data.rows||[];
-  renderTable(state.rows);
-  if($("summary")) $("summary").textContent=
-    `${data.match_count||0} matches • ${data.symbols_scanned||0} stocks scanned • Updated ${new Date(data.generated_at).toLocaleString()}`;
+function setResults(rows) {
+  state.rawRows = rows || [];
+  renderTableData(state.rawRows);
 }
 
-function showError(e){
-  console.error(e);
-  if($("summary")) $("summary").textContent="Results not available yet. Run RUN_ALL_SCANNERS.bat first.";
-  renderTable([]);
+function renderZones(z) {
+  const x = Object.entries(z || {});
+  $("zoneCard").classList.toggle("hidden", !x.length);
+  $("zones").innerHTML = x.map(([n, c]) => `<div class="zone">${escapeHTML(n)}: ${escapeHTML(c)}</div>`).join("");
 }
 
-function setupButtons(){
-  if($("runBtn")) $("runBtn").onclick=()=>loadSelected().catch(showError);
-  if($("refreshBtn")) $("refreshBtn").onclick=async()=>{
-    try{
-      state.manifest=await getJSON(`${ROOT}/manifest.json`);
-      fillTimeframes();
-      await loadSelected();
-    }catch(e){showError(e);}
-  };
-  if($("csvBtn")) $("csvBtn").onclick=()=>{
-    if(!state.rows.length) return;
-    const cols=[...new Set(state.rows.flatMap(r=>Object.keys(r)))];
-    const csv=[cols.join(","),...state.rows.map(r=>cols.map(c=>JSON.stringify(r[c]??"")).join(","))].join("\n");
-    const a=document.createElement("a");
-    a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv"}));
-    a.download=`${slug(state.scanner)}_${slug($("timeframe")?.value||"Daily")}.csv`;
-    a.click();
-  };
-  if($("search")) $("search").oninput=e=>{
-    const q=e.target.value.toLowerCase();
-    renderTable(state.rows.filter(r=>JSON.stringify(r).toLowerCase().includes(q)));
-  };
+async function runScanner() {
+  try {
+    setStatus(`Loading ${state.scanner}…`);
+    $("runBtn").disabled = true;
+    const tf = $("timeframe").value.replace(/ /g, "_");
+    const file = safeFilename(state.scanner);
+    const result = await fetchJSON(`data/scan/${tf}/${file}.json`);
+    $("summary").textContent = `${result.total_matches} matches • ${result.timeframe} • ${result.analysis_date}`;
+    setResults(result.results || []);
+    renderZones(result.zones || {});
+    setStatus(`✓ ${state.scanner} loaded (as of ${result.analysis_date})`, "ok");
+  } catch (e) {
+    setStatus(`🔴 ${e.message}`, "error");
+  } finally {
+    $("runBtn").disabled = false;
+  }
 }
 
-async function init(){
-  renderTabs();
-  setupButtons();
-  try{
-    state.manifest=await getJSON(`${ROOT}/manifest.json`);
-    fillTimeframes();
-    await loadSelected();
-  }catch(e){showError(e);}
+async function runMatrix() {
+  try {
+    setStatus("Loading scanner matrix…");
+    $("matrixBtn").disabled = true;
+    const tf = $("timeframe").value.replace(/ /g, "_");
+    const symbol = $("symbol").value;
+    const r = await fetchJSON(`data/matrix/${tf}/${symbol}.json`);
+    $("matrixSummary").textContent = `${r.symbol} • ${r.timeframe} • ${r.analysis_date}`;
+    $("matrixTable").querySelector("thead").innerHTML = "<tr><th>Scanner</th><th>Result</th></tr>";
+    $("matrixTable").querySelector("tbody").innerHTML = (r.results || []).map(x =>
+      `<tr><td>${escapeHTML(x.Scanner)}</td><td class="${x.Result ? "yes" : "no"}">${x.Result ? "🟢 YES" : "🔴 NO"}</td></tr>`
+    ).join("");
+    setStatus("✓ Scanner matrix loaded", "ok");
+  } catch (e) {
+    setStatus(`🔴 Matrix error: ${e.message}`, "error");
+  } finally {
+    $("matrixBtn").disabled = false;
+  }
 }
+
+function filterTable() {
+  const q = $("search").value.trim().toUpperCase();
+  const filtered = q
+    ? state.rawRows.filter(r => String(r.Symbol || "").toUpperCase().includes(q))
+    : state.rawRows;
+  renderTableData(filtered);
+}
+
+function downloadCSV() {
+  if (!state.rawRows.length) return;
+  const c = Object.keys(state.rawRows[0]), esc = v => `"${String(v ?? "").replaceAll('"', '""')}"`;
+  const csv = [c.join(","), ...state.rawRows.map(r => c.map(k => esc(r[k])).join(","))].join("\n");
+  const b = new Blob([csv], { type: "text/csv" });
+  const u = URL.createObjectURL(b);
+  const a = document.createElement("a");
+  a.href = u;
+  a.download = `${state.scanner}_${$("timeframe").value}.csv`.replaceAll(" ", "_");
+  a.click();
+  URL.revokeObjectURL(u);
+}
+
+async function refreshData() {
+  try {
+    setStatus("Re-checking latest committed scan data…");
+    $("refreshBtn").disabled = true;
+    await Promise.all([loadSymbols(), loadLastCandles()]);
+    setStatus("✓ Refreshed from latest committed data. (New scans run automatically via GitHub Actions.)", "ok");
+  } catch (e) {
+    setStatus(`🔴 Refresh error: ${e.message}`, "error");
+  } finally {
+    $("refreshBtn").disabled = false;
+  }
+}
+
+async function init() {
+  $("runBtn").onclick = runScanner;
+  $("matrixBtn").onclick = runMatrix;
+  $("refreshBtn").onclick = refreshData;
+  $("search").oninput = filterTable;
+  $("csvBtn").onclick = downloadCSV;
+
+  try {
+    setConnection("LOADING");
+    state.scanners = await fetchJSON(SCANNERS_JSON);
+    state.scanner = state.scanners[0]?.name || null;
+    $("selectedScannerName").textContent = state.scanner || "—";
+    renderTabs();
+
+    const tfs = await fetchJSON(TIMEFRAMES_JSON);
+    fillSelect("timeframe", tfs, "Daily");
+    await Promise.all([loadSymbols(), loadLastCandles()]);
+
+    setConnection("STATIC DATA");
+    setStatus("🟢 Loaded from static GitHub-committed scan data", "ok");
+    $("timeframe").onchange = () => loadSymbols().catch(e => setStatus(`🔴 ${e.message}`, "error"));
+  } catch (e) {
+    setConnection("ERROR");
+    setStatus(`🔴 Setup error: ${e.message} — has the "Run Scanners" workflow run yet?`, "error");
+  }
+}
+
 init();
