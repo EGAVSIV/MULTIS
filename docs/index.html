@@ -3,63 +3,39 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#081326">
   <title>Multi-Timeframe Stock Screener</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="./style.css">
 </head>
 <body>
-  <div class="aurora a1"></div><div class="aurora a2"></div><div class="grid-glow"></div>
-  <header class="topbar">
-    <div class="brand-wrap">
-      <div class="brand-icon"><span>▥</span><i></i></div>
-      <div><div class="eyebrow"><span class="live-dot"></span> LIVE MARKET INTELLIGENCE</div><h1>Multi-Timeframe <em>Stock Screener</em></h1><p>Professional Quant Intelligence for NSE Markets</p></div>
-    </div>
-    <div class="header-actions">
-      <div class="connection-pill"><span class="pulse"></span><span id="connectionText">CONNECTING</span></div>
-      <button id="refreshBtn" class="refresh-btn"><span>↻</span> Reload Data</button>
-    </div>
-  </header>
-
-  <div class="status-wrap"><div class="status" id="status"><span class="status-icon">◌</span><span>Connecting to scanner backend…</span></div></div>
-
-  <main class="layout">
-    <aside class="sidebar glass">
-      <div class="side-heading"><div class="side-icon">⚙</div><div><span>CONTROL PANEL</span><h2>Scanner Controls</h2></div></div>
-      <div class="control-group"><label><span>◷</span> Timeframe</label><div class="field-wrap"><select id="timeframe"></select><b>⌄</b></div></div>
-      <div class="control-group"><label><span>▣</span> Analysis Date</label><div class="field-wrap"><input id="analysisDate" type="date"></div></div>
-      <div class="selected-scanner"><div class="selected-top"><span class="mini-target">◉</span><span>ACTIVE SCANNER</span></div><strong id="selectedScannerName">RSI Market Pulse</strong><small>Ready to execute</small></div>
-      <button id="runBtn" class="run-btn"><span class="rocket">🚀</span><span>RUN SELECTED SCANNER</span><b>→</b></button>
-      <div class="divider"><span>OR ANALYZE ONE STOCK</span></div>
-      <div class="single-stock-head"><span class="search-orb">⌕</span><h3>Single Stock Scan</h3></div>
-      <div class="control-group"><label><span>◇</span> Stock Symbol</label><div class="field-wrap"><select id="symbol"></select><b>⌄</b></div></div>
-      <button id="matrixBtn" class="matrix-btn"><span>▦</span> RUN SCANNER MATRIX</button>
-      <div class="sidebar-footer"><span class="shield">✦</span> Quant Engine <i>•</i> NSE</div>
-    </aside>
-
-    <section class="content">
-      <section class="scanner-card glass scanner-tabs-card">
-        <div class="section-title"><div><div class="section-kicker"><span>◉</span> SCANNER LIBRARY</div><h2>Select Your <em>Strategy</em></h2></div><div class="tab-count"><span id="scannerCount">0</span> strategies available</div></div>
-        <div id="scannerTabs" class="scanner-tabs"></div>
-      </section>
-
-      <section class="meta-card glass">
-        <div class="meta-title"><div class="section-kicker"><span>◷</span> DATA STATUS</div><h2>Latest Copied <em>Market Data</em></h2></div>
-        <div id="lastCandles" class="candles"><div class="loading-shimmer"></div><div class="loading-shimmer"></div><div class="loading-shimmer"></div></div>
-      </section>
-
-      <section class="results-header">
-        <div><div class="section-kicker"><span>✦</span> LIVE OUTPUT</div><h2>Scanner <em>Results</em></h2><div id="summary" class="summary"></div></div>
-        <div class="result-tools"><div class="search-wrap"><span>⌕</span><input id="search" type="search" placeholder="Search symbol..."></div><button id="csvBtn" class="csv-btn"><span>⇩</span> EXPORT CSV</button></div>
-      </section>
-
-      <section class="result-card glass"><div class="table-wrap"><table id="resultsTable"><thead></thead><tbody></tbody></table></div><div id="emptyResults" class="empty"><div class="empty-orb">⌁</div><h3>Your scan results will appear here</h3><p>Select a strategy, choose a timeframe and launch the scanner.</p><div class="empty-steps"><span>01 Select Strategy</span><i>→</i><span>02 Choose Timeframe</span><i>→</i><span>03 Run Scan</span></div></div></section>
-      <section id="zoneCard" class="result-card glass hidden"><div class="section-kicker"><span>◉</span> MOMENTUM DISTRIBUTION</div><h2>RSI Market Pulse <em>Distribution</em></h2><div id="zones" class="zones"></div></section>
-      <section class="result-card glass matrix-card"><div class="matrix-title"><div><div class="section-kicker"><span>▦</span> STOCK INTELLIGENCE</div><h2>Scanner <em>Matrix</em></h2></div><div id="matrixSummary" class="summary"></div></div><div class="table-wrap"><table id="matrixTable"><thead></thead><tbody></tbody></table></div><div class="matrix-empty">Select a stock and run the matrix to compare all strategies.</div></section>
+<header class="topbar">
+  <div><h1>📊 Multi-Timeframe Stock Screener</h1><p>Quant Intelligence • NSE Scanner</p></div>
+  <button id="refreshBtn" class="secondary">↻ Reload Copied Data</button>
+</header>
+<div class="status" id="status">Connecting to scanner backend…</div>
+<main class="layout">
+  <aside class="sidebar">
+    <h2>Scanner Controls</h2>
+    <label>Timeframe</label><select id="timeframe"></select>
+    <label>Analysis Date</label><input id="analysisDate" type="date">
+    <div class="selected-scanner"><span>Selected Scanner</span><strong id="selectedScannerName">RSI Market Pulse</strong></div>
+    <button id="runBtn" class="primary">🚀 RUN SELECTED SCANNER</button>
+    <hr>
+    <h3>🔍 Single Stock Scan</h3>
+    <label>Stock</label><select id="symbol"></select>
+    <button id="matrixBtn" class="secondary full">Run Scanner Matrix</button>
+  </aside>
+  <section class="content">
+    <section class="scanner-card scanner-tabs-card">
+      <div class="section-title"><h2>🎯 Select Scanner</h2><span>Click any scanner tab</span></div>
+      <div id="scannerTabs" class="scanner-tabs"></div>
     </section>
-  </main>
-  <script src="./app.js"></script>
-</body>
-</html>
+    <section class="meta-card"><h2>🕯 Latest Copied Data</h2><div id="lastCandles" class="candles"></div></section>
+    <section class="results-header"><div><h2>Scanner Results</h2><div id="summary" class="summary"></div></div><div><input id="search" type="search" placeholder="Search symbol"><button id="csvBtn" class="secondary">⬇ CSV</button></div></section>
+    <section class="result-card"><div class="table-wrap"><table id="resultsTable"><thead></thead><tbody></tbody></table></div><div id="emptyResults" class="empty">Select a scanner tab and click <b>RUN SELECTED SCANNER</b>.</div></section>
+    <section id="zoneCard" class="result-card hidden"><h2>🎯 RSI Market Pulse Distribution</h2><div id="zones" class="zones"></div></section>
+    <section class="result-card"><h2>🧾 Scanner Matrix</h2><div id="matrixSummary" class="summary"></div><div class="table-wrap"><table id="matrixTable"><thead></thead><tbody></tbody></table></div></section>
+  </section>
+</main>
+<script src="./config.js"></script>
+<script src="./app.js"></script>
+</body></html>
