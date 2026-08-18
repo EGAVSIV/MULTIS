@@ -1,35 +1,229 @@
 const API = String(window.SCANNER_API_BASE || "").replace(/\/$/, "");
 
-
 const SCANNERS = [
-["RSI Market Pulse","#1abc9c"],["Volume Shocker","#1abc9c"],["NRB-7 Breakout","#1abc9c"],["Counter Attack","#1abc9c"],
-["Breakaway Gaps","#e67e22"],["RSI + ADX","#e67e22"],["RSI WM 60–40","#e67e22"],["MACD Market Pulse","#e67e22"],
-["MACD Normal Divergence","#f1c40f"],["MACD RD (4th Wave)","#f1c40f"],["Probable 3rd Wave","#f1c40f"],["Probable C Wave","#f1c40f"],
-["MACD Bearish Peak Divergence","#3498db"],["MACD Bullish Base Divergence","#3498db"],["Trend Alignment (EMA)","#3498db"],["Pullback to EMA","#3498db"],
-["High Probability Confluence","#e84393"],["MACD Hook Up","#e84393"],["MACD Hook Down","#e84393"],["MACD Histogram Divergence","#e84393"],
-["EMA50 + Stoch Oversold","#f1c40f"],["Dark Cloud Cover","#f1c40f"],["Morning Star (Bottom)","#f1c40f"],["Evening Star (Top)","#f1c40f"],
-["Bullish GSAS","#27ae60"],["Bearish GSAS","#27ae60"],["50 EMA Fake Breakdown","#27ae60"],["50 EMA Fake Breakout","#27ae60"],
-["KDJ BUY (Oversold)","#f39c12"],["KDJ SELL (Overbought)","#f39c12"],["Probable Momentum (Consecutive Close)","#f39c12"],["Camarilla Breakout / Breakdown","#f39c12"],
-["CPR Breakout / Breakdown","#e67e22"],["Inside Bar Breakout","#e67e22"],["ADX Expansion (Trend Ignition)","#e67e22"],["Range Expansion Day","#e67e22"],
-["Failed Breakout / Breakdown","#34495e"],["EMA Compression → Expansion","#34495e"],["Top 10 by ATR %","#34495e"],["Liquidity Sweep Reversal","#34495e"],
-["Island Reversal","#ff6b81"],["Wyckoff Spring / Upthrust","#ff6b81"],["Smart Money Trap","#ff6b81"],["Bump & Run Reversal","#ff6b81"],
-["Exhaustion Bar","#3498db"],["Shakeout / Trap","#3498db"],["Hidden Pivot Reversal","#3498db"],["Springer Reversal","#3498db"],
-["RSI + MACD Cross Swing","#9b59b6"],["RSI Swing","#8e44ad"]
+  ["RSI Market Pulse","#1abc9c"],["Volume Shocker","#1abc9c"],["NRB-7 Breakout","#1abc9c"],["Counter Attack","#1abc9c"],
+  ["Breakaway Gaps","#e67e22"],["RSI + ADX","#e67e22"],["RSI WM 60–40","#e67e22"],["MACD Market Pulse","#e67e22"],
+  ["MACD Normal Divergence","#f1c40f"],["MACD RD (4th Wave)","#f1c40f"],["Probable 3rd Wave","#f1c40f"],["Probable C Wave","#f1c40f"],
+  ["MACD Bearish Peak Divergence","#3498db"],["MACD Bullish Base Divergence","#3498db"],["Trend Alignment (EMA)","#3498db"],["Pullback to EMA","#3498db"],
+  ["High Probability Confluence","#e84393"],["MACD Hook Up","#e84393"],["MACD Hook Down","#e84393"],["MACD Histogram Divergence","#e84393"],
+  ["EMA50 + Stoch Oversold","#f1c40f"],["Dark Cloud Cover","#f1c40f"],["Morning Star (Bottom)","#f1c40f"],["Evening Star (Top)","#f1c40f"],
+  ["Bullish GSAS","#27ae60"],["Bearish GSAS","#27ae60"],["50 EMA Fake Breakdown","#27ae60"],["50 EMA Fake Breakout","#27ae60"],
+  ["KDJ BUY (Oversold)","#f39c12"],["KDJ SELL (Overbought)","#f39c12"],["Probable Momentum (Consecutive Close)","#f39c12"],["Camarilla Breakout / Breakdown","#f39c12"],
+  ["CPR Breakout / Breakdown","#e67e22"],["Inside Bar Breakout","#e67e22"],["ADX Expansion (Trend Ignition)","#e67e22"],["Range Expansion Day","#e67e22"],
+  ["Failed Breakout / Breakdown","#34495e"],["EMA Compression → Expansion","#34495e"],["Top 10 by ATR %","#34495e"],["Liquidity Sweep Reversal","#34495e"],
+  ["Island Reversal","#ff6b81"],["Wyckoff Spring / Upthrust","#ff6b81"],["Smart Money Trap","#ff6b81"],["Bump & Run Reversal","#ff6b81"],
+  ["Exhaustion Bar","#3498db"],["Shakeout / Trap","#3498db"],["Hidden Pivot Reversal","#3498db"],["Springer Reversal","#3498db"],
+  ["RSI + MACD Cross Swing","#9b59b6"],["RSI Swing","#8e44ad"]
 ].map(([name,color])=>({name,color}));
 
-const state={rows:[], scanner:SCANNERS[0].name}; const $=id=>document.getElementById(id);
-function setStatus(message,type=""){const el=$("status");el.className=`status ${type}`;el.textContent=message;}
-async function request(path,options={}){if(!API || API.includes("api.raosab.in")){throw new Error("Public API URL is not configured yet. Update docs/config.js with the deployed HTTPS backend URL.");}const r=await fetch(`${API}${path}`,{headers:{"Content-Type":"application/json",...(options.headers||{})},...options});if(!r.ok){let m=`${r.status} ${r.statusText}`;try{m=(await r.json()).detail||m;}catch(_){}throw new Error(m);}return r.json();}
-function fillSelect(id,values,selected){const el=$(id);el.innerHTML="";values.forEach(v=>{const o=document.createElement("option");o.value=v;o.textContent=v;o.selected=v===selected;el.appendChild(o);});}
-function renderTabs(){const box=$("scannerTabs");box.innerHTML=SCANNERS.map(s=>`<button class="scanner-tab ${s.name===state.scanner?"active":""}" data-name="${encodeURIComponent(s.name)}" style="--tab-color:${s.color}">${s.name}</button>`).join("");box.querySelectorAll("button").forEach(b=>b.onclick=()=>{state.scanner=decodeURIComponent(b.dataset.name);$("selectedScannerName").textContent=state.scanner;renderTabs();});}
-async function loadSymbols(){const tf=$("timeframe").value;$("symbol").innerHTML="<option>Loading…</option>";fillSelect("symbol",await request(`/api/symbols?timeframe=${encodeURIComponent(tf)}`));}
-async function loadLastCandles(){const data=await request("/api/last-candles");$("lastCandles").innerHTML=Object.entries(data).map(([tf,v])=>`<div class="candle"><b>${tf}</b><br>${v?new Date(v).toLocaleString():"NA"}</div>`).join("");}
-function renderResults(rows){state.rows=rows;const t=$("resultsTable"),e=$("emptyResults");if(!rows.length){t.querySelector("thead").innerHTML="";t.querySelector("tbody").innerHTML="";e.style.display="block";return;}e.style.display="none";const cols=Object.keys(rows[0]);t.querySelector("thead").innerHTML=`<tr>${cols.map(c=>`<th>${c}</th>`).join("")}</tr>`;t.querySelector("tbody").innerHTML=rows.map(row=>`<tr>${cols.map(c=>{const v=row[c]??"";if(c==="TV_Link"&&String(v).includes("http")){const u=String(v).match(/\((.*?)\)/)?.[1]||v;return `<td><a href="${u}" target="_blank" rel="noopener">TV</a></td>`;}return `<td>${String(v)}</td>`;}).join("")}</tr>`).join("");}
-function renderZones(z){const x=Object.entries(z||{});$("zoneCard").classList.toggle("hidden",!x.length);$("zones").innerHTML=x.map(([n,c])=>`<div class="zone">${n}: ${c}</div>`).join("");}
-async function runScanner(){try{setStatus(`Running ${state.scanner}…`);$("runBtn").disabled=true;const result=await request("/api/scan",{method:"POST",body:JSON.stringify({scanner:state.scanner,timeframe:$("timeframe").value,analysis_date:$("analysisDate").value||null})});$("summary").textContent=`${result.total_matches} matches • ${result.timeframe} • ${result.analysis_date}`;renderResults(result.results||[]);renderZones(result.zones||{});setStatus(`✓ ${state.scanner} completed successfully`,"ok");}catch(e){setStatus(`🔴 Scanner error: ${e.message}`,"error");}finally{$("runBtn").disabled=false;}}
-async function runMatrix(){try{setStatus("Running single-stock scanner matrix…");$("matrixBtn").disabled=true;const r=await request("/api/matrix",{method:"POST",body:JSON.stringify({symbol:$("symbol").value,timeframe:$("timeframe").value,analysis_date:$("analysisDate").value||null})});$("matrixSummary").textContent=`${r.symbol} • ${r.timeframe} • ${r.analysis_date}`;$("matrixTable").querySelector("thead").innerHTML="<tr><th>Scanner</th><th>Result</th></tr>";$("matrixTable").querySelector("tbody").innerHTML=(r.results||[]).map(x=>`<tr><td>${x.Scanner}</td><td class="${x.Result?"yes":"no"}">${x.Result?"🟢 YES":"🔴 NO"}</td></tr>`).join("");setStatus("✓ Scanner matrix completed","ok");}catch(e){setStatus(`🔴 Matrix error: ${e.message}`,"error");}finally{$("matrixBtn").disabled=false;}}
-function filterTable(){const q=$("search").value.trim().toUpperCase();renderResults(q?state.rows.filter(r=>String(r.Symbol||"").toUpperCase().includes(q)):state.rows);}
-function downloadCSV(){if(!state.rows.length)return;const c=Object.keys(state.rows[0]),esc=v=>`"${String(v??"").replaceAll('"','""')}"`;const csv=[c.join(","),...state.rows.map(r=>c.map(k=>esc(r[k])).join(","))].join("\n"),b=new Blob([csv],{type:"text/csv"}),u=URL.createObjectURL(b),a=document.createElement("a");a.href=u;a.download=`${state.scanner}_${$("timeframe").value}.csv`.replaceAll(" ","_");a.click();URL.revokeObjectURL(u);}
-async function refreshData(){try{setStatus("Reloading local COPIEDDATA…");$("refreshBtn").disabled=true;await request("/api/refresh-data",{method:"POST"});await Promise.all([loadSymbols(),loadLastCandles()]);setStatus("✓ Local copied data reloaded","ok");}catch(e){setStatus(`🔴 Refresh error: ${e.message}`,"error");}finally{$("refreshBtn").disabled=false;}}
-async function init(){renderTabs();$("selectedScannerName").textContent=state.scanner;$("runBtn").onclick=runScanner;$("matrixBtn").onclick=runMatrix;$("refreshBtn").onclick=refreshData;$("search").oninput=filterTable;$("csvBtn").onclick=downloadCSV;if(!API || API.includes("api.raosab.in")){setStatus("⚠ Public scanner API URL is not configured. Set the deployed HTTPS backend URL in docs/config.js.","error");return;}try{const tfs=await request("/api/timeframes");fillSelect("timeframe",tfs,"Daily");await Promise.all([loadSymbols(),loadLastCandles()]);setStatus("🟢 Scanner engine connected","ok");$("timeframe").onchange=()=>loadSymbols().catch(e=>setStatus(`🔴 ${e.message}`,"error"));}catch(e){setStatus(`🔴 API connection error: ${e.message}`,"error");}}
+const state = { rawRows: [], scanner: SCANNERS[0].name }; 
+const $ = id => document.getElementById(id);
+
+function escapeHTML(str) {
+  return String(str ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function setStatus(message, type = "") {
+  const el = $("status");
+  el.className = `status ${type}`;
+  el.textContent = message;
+}
+
+async function request(path, options = {}) {
+  if (!API || API.includes("api.raosab.in")) {
+    throw new Error("Public API URL is not configured yet. Update docs/config.js with the deployed HTTPS backend URL.");
+  }
+  const r = await fetch(`${API}${path}`, {
+    headers: { "Content-Type": "application/json", ...(options.headers || {}) },
+    ...options
+  });
+  if (!r.ok) {
+    let m = `${r.status} ${r.statusText}`;
+    try { m = (await r.json()).detail || m; } catch (_) {}
+    throw new Error(m);
+  }
+  return r.json();
+}
+
+function fillSelect(id, values, selected) {
+  const el = $(id);
+  el.innerHTML = "";
+  values.forEach(v => {
+    const o = document.createElement("option");
+    o.value = v;
+    o.textContent = v;
+    o.selected = v === selected;
+    el.appendChild(o);
+  });
+}
+
+function renderTabs() {
+  const box = $("scannerTabs");
+  box.innerHTML = SCANNERS.map(s => `<button class="scanner-tab ${s.name === state.scanner ? "active" : ""}" data-name="${encodeURIComponent(s.name)}" style="--tab-color:${s.color}">${escapeHTML(s.name)}</button>`).join("");
+  box.querySelectorAll("button").forEach(b => b.onclick = () => {
+    state.scanner = decodeURIComponent(b.dataset.name);
+    $("selectedScannerName").textContent = state.scanner;
+    renderTabs();
+  });
+}
+
+async function loadSymbols() {
+  const tf = $("timeframe").value;
+  $("symbol").innerHTML = "<option>Loading…</option>";
+  fillSelect("symbol", await request(`/api/symbols?timeframe=${encodeURIComponent(tf)}`));
+}
+
+async function loadLastCandles() {
+  const data = await request("/api/last-candles");
+  $("lastCandles").innerHTML = Object.entries(data).map(([tf, v]) => 
+    `<div class="candle"><b>${escapeHTML(tf)}</b><br>${v ? new Date(v).toLocaleString() : "NA"}</div>`
+  ).join("");
+}
+
+function renderTableData(rows) {
+  const t = $("resultsTable"), e = $("emptyResults");
+  if (!rows || !rows.length) {
+    t.querySelector("thead").innerHTML = "";
+    t.querySelector("tbody").innerHTML = "";
+    e.style.display = "block";
+    return;
+  }
+  e.style.display = "none";
+  const cols = Object.keys(rows[0]);
+  t.querySelector("thead").innerHTML = `<tr>${cols.map(c => `<th>${escapeHTML(c)}</th>`).join("")}</tr>`;
+  t.querySelector("tbody").innerHTML = rows.map(row => 
+    `<tr>${cols.map(c => {
+      const v = row[c] ?? "";
+      if (c === "TV_Link" && String(v).includes("http")) {
+        const u = String(v).match(/\((.*?)\)/)?.[1] || v;
+        return `<td><a href="${escapeHTML(u)}" target="_blank" rel="noopener">TV</a></td>`;
+      }
+      return `<td>${escapeHTML(v)}</td>`;
+    }).join("")}</tr>`
+  ).join("");
+}
+
+function setResults(rows) {
+  state.rawRows = rows || [];
+  renderTableData(state.rawRows);
+}
+
+function renderZones(z) {
+  const x = Object.entries(z || {});
+  $("zoneCard").classList.toggle("hidden", !x.length);
+  $("zones").innerHTML = x.map(([n, c]) => `<div class="zone">${escapeHTML(n)}: ${escapeHTML(c)}</div>`).join("");
+}
+
+async function runScanner() {
+  try {
+    setStatus(`Running ${state.scanner}…`);
+    $("runBtn").disabled = true;
+    const result = await request("/api/scan", {
+      method: "POST",
+      body: JSON.stringify({
+        scanner: state.scanner,
+        timeframe: $("timeframe").value,
+        analysis_date: $("analysisDate").value || null
+      })
+    });
+    $("summary").textContent = `${result.total_matches} matches • ${result.timeframe} • ${result.analysis_date}`;
+    setResults(result.results || []);
+    renderZones(result.zones || {});
+    setStatus(`✓ ${state.scanner} completed successfully`, "ok");
+  } catch (e) {
+    setStatus(`🔴 Scanner error: ${e.message}`, "error");
+  } finally {
+    $("runBtn").disabled = false;
+  }
+}
+
+async function runMatrix() {
+  try {
+    setStatus("Running single-stock scanner matrix…");
+    $("matrixBtn").disabled = true;
+    const r = await request("/api/matrix", {
+      method: "POST",
+      body: JSON.stringify({
+        symbol: $("symbol").value,
+        timeframe: $("timeframe").value,
+        analysis_date: $("analysisDate").value || null
+      })
+    });
+    $("matrixSummary").textContent = `${r.symbol} • ${r.timeframe} • ${r.analysis_date}`;
+    $("matrixTable").querySelector("thead").innerHTML = "<tr><th>Scanner</th><th>Result</th></tr>";
+    $("matrixTable").querySelector("tbody").innerHTML = (r.results || []).map(x => 
+      `<tr><td>${escapeHTML(x.Scanner)}</td><td class="${x.Result ? "yes" : "no"}">${x.Result ? "🟢 YES" : "🔴 NO"}</td></tr>`
+    ).join("");
+    setStatus("✓ Scanner matrix completed", "ok");
+  } catch (e) {
+    setStatus(`🔴 Matrix error: ${e.message}`, "error");
+  } finally {
+    $("matrixBtn").disabled = false;
+  }
+}
+
+function filterTable() {
+  const q = $("search").value.trim().toUpperCase();
+  const filtered = q 
+    ? state.rawRows.filter(r => String(r.Symbol || "").toUpperCase().includes(q))
+    : state.rawRows;
+  renderTableData(filtered);
+}
+
+function downloadCSV() {
+  if (!state.rawRows.length) return;
+  const c = Object.keys(state.rawRows[0]), esc = v => `"${String(v ?? "").replaceAll('"', '""')}"`;
+  const csv = [c.join(","), ...state.rawRows.map(r => c.map(k => esc(r[k])).join(","))].join("\n");
+  const b = new Blob([csv], { type: "text/csv" });
+  const u = URL.createObjectURL(b);
+  const a = document.createElement("a");
+  a.href = u;
+  a.download = `${state.scanner}_${$("timeframe").value}.csv`.replaceAll(" ", "_");
+  a.click();
+  URL.revokeObjectURL(u);
+}
+
+async function refreshData() {
+  try {
+    setStatus("Reloading local COPIEDDATA…");
+    $("refreshBtn").disabled = true;
+    await request("/api/refresh-data", { method: "POST" });
+    await Promise.all([loadSymbols(), loadLastCandles()]);
+    setStatus("✓ Local copied data reloaded", "ok");
+  } catch (e) {
+    setStatus(`🔴 Refresh error: ${e.message}`, "error");
+  } finally {
+    $("refreshBtn").disabled = false;
+  }
+}
+
+async function init() {
+  renderTabs();
+  $("selectedScannerName").textContent = state.scanner;
+  $("runBtn").onclick = runScanner;
+  $("matrixBtn").onclick = runMatrix;
+  $("refreshBtn").onclick = refreshData;
+  $("search").oninput = filterTable;
+  $("csvBtn").onclick = downloadCSV;
+
+  if (!API || API.includes("api.raosab.in")) {
+    setStatus("⚠ Public scanner API URL is not configured. Set the deployed HTTPS backend URL in docs/config.js.", "error");
+    return;
+  }
+
+  try {
+    const tfs = await request("/api/timeframes");
+    fillSelect("timeframe", tfs, "Daily");
+    await Promise.all([loadSymbols(), loadLastCandles()]);
+    setStatus("🟢 Scanner engine connected", "ok");
+    $("timeframe").onchange = () => loadSymbols().catch(e => setStatus(`🔴 ${e.message}`, "error"));
+  } catch (e) {
+    setStatus(`🔴 API connection error: ${e.message}`, "error");
+  }
+}
+
 init();
