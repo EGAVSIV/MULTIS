@@ -26,7 +26,7 @@ app = FastAPI(
     version="1.0.0",
 )
 
-# Allowed CORS origins (including local dev servers)
+# Allowed CORS origins (including local development servers)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -246,7 +246,7 @@ def matrix(request: MatrixRequest):
         if symbol_df is None:
             raise HTTPException(400, "Not enough data for selected date")
 
-        # Load all timeframes using cached load_data calls
+        # Matrix needs current TF plus higher/required TF data from cache
         data_all_tfs = {tf: load_data(tf, force_refresh=False) for tf in TIMEFRAME_FOLDERS}
         data_all_tfs[request.timeframe] = current_data
 
