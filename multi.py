@@ -15,7 +15,6 @@ from admin import admin_panel
 from database import create_database, upgrade_database
 from streamlit_autorefresh import st_autorefresh
 
-
     
 st.set_page_config(
     page_title="FNO_STOCK_SCAN",
@@ -181,10 +180,10 @@ def get_last_candle_by_tf(folder_path: str):
         return None
     
     for f in os.listdir(folder_path):
-        if not f.endswith(".parquet"):
+        if not f.endswith(".json"):
                 continue
         try:
-            df = pd.read_parquet(os.path.join(folder_path, f))
+            df = pd.read_json(os.path.join(folder_path, f))
             if df.empty:
                 continue
     
@@ -243,11 +242,11 @@ def load_data(folder: str):
     
     
     for f in os.listdir(folder):
-        if not f.endswith(".parquet"):
+        if not f.endswith(".json"):
             continue
     
-        sym = f.replace(".parquet", "")
-        df = pd.read_parquet(os.path.join(folder, f))
+        sym = f.replace(".json", "")
+        df = pd.read_json(os.path.join(folder, f))
     
         if isinstance(df.index, pd.MultiIndex):
             df = df.reset_index()
@@ -267,13 +266,14 @@ def load_data(folder: str):
 def make_tradingview_link(sym: str) -> str:
     base = "https://in.tradingview.com/chart/LqUZraZ9/"
     return f"{base}?symbol=NSE%3A{sym}"
+
     # 1) TIMEFRAMES
 TIMEFRAMES = {
-    "15 Min": os.path.join(BASE_PATH, "stock_data_15"),
-    "1 Hour": os.path.join(BASE_PATH, "stock_data_1H"),
-    "Daily": os.path.join(BASE_PATH, "stock_data_D"),
-    "Weekly": os.path.join(BASE_PATH, "stock_data_W"),
-    "Monthly": os.path.join(BASE_PATH, "stock_data_M"),
+    "15 Min": os.path.join(BASE_PATH, "stockdata_15"),
+    "1 Hour": os.path.join(BASE_PATH, "stockdata_1H"),
+    "Daily": os.path.join(BASE_PATH, "stockdata_D"),
+    "Weekly": os.path.join(BASE_PATH, "stockdata_W"),
+    "Monthly": os.path.join(BASE_PATH, "stockdata_M"),
 }
     
     
