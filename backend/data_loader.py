@@ -4,14 +4,14 @@ from pathlib import Path
 import pandas as pd
 
 PROJECT_DIR = Path(__file__).resolve().parent.parent
-DATA_ROOT = PROJECT_DIR / "COPIEDDATA"
+DATA_ROOT = PROJECT_DIR
 
 TIMEFRAME_FOLDERS = {
-    "15 Min": "stock_data_15",
-    "1 Hour": "stock_data_1H",
-    "Daily": "stock_data_D",
-    "Weekly": "stock_data_W",
-    "Monthly": "stock_data_M",
+    "15 Min": "stockdata_15",
+    "1 Hour": "stockdata_1H",
+    "Daily": "stockdata_D",
+    "Weekly": "stockdata_W",
+    "Monthly": "stockdata_M",
 }
 
 def _to_df(payload):
@@ -25,15 +25,15 @@ def _to_df(payload):
         return None
     df.columns = [str(c).strip().lower() for c in df.columns]
     aliases = {
-        "timestamp":"datetime","date":"datetime","time":"datetime",
-        "o":"open","h":"high","l":"low","c":"close",
-        "v":"volume","vol":"volume"
+        "timestamp": "datetime", "date": "datetime", "time": "datetime",
+        "o": "open", "h": "high", "l": "low", "c": "close",
+        "v": "volume", "vol": "volume"
     }
-    df = df.rename(columns={k:v for k,v in aliases.items() if k in df.columns})
+    df = df.rename(columns={k: v for k, v in aliases.items() if k in df.columns})
     if "datetime" not in df.columns:
         return None
     df["datetime"] = pd.to_datetime(df["datetime"], errors="coerce")
-    for c in ("open","high","low","close"):
+    for c in ("open", "high", "low", "close"):
         if c not in df.columns:
             return None
         df[c] = pd.to_numeric(df[c], errors="coerce")
@@ -41,12 +41,12 @@ def _to_df(payload):
         df["volume"] = 0.0
     else:
         df["volume"] = pd.to_numeric(df["volume"], errors="coerce").fillna(0)
-    df = df.dropna(subset=["datetime","open","high","low","close"])
+    df = df.dropna(subset=["datetime", "open", "high", "low", "close"])
     if df.empty:
         return None
     return df.sort_values("datetime").drop_duplicates("datetime", keep="last").set_index("datetime")
 
-def load_data(timeframe):
+def load_data(timeframe: str) -> dict[str, pd.DataFrame]:
     folder_name = TIMEFRAME_FOLDERS[timeframe]
     folder = DATA_ROOT / folder_name
     if not folder.exists():
@@ -63,5 +63,5 @@ def load_data(timeframe):
             print(f"Skipping {path}: {exc}")
     return out
 
-def available_timeframes():
-    return [tf for tf, folder in TIMEFRAME_FOLDERS.items() if (DATA_ROOT/folder).exists()]
+def available_timeframes() -> list[str]:
+    return [tf for tf, folder in TIMEFRAME_FOLDERS.items() if (DATA_ROOT / folder).exists()]
