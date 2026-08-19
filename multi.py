@@ -1,51 +1,47 @@
+import base64
 import os
 import sys
-import base64
+
 import numpy as np
 import pandas as pd
-import talib
 import plotly.express as px
 import streamlit as st
-from login import login_page
-from database import create_database, upgrade_database
-from styles import load_css, show_footer
-from utils import logout, greeting
-from streamlit.runtime.caching import cache_data
-from admin import admin_panel
 from streamlit_autorefresh import st_autorefresh
+import talib
 
+from admin import admin_panel
+from config import EMAIL_ADDRESS, EMAIL_PASSWORD
+from database import create_database, upgrade_database
+from login import login_page
+from styles import load_css, show_footer
+from utils import greeting, logout
 
+# Streamlit Page Config
 st.set_page_config(
-    page_title="FNO_STOCK_SCAN",
-    layout="wide",
-    page_icon="🧮"
+    page_title="FNO_STOCK_SCAN", layout="wide", page_icon="🧮"
 )
 
-st_autorefresh(
-    interval=600000,
-    key="auto_refresh"
-)
+# Auto refresh every 10 minutes
+st_autorefresh(interval=600000, key="auto_refresh")
 
 st.cache_data.clear()
-
-from config import EMAIL_ADDRESS, EMAIL_PASSWORD
 
 st.write("Config Email:", repr(EMAIL_ADDRESS))
 st.write("Config Password Length:", len(EMAIL_PASSWORD))
 
-# Create database automatically
+# Create & Upgrade Database
 create_database()
 upgrade_database()
 
-# Load CSS
+# Load Custom CSS
 load_css()
 
 BASE_PATH = os.path.dirname(__file__)
 
-
-# --- Python 3.13 image hack ---
+# Python 3.13 image module compatibility patch
 if sys.version_info >= (3, 13):
     import types
+
     imghdr = types.ModuleType("imghdr")
     imghdr.what = lambda *args, **kwargs: None
     sys.modules["imghdr"] = imghdr
@@ -97,6 +93,9 @@ def set_bg_image(image_path: str):
     )
 
 
+# ==============================
+# AUTHENTICATION & ACCESS CONTROL
+# ==============================
 if "authenticated" not in st.session_state:
     st.session_state.authenticated = False
 
@@ -104,18 +103,14 @@ if not st.session_state.authenticated:
     login_page()
     st.stop()
 
-
-# ======================================
-# ADMIN PANEL
-# ======================================
+# Admin Panel Access
 if st.session_state.get("role") == "Admin":
     admin_panel()
     st.stop()
 
-
-# ======================================
-# USER WELCOME & HEADER
-# ======================================
+# ==============================
+# USER HEADER
+# ==============================
 col1, col2 = st.columns([6, 1])
 
 with col1:
@@ -134,9 +129,9 @@ with col2:
         logout()
 
 
-# ======================================
-# UPDATED FILE READER / LAST CANDLE HELPER
-# ======================================
+# ==============================
+# LAST CANDLE TIME HELPERS
+# ==============================
 def get_last_candle_by_tf(folder_path: str):
     last_dt = None
 
@@ -155,16 +150,16 @@ def get_last_candle_by_tf(folder_path: str):
                 dt = df.index[-1]
             elif "datetime" in df.columns:
                 dt = pd.to_datetime(df["datetime"]).iloc[-1]
-            elif "Date" in df.columns:
-                dt = pd.to_datetime(df["Date"]).iloc[-1]
             else:
                 continue
 
-            # Timezone adjustment to IST
+            # Assume UTC → convert to IST
             if dt.tzinfo is None:
-                dt = dt.tz_localize("UTC").tz_convert("Asia/Kolkata")
+                dt = dt.tz_localize("UTC")
             else:
-                dt = dt.tz_convert("Asia/Kolkata")
+                dt = dt.tz_convert("UTC")
+
+            dt = dt.tz_convert("Asia/Kolkata")
 
             if last_dt is None or dt > last_dt:
                 last_dt = dt
@@ -175,9 +170,7 @@ def get_last_candle_by_tf(folder_path: str):
     return last_dt
 
 
-# ==============================
-# STREAMLIT CONFIG
-# ==============================
+# Header UI & Background
 st.markdown(
     """
     <h1 style="color: blue; font-weight: 700; margin-bottom: 0.2rem;">
@@ -192,9 +185,9 @@ if os.path.exists(bg_path):
     set_bg_image(bg_path)
 
 
-# ======================================
-# UPDATED DATA LOADER (DATA FOLDER READER)
-# ======================================
+# ==============================
+# DATA LOADER
+# ==============================
 @st.cache_data(show_spinner=False)
 def load_data(folder: str):
     data = {}
@@ -207,50 +200,20 @@ def load_data(folder: str):
             continue
 
         sym = f.replace(".parquet", "")
-        file_path = os.path.join(folder, f)
+        df = pd.read_parquet(os.path.join(folder, f))
 
-        try:
-            df = pd.read_parquet(file_path)
+        if isinstance(df.index, pd.MultiIndex):
+            df = df.reset_index()
 
-            if df.empty:
-                continue
+        if "datetime" in df.columns:
+            df["datetime"] = pd.to_datetime(df["datetime"])
+            df = df.sort_values("datetime").set_index("datetime")
 
-            # Standardize column headers to lowercase
-            df.columns = [str(c).lower().strip() for c in df.columns]
-
-            # Handle MultiIndex
-            if isinstance(df.index, pd.MultiIndex):
-                df = df.reset_index()
-
-            # Datetime Index Extraction and Normalization
-            if "datetime" in df.columns:
-                df["datetime"] = pd.to_datetime(df["datetime"])
-                df = df.sort_values("datetime").set_index("datetime")
-            elif "date" in df.columns:
-                df["datetime"] = pd.to_datetime(df["date"])
-                df = df.sort_values("datetime").set_index("datetime")
-            elif isinstance(df.index, pd.DatetimeIndex):
-                df = df.sort_index()
-            else:
-                continue
-
-            needed = {"open", "high", "low", "close", "volume"}
-            if not needed.issubset(df.columns):
-                continue
-
-            # Cast OHLCV columns explicitly to numerical values
-            for col in needed:
-                df[col] = pd.to_numeric(df[col], errors="coerce")
-
-            df = df.dropna(subset=list(needed))
-
-            if df.empty:
-                continue
-
-            data[sym] = df
-
-        except Exception:
+        needed = {"open", "high", "low", "close", "volume"}
+        if not needed.issubset(df.columns):
             continue
+
+        data[sym] = df
 
     return data
 
@@ -260,7 +223,6 @@ def make_tradingview_link(sym: str) -> str:
     return f"{base}?symbol=NSE%3A{sym}"
 
 
-# 1) TIMEFRAMES
 TIMEFRAMES = {
     "15 Min": os.path.join(BASE_PATH, "stock_data_15"),
     "1 Hour": os.path.join(BASE_PATH, "stock_data_1H"),
@@ -269,13 +231,11 @@ TIMEFRAMES = {
     "Monthly": os.path.join(BASE_PATH, "stock_data_M"),
 }
 
-# 2) Sidebar Timeframe Select
 tf_options = list(TIMEFRAMES.keys())
 tf = st.sidebar.selectbox(
     "Timeframe", tf_options, index=tf_options.index("Daily")
 )
 
-# 3) Single-stock dropdown
 sample_data = load_data(TIMEFRAMES[tf])
 all_symbols = sorted(sample_data.keys()) if sample_data else []
 st.sidebar.markdown("### 🔍 Single Stock Scan")
@@ -383,7 +343,9 @@ def nrb_7(df):
     base_high = base["high"]
     base_low = base["low"]
 
-    cond_high_low = inside["high"].max() <= base_high and inside["low"].min() >= base_low
+    cond_high_low = (
+        inside["high"].max() <= base_high and inside["low"].min() >= base_low
+    )
     cond_open_close = (
         inside["open"].max() <= base_high
         and inside["open"].min() >= base_low
@@ -817,7 +779,12 @@ def ema50_stoch_oversold(df):
 
     ema50 = talib.EMA(df["close"], 50)
     slowk, slowd = talib.STOCH(
-        df["high"], df["low"], df["close"], fastk_period=14, slowk_period=3, slowd_period=3
+        df["high"],
+        df["low"],
+        df["close"],
+        fastk_period=14,
+        slowk_period=3,
+        slowd_period=3,
     )
 
     price = df["close"].iloc[-1]
@@ -1279,14 +1246,18 @@ def rsi_macd_cross_swing(df):
     signal_curr = signal.iloc[-1]
 
     if (
-        rsi_prev < 40 and rsi_curr > 40 and
-        macd_prev < signal_prev and macd_curr > signal_curr
+        rsi_prev < 40
+        and rsi_curr > 40
+        and macd_prev < signal_prev
+        and macd_curr > signal_curr
     ):
         return "Bullish RSI+MACD Cross"
 
     if (
-        rsi_prev > 60 and rsi_curr < 60 and
-        macd_prev > signal_prev and macd_curr < signal_curr
+        rsi_prev > 60
+        and rsi_curr < 60
+        and macd_prev > signal_prev
+        and macd_curr < signal_curr
     ):
         return "Bearish RSI+MACD Cross"
 
@@ -1346,11 +1317,7 @@ def calculate_confluence(row):
 
 
 def run_all_scanners_for_symbol(
-    sym,
-    df,
-    tf,
-    analysis_date,
-    data_all_tfs,
+    sym, df, tf, analysis_date, data_all_tfs
 ):
     results = {}
 
@@ -1362,14 +1329,20 @@ def run_all_scanners_for_symbol(
     results["RSI + ADX"] = rsi_adx(df) is not None
     results["MACD Market Pulse"] = macd_market_pulse(df) is not None
     results["MACD Normal Divergence"] = macd_normal_divergence(df) is not None
-    results["MACD Bearish Peak Divergence"] = macd_peak_bearish_divergence(df) is not None
-    results["MACD Bullish Base Divergence"] = macd_base_bullish_divergence(df) is not None
+    results["MACD Bearish Peak Divergence"] = (
+        macd_peak_bearish_divergence(df) is not None
+    )
+    results["MACD Bullish Base Divergence"] = (
+        macd_base_bullish_divergence(df) is not None
+    )
     results["Trend Alignment (EMA)"] = trend_alignment(df) is not None
     results["Pullback to EMA"] = pullback_to_ema(df) is not None
     results["High Probability Confluence"] = confluence_setup(df) is not None
     results["MACD Hook Up"] = macd_hook_up(df) is not None
     results["MACD Hook Down"] = macd_hook_down(df) is not None
-    results["MACD Histogram Divergence"] = macd_histogram_divergence(df) is not None
+    results["MACD Histogram Divergence"] = (
+        macd_histogram_divergence(df) is not None
+    )
     results["EMA50 + Stoch Oversold"] = ema50_stoch_oversold(df) is not None
     results["Dark Cloud Cover"] = dark_cloud_cover(df) is not None
     results["Morning Star (Bottom)"] = morning_star_bottom(df) is not None
@@ -1381,13 +1354,19 @@ def run_all_scanners_for_symbol(
     results["Probable Momentum (Consecutive Close)"] = (
         consecutive_close_momentum(df, min_count=3) is not None
     )
-    results["Camarilla Breakout / Breakdown"] = camarilla_breakout(df) is not None
+    results["Camarilla Breakout / Breakdown"] = (
+        camarilla_breakout(df) is not None
+    )
     results["CPR Breakout / Breakdown"] = cpr_breakout(df) is not None
     results["Inside Bar Breakout"] = inside_bar_breakout(df) is not None
     results["ADX Expansion (Trend Ignition)"] = adx_expansion(df) is not None
     results["Range Expansion Day"] = range_expansion_day(df) is not None
-    results["Failed Breakout / Breakdown"] = failed_breakout_breakdown(df) is not None
-    results["EMA Compression → Expansion"] = ema_compression_expansion(df) is not None
+    results["Failed Breakout / Breakdown"] = (
+        failed_breakout_breakdown(df) is not None
+    )
+    results["EMA Compression → Expansion"] = (
+        ema_compression_expansion(df) is not None
+    )
     results["RSI Swing"] = rsi_swing(df) is not None
 
     if "Weekly" in data_all_tfs and "Monthly" in data_all_tfs:
@@ -1576,10 +1555,16 @@ def hidden_pivot_reversal(df, lookback=25):
     highs = df["high"].iloc[-lookback:]
     lows = df["low"].iloc[-lookback:]
 
-    if highs.iloc[-1] > highs.iloc[:-1].max() and df["close"].iloc[-1] < highs.iloc[:-1].max():
+    if (
+        highs.iloc[-1] > highs.iloc[:-1].max()
+        and df["close"].iloc[-1] < highs.iloc[:-1].max()
+    ):
         return "Hidden Pivot Bearish Reversal"
 
-    if lows.iloc[-1] < lows.iloc[:-1].min() and df["close"].iloc[-1] > lows.iloc[:-1].min():
+    if (
+        lows.iloc[-1] < lows.iloc[:-1].min()
+        and df["close"].iloc[-1] > lows.iloc[:-1].min()
+    ):
         return "Hidden Pivot Bullish Reversal"
 
     return None
@@ -1706,9 +1691,7 @@ scanner = st.session_state["scanner"]
 st.markdown(f"**Active Scanner:** `{scanner}`  |  **Timeframe:** `{tf}`")
 
 run = clicked_scanner is not None
-
 df_res = empty_result_df()
-
 
 # ==============================
 # MAIN EXECUTION
@@ -2138,8 +2121,7 @@ if run:
             df_res = empty_result_df()
         else:
             atr_list.sort(key=lambda x: x[1], reverse=True)
-            rows = [r[2] for r in atr_list[:10]]
-            results = rows
+            results = [r[2] for r in atr_list[:10]]
 
     if not results:
         st.info("No stocks matched.")
@@ -2156,6 +2138,7 @@ if run:
             df_res.at[i, "Confluence"] = score
             df_res.at[i, "Bias"] = bias
             df_res.at[i, "Probability"] = prob
+
         df_res["TV_Link"] = df_res["Symbol"].apply(
             lambda s: f"[TV]({make_tradingview_link(s)})" if s else ""
         )
@@ -2172,19 +2155,20 @@ if run:
 
         st.dataframe(df_res, use_container_width=True, hide_index=True)
 
-        # RSI Market Pulse Donut Chart
         if scanner == "RSI Market Pulse" and not df_res.empty:
-            df_res['Zone'] = df_res['Zone'].astype(str).str.strip()
-            df_filtered = df_res[df_res['Zone'].isin(["RSI > 60", "RSI 40–60", "RSI < 40"])]
+            df_res["Zone"] = df_res["Zone"].astype(str).str.strip()
+            df_filtered = df_res[
+                df_res["Zone"].isin(["RSI > 60", "RSI 40–60", "RSI < 40"])
+            ]
 
             if not df_filtered.empty:
-                zone_counts = df_filtered['Zone'].value_counts().reset_index()
-                zone_counts.columns = ['Zone', 'Count']
+                zone_counts = df_filtered["Zone"].value_counts().reset_index()
+                zone_counts.columns = ["Zone", "Count"]
 
                 fig = px.pie(
                     zone_counts,
-                    names='Zone',
-                    values='Count',
+                    names="Zone",
+                    values="Count",
                     title="🎯 RSI Market Pulse Distribution",
                     hole=0.5,
                     color="Zone",
@@ -2198,7 +2182,7 @@ if run:
                 fig.update_traces(
                     textinfo="percent+value",
                     textfont_size=13,
-                    marker=dict(line=dict(color='#FFFFFF', width=2))
+                    marker=dict(line=dict(color="#FFFFFF", width=2)),
                 )
 
                 fig.update_layout(
@@ -2217,7 +2201,9 @@ st.markdown("### 🧾 Scanner Matrix for Selected Stock")
 if selected_symbol != "NA":
     data_single_tf = load_data(TIMEFRAMES[tf])
     if selected_symbol in data_single_tf:
-        df_sym = trim_df_to_date(data_single_tf[selected_symbol], analysis_date)
+        df_sym = trim_df_to_date(
+            data_single_tf[selected_symbol], analysis_date
+        )
         if df_sym is not None:
             data_all_tfs = {
                 tf: data_single_tf,
@@ -2238,7 +2224,9 @@ if selected_symbol != "NA":
             mat_df = pd.DataFrame(
                 {
                     "Scanner": list(results_dict.keys()),
-                    "Result": ["Yes" if v else "No" for v in results_dict.values()],
+                    "Result": [
+                        "Yes" if v else "No" for v in results_dict.values()
+                    ],
                 }
             )
             st.dataframe(mat_df, use_container_width=True, hide_index=True)
@@ -2248,7 +2236,8 @@ if selected_symbol != "NA":
         st.info("Symbol data not found for this timeframe.")
 
 
-st.markdown("""
+st.markdown(
+    """
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 
 <div style="line-height: 1.6;">
@@ -2268,5 +2257,7 @@ Energy | Commodity | Quant Intelligence 📶<br><br>
 
 📧 <a href="mailto:yadav.gauravsingh@gmail.com">yadav.gauravsingh@gmail.com</a> ™️
 </div>
-    """, unsafe_allow_html=True)
+    """,
+    unsafe_allow_html=True,
+)
 show_footer()
