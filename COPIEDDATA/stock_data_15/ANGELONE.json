@@ -1,41 +1,5 @@
 [
     {
-        "datetime":"2025-12-23T09:00:00.000",
-        "symbol":"NSE:ANGELONE",
-        "open":256.69,
-        "high":256.69,
-        "low":254.66,
-        "close":254.7,
-        "volume":164720.0
-    },
-    {
-        "datetime":"2025-12-23T09:15:00.000",
-        "symbol":"NSE:ANGELONE",
-        "open":254.67,
-        "high":256.4,
-        "low":254.29,
-        "close":256.37,
-        "volume":174800.0
-    },
-    {
-        "datetime":"2025-12-23T09:30:00.000",
-        "symbol":"NSE:ANGELONE",
-        "open":256.85,
-        "high":256.92,
-        "low":255.71,
-        "close":256.14,
-        "volume":203540.0
-    },
-    {
-        "datetime":"2025-12-23T09:45:00.000",
-        "symbol":"NSE:ANGELONE",
-        "open":256.18,
-        "high":256.29,
-        "low":253.97,
-        "close":254.8,
-        "volume":281320.0
-    },
-    {
         "datetime":"2025-12-24T03:45:00.000",
         "symbol":"NSE:ANGELONE",
         "open":254.99,
@@ -35995,8 +35959,44 @@
         "symbol":"NSE:ANGELONE",
         "open":292.5,
         "high":292.55,
-        "low":292.2,
-        "close":292.4,
-        "volume":3261.0
+        "low":291.55,
+        "close":291.8,
+        "volume":89964.0
+    },
+    {
+        "datetime":"2026-08-19T05:45:00.000",
+        "symbol":"NSE:ANGELONE",
+        "open":291.8,
+        "high":292.2,
+        "low":291.45,
+        "close":291.6,
+        "volume":103866.0
+    },
+    {
+        "datetime":"2026-08-19T06:00:00.000",
+        "symbol":"NSE:ANGELONE",
+        "open":291.8,
+        "high":292.25,
+        "low":291.55,
+        "close":291.75,
+        "volume":53511.0
+    },
+    {
+        "datetime":"2026-08-19T06:15:00.000",
+        "symbol":"NSE:ANGELONE",
+        "open":291.95,
+        "high":292.5,
+        "low":291.75,
+        "close":292.35,
+        "volume":69996.0
+    },
+    {
+        "datetime":"2026-08-19T06:30:00.000",
+        "symbol":"NSE:ANGELONE",
+        "open":292.35,
+        "high":292.4,
+        "low":291.2,
+        "close":291.2,
+        "volume":44552.0
     }
 ]

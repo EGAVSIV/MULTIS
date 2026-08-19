@@ -1,41 +1,5 @@
 [
     {
-        "datetime":"2025-12-23T09:00:00.000",
-        "symbol":"NSE:DMART",
-        "open":3829.4,
-        "high":3830.8,
-        "low":3821.0,
-        "close":3821.0,
-        "volume":9786.0
-    },
-    {
-        "datetime":"2025-12-23T09:15:00.000",
-        "symbol":"NSE:DMART",
-        "open":3821.0,
-        "high":3825.8,
-        "low":3815.7,
-        "close":3823.4,
-        "volume":10217.0
-    },
-    {
-        "datetime":"2025-12-23T09:30:00.000",
-        "symbol":"NSE:DMART",
-        "open":3824.2,
-        "high":3834.2,
-        "low":3823.8,
-        "close":3826.6,
-        "volume":17482.0
-    },
-    {
-        "datetime":"2025-12-23T09:45:00.000",
-        "symbol":"NSE:DMART",
-        "open":3827.0,
-        "high":3833.0,
-        "low":3823.1,
-        "close":3832.9,
-        "volume":21840.0
-    },
-    {
         "datetime":"2025-12-24T03:45:00.000",
         "symbol":"NSE:DMART",
         "open":3840.5,
@@ -35995,8 +35959,44 @@
         "symbol":"NSE:DMART",
         "open":3991.0,
         "high":3991.0,
-        "low":3987.2,
-        "close":3987.7,
-        "volume":229.0
+        "low":3983.5,
+        "close":3986.9,
+        "volume":3114.0
+    },
+    {
+        "datetime":"2026-08-19T05:45:00.000",
+        "symbol":"NSE:DMART",
+        "open":3987.3,
+        "high":3990.8,
+        "low":3985.5,
+        "close":3988.5,
+        "volume":2220.0
+    },
+    {
+        "datetime":"2026-08-19T06:00:00.000",
+        "symbol":"NSE:DMART",
+        "open":3988.5,
+        "high":3991.0,
+        "low":3985.0,
+        "close":3990.4,
+        "volume":2418.0
+    },
+    {
+        "datetime":"2026-08-19T06:15:00.000",
+        "symbol":"NSE:DMART",
+        "open":3990.5,
+        "high":4001.3,
+        "low":3988.9,
+        "close":3998.0,
+        "volume":5578.0
+    },
+    {
+        "datetime":"2026-08-19T06:30:00.000",
+        "symbol":"NSE:DMART",
+        "open":3998.0,
+        "high":4004.0,
+        "low":3995.8,
+        "close":3998.8,
+        "volume":5490.0
     }
 ]

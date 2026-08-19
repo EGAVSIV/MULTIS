@@ -1,41 +1,5 @@
 [
     {
-        "datetime":"2025-12-23T09:00:00.000",
-        "symbol":"NSE:IOC",
-        "open":163.33,
-        "high":163.39,
-        "low":162.82,
-        "close":162.84,
-        "volume":419917.0
-    },
-    {
-        "datetime":"2025-12-23T09:15:00.000",
-        "symbol":"NSE:IOC",
-        "open":162.84,
-        "high":163.15,
-        "low":162.66,
-        "close":163.12,
-        "volume":344103.0
-    },
-    {
-        "datetime":"2025-12-23T09:30:00.000",
-        "symbol":"NSE:IOC",
-        "open":163.2,
-        "high":163.55,
-        "low":163.2,
-        "close":163.3,
-        "volume":372563.0
-    },
-    {
-        "datetime":"2025-12-23T09:45:00.000",
-        "symbol":"NSE:IOC",
-        "open":163.3,
-        "high":163.43,
-        "low":163.09,
-        "close":163.15,
-        "volume":613866.0
-    },
-    {
         "datetime":"2025-12-24T03:45:00.000",
         "symbol":"NSE:IOC",
         "open":163.41,
@@ -35994,9 +35958,45 @@
         "datetime":"2026-08-19T05:30:00.000",
         "symbol":"NSE:IOC",
         "open":137.0,
-        "high":137.03,
+        "high":137.42,
         "low":137.0,
-        "close":137.0,
-        "volume":36765.0
+        "close":137.3,
+        "volume":245762.0
+    },
+    {
+        "datetime":"2026-08-19T05:45:00.000",
+        "symbol":"NSE:IOC",
+        "open":137.29,
+        "high":137.39,
+        "low":137.15,
+        "close":137.15,
+        "volume":251632.0
+    },
+    {
+        "datetime":"2026-08-19T06:00:00.000",
+        "symbol":"NSE:IOC",
+        "open":137.19,
+        "high":137.37,
+        "low":137.13,
+        "close":137.18,
+        "volume":128018.0
+    },
+    {
+        "datetime":"2026-08-19T06:15:00.000",
+        "symbol":"NSE:IOC",
+        "open":137.22,
+        "high":137.4,
+        "low":137.18,
+        "close":137.25,
+        "volume":107478.0
+    },
+    {
+        "datetime":"2026-08-19T06:30:00.000",
+        "symbol":"NSE:IOC",
+        "open":137.3,
+        "high":137.32,
+        "low":137.07,
+        "close":137.12,
+        "volume":85966.0
     }
 ]

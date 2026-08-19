@@ -1,41 +1,5 @@
 [
     {
-        "datetime":"2025-12-23T09:00:00.000",
-        "symbol":"NSE:MARUTI",
-        "open":16611.0,
-        "high":16616.0,
-        "low":16596.0,
-        "close":16599.0,
-        "volume":6195.0
-    },
-    {
-        "datetime":"2025-12-23T09:15:00.000",
-        "symbol":"NSE:MARUTI",
-        "open":16599.0,
-        "high":16611.0,
-        "low":16579.0,
-        "close":16610.0,
-        "volume":6853.0
-    },
-    {
-        "datetime":"2025-12-23T09:30:00.000",
-        "symbol":"NSE:MARUTI",
-        "open":16606.0,
-        "high":16616.0,
-        "low":16579.0,
-        "close":16586.0,
-        "volume":14519.0
-    },
-    {
-        "datetime":"2025-12-23T09:45:00.000",
-        "symbol":"NSE:MARUTI",
-        "open":16586.0,
-        "high":16586.0,
-        "low":16558.0,
-        "close":16561.0,
-        "volume":18427.0
-    },
-    {
         "datetime":"2025-12-24T03:45:00.000",
         "symbol":"NSE:MARUTI",
         "open":16601.0,
@@ -35994,9 +35958,45 @@
         "datetime":"2026-08-19T05:30:00.000",
         "symbol":"NSE:MARUTI",
         "open":13684.0,
+        "high":13689.0,
+        "low":13653.0,
+        "close":13670.0,
+        "volume":7071.0
+    },
+    {
+        "datetime":"2026-08-19T05:45:00.000",
+        "symbol":"NSE:MARUTI",
+        "open":13674.0,
+        "high":13682.0,
+        "low":13669.0,
+        "close":13677.0,
+        "volume":3872.0
+    },
+    {
+        "datetime":"2026-08-19T06:00:00.000",
+        "symbol":"NSE:MARUTI",
+        "open":13676.0,
+        "high":13680.0,
+        "low":13663.0,
+        "close":13666.0,
+        "volume":7184.0
+    },
+    {
+        "datetime":"2026-08-19T06:15:00.000",
+        "symbol":"NSE:MARUTI",
+        "open":13666.0,
+        "high":13675.0,
+        "low":13663.0,
+        "close":13672.0,
+        "volume":1232.0
+    },
+    {
+        "datetime":"2026-08-19T06:30:00.000",
+        "symbol":"NSE:MARUTI",
+        "open":13680.0,
         "high":13684.0,
-        "low":13680.0,
-        "close":13681.0,
-        "volume":146.0
+        "low":13663.0,
+        "close":13668.0,
+        "volume":8279.0
     }
 ]

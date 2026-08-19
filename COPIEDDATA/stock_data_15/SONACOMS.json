@@ -1,41 +1,5 @@
 [
     {
-        "datetime":"2025-12-23T09:00:00.000",
-        "symbol":"NSE:SONACOMS",
-        "open":488.0,
-        "high":488.5,
-        "low":488.0,
-        "close":488.1,
-        "volume":64384.0
-    },
-    {
-        "datetime":"2025-12-23T09:15:00.000",
-        "symbol":"NSE:SONACOMS",
-        "open":488.0,
-        "high":488.25,
-        "low":486.0,
-        "close":488.0,
-        "volume":70914.0
-    },
-    {
-        "datetime":"2025-12-23T09:30:00.000",
-        "symbol":"NSE:SONACOMS",
-        "open":488.8,
-        "high":489.3,
-        "low":486.45,
-        "close":488.5,
-        "volume":77418.0
-    },
-    {
-        "datetime":"2025-12-23T09:45:00.000",
-        "symbol":"NSE:SONACOMS",
-        "open":488.4,
-        "high":489.45,
-        "low":488.0,
-        "close":489.45,
-        "volume":80164.0
-    },
-    {
         "datetime":"2025-12-24T03:45:00.000",
         "symbol":"NSE:SONACOMS",
         "open":488.2,
@@ -35994,9 +35958,45 @@
         "datetime":"2026-08-19T05:30:00.000",
         "symbol":"NSE:SONACOMS",
         "open":823.3,
-        "high":823.3,
+        "high":825.2,
         "low":822.6,
-        "close":822.8,
-        "volume":599.0
+        "close":824.6,
+        "volume":134628.0
+    },
+    {
+        "datetime":"2026-08-19T05:45:00.000",
+        "symbol":"NSE:SONACOMS",
+        "open":824.95,
+        "high":825.9,
+        "low":824.2,
+        "close":825.35,
+        "volume":16809.0
+    },
+    {
+        "datetime":"2026-08-19T06:00:00.000",
+        "symbol":"NSE:SONACOMS",
+        "open":825.0,
+        "high":826.2,
+        "low":824.7,
+        "close":826.0,
+        "volume":18662.0
+    },
+    {
+        "datetime":"2026-08-19T06:15:00.000",
+        "symbol":"NSE:SONACOMS",
+        "open":826.2,
+        "high":826.2,
+        "low":824.0,
+        "close":824.3,
+        "volume":21590.0
+    },
+    {
+        "datetime":"2026-08-19T06:30:00.000",
+        "symbol":"NSE:SONACOMS",
+        "open":824.25,
+        "high":825.35,
+        "low":824.15,
+        "close":824.5,
+        "volume":12335.0
     }
 ]

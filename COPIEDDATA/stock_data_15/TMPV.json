@@ -1,41 +1,5 @@
 [
     {
-        "datetime":"2025-12-23T09:00:00.000",
-        "symbol":"NSE:TMPV",
-        "open":363.5,
-        "high":363.75,
-        "low":362.8,
-        "close":362.85,
-        "volume":812977.0
-    },
-    {
-        "datetime":"2025-12-23T09:15:00.000",
-        "symbol":"NSE:TMPV",
-        "open":362.8,
-        "high":363.65,
-        "low":362.55,
-        "close":363.35,
-        "volume":603534.0
-    },
-    {
-        "datetime":"2025-12-23T09:30:00.000",
-        "symbol":"NSE:TMPV",
-        "open":363.55,
-        "high":363.9,
-        "low":362.85,
-        "close":363.6,
-        "volume":858701.0
-    },
-    {
-        "datetime":"2025-12-23T09:45:00.000",
-        "symbol":"NSE:TMPV",
-        "open":363.6,
-        "high":363.65,
-        "low":362.5,
-        "close":362.6,
-        "volume":988617.0
-    },
-    {
         "datetime":"2025-12-24T03:45:00.000",
         "symbol":"NSE:TMPV",
         "open":364.7,
@@ -35994,9 +35958,45 @@
         "datetime":"2026-08-19T05:30:00.000",
         "symbol":"NSE:TMPV",
         "open":320.4,
-        "high":321.55,
+        "high":321.95,
         "low":320.25,
-        "close":321.35,
-        "volume":128879.0
+        "close":321.95,
+        "volume":303404.0
+    },
+    {
+        "datetime":"2026-08-19T05:45:00.000",
+        "symbol":"NSE:TMPV",
+        "open":322.1,
+        "high":322.1,
+        "low":321.45,
+        "close":322.0,
+        "volume":331792.0
+    },
+    {
+        "datetime":"2026-08-19T06:00:00.000",
+        "symbol":"NSE:TMPV",
+        "open":322.0,
+        "high":323.0,
+        "low":321.95,
+        "close":322.65,
+        "volume":236323.0
+    },
+    {
+        "datetime":"2026-08-19T06:15:00.000",
+        "symbol":"NSE:TMPV",
+        "open":322.65,
+        "high":323.35,
+        "low":322.5,
+        "close":323.0,
+        "volume":172989.0
+    },
+    {
+        "datetime":"2026-08-19T06:30:00.000",
+        "symbol":"NSE:TMPV",
+        "open":323.1,
+        "high":323.1,
+        "low":322.15,
+        "close":322.15,
+        "volume":92623.0
     }
 ]

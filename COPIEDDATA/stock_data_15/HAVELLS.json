@@ -1,41 +1,5 @@
 [
     {
-        "datetime":"2025-12-23T09:00:00.000",
-        "symbol":"NSE:HAVELLS",
-        "open":1429.9,
-        "high":1430.0,
-        "low":1424.0,
-        "close":1424.2,
-        "volume":6577.0
-    },
-    {
-        "datetime":"2025-12-23T09:15:00.000",
-        "symbol":"NSE:HAVELLS",
-        "open":1424.2,
-        "high":1426.2,
-        "low":1423.1,
-        "close":1426.0,
-        "volume":14365.0
-    },
-    {
-        "datetime":"2025-12-23T09:30:00.000",
-        "symbol":"NSE:HAVELLS",
-        "open":1426.2,
-        "high":1430.0,
-        "low":1426.1,
-        "close":1426.7,
-        "volume":17083.0
-    },
-    {
-        "datetime":"2025-12-23T09:45:00.000",
-        "symbol":"NSE:HAVELLS",
-        "open":1427.0,
-        "high":1427.7,
-        "low":1423.1,
-        "close":1425.9,
-        "volume":20175.0
-    },
-    {
         "datetime":"2025-12-24T03:45:00.000",
         "symbol":"NSE:HAVELLS",
         "open":1425.7,
@@ -35994,9 +35958,45 @@
         "datetime":"2026-08-19T05:30:00.000",
         "symbol":"NSE:HAVELLS",
         "open":1279.9,
+        "high":1282.4,
+        "low":1278.1,
+        "close":1282.1,
+        "volume":50017.0
+    },
+    {
+        "datetime":"2026-08-19T05:45:00.000",
+        "symbol":"NSE:HAVELLS",
+        "open":1282.1,
+        "high":1284.4,
+        "low":1277.2,
+        "close":1277.4,
+        "volume":22834.0
+    },
+    {
+        "datetime":"2026-08-19T06:00:00.000",
+        "symbol":"NSE:HAVELLS",
+        "open":1277.6,
         "high":1280.1,
-        "low":1279.5,
-        "close":1280.1,
-        "volume":12846.0
+        "low":1275.8,
+        "close":1277.3,
+        "volume":16226.0
+    },
+    {
+        "datetime":"2026-08-19T06:15:00.000",
+        "symbol":"NSE:HAVELLS",
+        "open":1277.3,
+        "high":1278.7,
+        "low":1276.6,
+        "close":1278.4,
+        "volume":13200.0
+    },
+    {
+        "datetime":"2026-08-19T06:30:00.000",
+        "symbol":"NSE:HAVELLS",
+        "open":1278.5,
+        "high":1280.5,
+        "low":1276.4,
+        "close":1278.6,
+        "volume":12592.0
     }
 ]

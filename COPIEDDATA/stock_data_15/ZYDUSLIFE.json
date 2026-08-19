@@ -1,41 +1,5 @@
 [
     {
-        "datetime":"2025-12-23T09:00:00.000",
-        "symbol":"NSE:ZYDUSLIFE",
-        "open":927.0,
-        "high":927.6,
-        "low":925.55,
-        "close":925.6,
-        "volume":19598.0
-    },
-    {
-        "datetime":"2025-12-23T09:15:00.000",
-        "symbol":"NSE:ZYDUSLIFE",
-        "open":924.8,
-        "high":925.05,
-        "low":923.65,
-        "close":924.65,
-        "volume":7665.0
-    },
-    {
-        "datetime":"2025-12-23T09:30:00.000",
-        "symbol":"NSE:ZYDUSLIFE",
-        "open":926.0,
-        "high":927.45,
-        "low":925.2,
-        "close":925.8,
-        "volume":8957.0
-    },
-    {
-        "datetime":"2025-12-23T09:45:00.000",
-        "symbol":"NSE:ZYDUSLIFE",
-        "open":925.55,
-        "high":932.25,
-        "low":924.3,
-        "close":929.45,
-        "volume":69392.0
-    },
-    {
         "datetime":"2025-12-24T03:45:00.000",
         "symbol":"NSE:ZYDUSLIFE",
         "open":933.35,
@@ -35994,9 +35958,45 @@
         "datetime":"2026-08-19T05:30:00.000",
         "symbol":"NSE:ZYDUSLIFE",
         "open":1114.6,
-        "high":1114.6,
+        "high":1117.2,
+        "low":1111.4,
+        "close":1116.4,
+        "volume":31963.0
+    },
+    {
+        "datetime":"2026-08-19T05:45:00.000",
+        "symbol":"NSE:ZYDUSLIFE",
+        "open":1116.9,
+        "high":1123.5,
+        "low":1116.4,
+        "close":1122.3,
+        "volume":180279.0
+    },
+    {
+        "datetime":"2026-08-19T06:00:00.000",
+        "symbol":"NSE:ZYDUSLIFE",
+        "open":1122.0,
+        "high":1123.0,
+        "low":1119.6,
+        "close":1119.6,
+        "volume":367513.0
+    },
+    {
+        "datetime":"2026-08-19T06:15:00.000",
+        "symbol":"NSE:ZYDUSLIFE",
+        "open":1119.1,
+        "high":1119.3,
+        "low":1113.1,
+        "close":1113.8,
+        "volume":33982.0
+    },
+    {
+        "datetime":"2026-08-19T06:30:00.000",
+        "symbol":"NSE:ZYDUSLIFE",
+        "open":1113.7,
+        "high":1114.1,
         "low":1112.3,
-        "close":1112.5,
-        "volume":5177.0
+        "close":1112.3,
+        "volume":11639.0
     }
 ]

@@ -1,41 +1,5 @@
 [
     {
-        "datetime":"2025-12-23T09:00:00.000",
-        "symbol":"NSE:COFORGE",
-        "open":1785.2,
-        "high":1786.2,
-        "low":1776.3,
-        "close":1777.1,
-        "volume":103075.0
-    },
-    {
-        "datetime":"2025-12-23T09:15:00.000",
-        "symbol":"NSE:COFORGE",
-        "open":1776.7,
-        "high":1786.0,
-        "low":1775.1,
-        "close":1785.0,
-        "volume":126562.0
-    },
-    {
-        "datetime":"2025-12-23T09:30:00.000",
-        "symbol":"NSE:COFORGE",
-        "open":1785.7,
-        "high":1790.0,
-        "low":1779.6,
-        "close":1780.0,
-        "volume":201265.0
-    },
-    {
-        "datetime":"2025-12-23T09:45:00.000",
-        "symbol":"NSE:COFORGE",
-        "open":1779.7,
-        "high":1780.0,
-        "low":1772.0,
-        "close":1778.0,
-        "volume":257873.0
-    },
-    {
         "datetime":"2025-12-24T03:45:00.000",
         "symbol":"NSE:COFORGE",
         "open":1780.2,
@@ -35995,8 +35959,44 @@
         "symbol":"NSE:COFORGE",
         "open":1802.0,
         "high":1802.6,
-        "low":1801.2,
-        "close":1801.9,
-        "volume":2844.0
+        "low":1797.0,
+        "close":1802.2,
+        "volume":100934.0
+    },
+    {
+        "datetime":"2026-08-19T05:45:00.000",
+        "symbol":"NSE:COFORGE",
+        "open":1802.2,
+        "high":1804.8,
+        "low":1800.3,
+        "close":1804.3,
+        "volume":143057.0
+    },
+    {
+        "datetime":"2026-08-19T06:00:00.000",
+        "symbol":"NSE:COFORGE",
+        "open":1804.5,
+        "high":1813.7,
+        "low":1803.2,
+        "close":1812.0,
+        "volume":91978.0
+    },
+    {
+        "datetime":"2026-08-19T06:15:00.000",
+        "symbol":"NSE:COFORGE",
+        "open":1812.0,
+        "high":1813.0,
+        "low":1809.1,
+        "close":1810.6,
+        "volume":110280.0
+    },
+    {
+        "datetime":"2026-08-19T06:30:00.000",
+        "symbol":"NSE:COFORGE",
+        "open":1810.3,
+        "high":1815.3,
+        "low":1809.4,
+        "close":1815.0,
+        "volume":40828.0
     }
 ]
