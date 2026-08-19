@@ -35988,15 +35988,15 @@
         "high":1800.0,
         "low":1797.7,
         "close":1798.8,
-        "volume":97260.0
+        "volume":101937.0
     },
     {
         "datetime":"2026-08-19T08:45:00.000",
         "symbol":"NSE:LAURUSLABS",
         "open":1800.0,
-        "high":1807.0,
+        "high":1808.3,
         "low":1797.4,
-        "close":1805.8,
-        "volume":76540.0
+        "close":1805.5,
+        "volume":277880.0
     }
 ]

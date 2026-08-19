@@ -35988,15 +35988,15 @@
         "high":8545.0,
         "low":8508.0,
         "close":8537.5,
-        "volume":23329.0
+        "volume":24517.0
     },
     {
         "datetime":"2026-08-19T08:45:00.000",
         "symbol":"NSE:DIVISLAB",
         "open":8537.5,
         "high":8543.0,
-        "low":8527.5,
-        "close":8529.0,
-        "volume":9663.0
+        "low":8520.5,
+        "close":8527.0,
+        "volume":32832.0
     }
 ]

@@ -35988,15 +35988,15 @@
         "high":8025.0,
         "low":7990.5,
         "close":7995.0,
-        "volume":32685.0
+        "volume":34648.0
     },
     {
         "datetime":"2026-08-19T08:45:00.000",
         "symbol":"NSE:EICHERMOT",
         "open":7995.0,
         "high":7995.0,
-        "low":7956.5,
-        "close":7959.5,
-        "volume":27513.0
+        "low":7947.5,
+        "close":7961.5,
+        "volume":81206.0
     }
 ]
