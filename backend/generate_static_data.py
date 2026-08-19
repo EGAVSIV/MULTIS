@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import math
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from pathlib import Path
 
 import pandas as pd
@@ -15,8 +15,9 @@ from scanner_engine import (
     trim_df_to_date,
 )
 
-REPO_ROOT = Path(__file__).resolve().parent.parent
-OUT_DIR = REPO_ROOT / "docs" / "data"
+# Parent of 'backend' directory (Project Root)
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+OUT_DIR = PROJECT_ROOT / "docs" / "data"
 
 
 def clean_value(value):
@@ -137,7 +138,7 @@ def main():
             out_file = OUT_DIR / "matrix" / tf.replace(" ", "_") / f"{sym}.json"
             write_json(out_file, payload)
 
-    write_json(OUT_DIR / "meta.json", {"generated_at": datetime.utcnow().isoformat() + "Z"})
+    write_json(OUT_DIR / "meta.json", {"generated_at": datetime.now(timezone.utc).isoformat()})
     print("Static data generation complete.")
 
 
